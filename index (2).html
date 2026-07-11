@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Amy's Daily Wordle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --latte:    #FDFBF7;  /* warm latte cream background     */
+    --espresso: #3E2C23;  /* rich espresso brown             */
+    --mocha:    #6B5142;  /* softer brown for secondary text */
+    --lily:     #FFFFFF;  /* lily white                      */
+    --sage:     #A8BBA0;  /* soft sage green  = correct      */
+    --butter:   #E3C481;  /* warm buttery gold = present     */
+    --taupe:    #C7BCB1;  /* muted taupe gray = absent       */
+    --rose:     #D9A0A5;  /* gentle rose-pink accent         */
+    --blushpk:  #F3D7DA;  /* pale petal pink                 */
+    --border:   #E4DCD1;  /* light coffee-cream border       */
+    --key:      #F1EAE0;  /* keyboard key resting color      */
+  }
+
+  html, body {
+    background: var(--latte);
+    color: var(--espresso);
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+
+  .font-display { font-family: 'Playfair Display', serif; }
+  .font-script  { font-family: 'Great Vibes', cursive; }
+
+  /* ---------- Page-load reveal ---------- */
+  .rise { animation: rise 0.7s ease both; }
+  .rise-1 { animation-delay: 0.05s; }
+  .rise-2 { animation-delay: 0.18s; }
+  .rise-3 { animation-delay: 0.32s; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- Coffee steam ---------- */
+  .steam path {
+    opacity: 0;
+    animation: steam-rise 2.8s ease-in-out infinite;
+  }
+  .steam path:nth-child(2) { animation-delay: 0.7s; }
+  .steam path:nth-child(3) { animation-delay: 1.4s; }
+  @keyframes steam-rise {
+    0%   { opacity: 0;   transform: translateY(2px); }
+    35%  { opacity: 0.8; }
+    100% { opacity: 0;   transform: translateY(-4px); }
+  }
+
+  /* ---------- Lily sway ---------- */
+  .lily-icon {
+    animation: sway 5.5s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+  @keyframes sway {
+    0%, 100% { transform: rotate(-4deg); }
+    50%      { transform: rotate(4deg); }
+  }
+
+  /* ---------- Drifting lily petals (ambient background) ---------- */
+  .petal {
+    position: fixed;
+    top: -4rem;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 30% 30%, var(--lily) 0%, var(--blushpk) 75%);
+    border-radius: 65% 35% 60% 40% / 55% 45% 65% 35%;
+    box-shadow: 0 1px 3px rgba(217, 160, 165, 0.15);
+    animation: petal-fall linear infinite;
+  }
+  @keyframes petal-fall {
+    0%   { transform: translateY(-6vh)  translateX(0)       rotate(0deg); }
+    25%  { transform: translateY(26vh)  translateX(2.4rem)  rotate(75deg); }
+    50%  { transform: translateY(52vh)  translateX(-1.6rem) rotate(160deg); }
+    75%  { transform: translateY(78vh)  translateX(2rem)    rotate(235deg); }
+    100% { transform: translateY(110vh) translateX(-1rem)   rotate(330deg); }
+  }
+
+  /* ---------- Victory petal burst ---------- */
+  .burst {
+    position: fixed;
+    z-index: 45;
+    pointer-events: none;
+    border-radius: 65% 35% 60% 40% / 55% 45% 65% 35%;
+    animation: burst 1.2s cubic-bezier(0.16, 0.6, 0.4, 1) forwards;
+  }
+  @keyframes burst {
+    0%   { transform: translate(0, 0) rotate(0deg) scale(0.6); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(1); opacity: 0; }
+  }
+
+  /* ---------- Tiles ---------- */
+  .tile {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.4rem, 6vw, 2rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    border: 2px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--lily);
+    color: var(--espresso);
+    user-select: none;
+    box-shadow: 0 1px 2px rgba(62, 44, 35, 0.04);
+    transition: transform 0.1s ease, border-color 0.15s ease;
+  }
+  .tile.filled {
+    border-color: var(--mocha);
+    animation: pop 0.12s ease;
+  }
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  .tile.flip { animation: flip 0.55s ease forwards; }
+  @keyframes flip {
+    0%   { transform: rotateX(0deg); }
+    50%  { transform: rotateX(90deg); }
+    100% { transform: rotateX(0deg); }
+  }
+  .tile.correct { background: var(--sage);   border-color: var(--sage);   color: #FFFFFF; }
+  .tile.present { background: var(--butter); border-color: var(--butter); color: #FFFFFF; }
+  .tile.absent  { background: var(--taupe);  border-color: var(--taupe);  color: #FFFFFF; }
+
+  .row.shake { animation: shake 0.45s ease; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  .tile.dance { animation: dance 0.5s ease; }
+  @keyframes dance {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+
+  /* ---------- Keyboard ---------- */
+  .key {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: clamp(0.8rem, 3.2vw, 0.95rem);
+    text-transform: uppercase;
+    background: var(--key);
+    color: var(--espresso);
+    border-radius: 0.45rem;
+    height: 3.4rem;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.05s ease;
+    user-select: none;
+  }
+  .key:active { transform: scale(0.94); }
+  .key.wide { flex: 1.6; font-size: 0.72rem; letter-spacing: 0.03em; }
+  .key.correct { background: var(--sage);   color: #fff; }
+  .key.present { background: var(--butter); color: #fff; }
+  .key.absent  { background: var(--taupe);  color: #fff; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: fixed;
+    top: 6.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--espresso);
+    color: var(--latte);
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 60;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ---------- Modal (love-note card) ---------- */
+  #modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(62, 44, 35, 0.45);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 50;
+  }
+  #modal-backdrop.show { opacity: 1; pointer-events: auto; }
+  #modal-card {
+    background: var(--lily);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    max-width: 26rem;
+    width: 100%;
+    padding: 2.25rem 2rem 1.75rem;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(62, 44, 35, 0.18);
+    transform: translateY(14px) scale(0.98);
+    transition: transform 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  #modal-backdrop.show #modal-card { transform: translateY(0) scale(1); }
+  #modal-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--sage), var(--butter), var(--rose));
+  }
+  /* faint lily watermark behind the note */
+  #modal-card::after {
+    content: "";
+    position: absolute;
+    right: -2.5rem;
+    bottom: -2.5rem;
+    width: 11rem;
+    height: 11rem;
+    background: radial-gradient(ellipse at 30% 30%, var(--blushpk), transparent 70%);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .divider-heart {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--rose);
+    margin: 1.1rem 0;
+  }
+  .divider-heart::before, .divider-heart::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .signature {
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.7rem;
+    color: var(--rose);
+    margin-top: 1rem;
+    line-height: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile.flip, .tile.filled, .tile.dance, .row.shake,
+    .rise, .steam path, .lily-icon, .petal, .burst { animation: none !important; }
+    .rise { opacity: 1; }
+    * { transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- ============ HEADER ============ -->
+  <header class="w-full border-b relative z-10 rise rise-1" style="border-color: var(--border); background: rgba(253,251,247,0.92);">
+    <div class="max-w-lg mx-auto flex items-center justify-center gap-3.5 py-4 px-4">
+      <!-- Coffee cup with rising steam -->
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--mocha)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <g class="steam">
+          <path d="M8 7c.6-.9-.6-1.7 0-2.8"/>
+          <path d="M11.5 7c.6-.9-.6-1.7 0-2.8"/>
+          <path d="M15 7c.6-.9-.6-1.7 0-2.8"/>
+        </g>
+        <path d="M17 10h1a3 3 0 0 1 0 6h-1"/>
+        <path d="M4 10h13v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-5z"/>
+      </svg>
+
+      <div class="text-center">
+        <h1 class="font-display text-2xl sm:text-3xl font-semibold tracking-wide" style="color: var(--espresso);">Amy's Daily Wordle</h1>
+        <p class="text-[0.7rem] uppercase tracking-[0.25em] mt-0.5" style="color: var(--rose);">a word a day, from me to you</p>
+        <p id="today-line" class="text-[0.7rem] mt-1 font-medium" style="color: var(--mocha);"></p>
+      </div>
+
+      <!-- Swaying lily -->
+      <svg class="lily-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--rose)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 22V10"/>
+        <path d="M12 10C12 6 9 3 6 2c0 4 1.5 7 6 8z"/>
+        <path d="M12 10c0-4 3-7 6-8 0 4-1.5 7-6 8z"/>
+        <path d="M12 14c-1.5 1-4 1.2-6 .5 1.2 2.4 3.8 3.5 6 2.5"/>
+        <path d="M12 14c1.5 1 4 1.2 6 .5-1.2 2.4-3.8 3.5-6 2.5"/>
+      </svg>
+    </div>
+  </header>
+
+  <!-- ============ TOAST ============ -->
+  <div id="toast" role="status"></div>
+
+  <!-- ============ GAME ============ -->
+  <main class="flex-1 w-full max-w-lg mx-auto flex flex-col items-center justify-between px-3 py-4 gap-4 relative z-10">
+    <div id="board" class="grid grid-rows-6 gap-1.5 w-full max-w-[21rem] rise rise-2" aria-label="game board"></div>
+    <div id="keyboard" class="w-full max-w-[32rem] flex flex-col gap-1.5 pb-2 rise rise-3" aria-label="on-screen keyboard"></div>
+  </main>
+
+  <!-- ============ MODAL ============ -->
+  <div id="modal-backdrop">
+    <div id="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <p class="text-[0.65rem] uppercase tracking-[0.3em] mb-2" style="color: var(--mocha);">Amy's Daily Wordle</p>
+      <h2 id="modal-title" class="font-display text-3xl font-semibold mb-1" style="color: var(--espresso);"></h2>
+      <p id="modal-word" class="font-display italic text-xl" style="color: var(--rose);"></p>
+
+      <div class="divider-heart" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--rose)"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.6 2.4 5 5.8 5c2 0 3.4 1.1 4.2 2.4h4c.8-1.3 2.2-2.4 4.2-2.4 3.4 0 5.4 3.6 3.8 6.7C19.5 16.2 12 21 12 21z" transform="scale(0.9) translate(1.3,1.3)"/></svg>
+      </div>
+
+      <p id="modal-message" class="text-[0.95rem] leading-relaxed relative z-10" style="color: var(--mocha);"></p>
+
+      <p class="signature">with all my love</p>
+
+      <p class="mt-4 text-xs" style="color: var(--taupe);">Next word in <span id="countdown" class="font-semibold" style="color: var(--mocha);"></span></p>
+
+      <button id="modal-close" class="mt-4 px-6 py-2.5 rounded-full text-sm font-semibold transition hover:opacity-90 relative z-10"
+              style="background: var(--espresso); color: var(--latte);">
+        See the board
+      </button>
+    </div>
+  </div>
+
+<script>
+/* ==========================================================================
+   AMY'S DAILY WORDLE — word calendar
+   ==========================================================================
+   HOW IT WORKS:
+   - Keys are "MM-DD" (perpetual calendar — the same word repeats each year,
+     so a fully filled calendar runs forever).
+   - `word` must be exactly 5 letters. Guesses aren't dictionary-checked,
+     so invented words are fine too.
+   - `message` is the note revealed in the pop-up when the round ends.
+   - Any date not listed below automatically falls back to FALLBACK_WORDS,
+     so the game never breaks.
+   - Currently filled: July 21 through January 16 (180 days — launch day is
+     July 21 and Amy's birthday, July 24, is pinned). Add more any
+     time using the same format:
+     "MM-DD": { word: "XXXXX", message: "Your note to Amy here." },
+   ========================================================================== */
+
+const WORDS = {
+  /* ================= JULY ================= */
+  "07-21": { word: "HELLO", message: "Welcome to your Wordle, Amy — day one. A word a day, every day, and every single one is a reason I love you. Hello, my love. There are 179 more where this came from." },
+  "07-22": { word: "VIVID", message: "You make my world so vivid — every moment spent with you brings color into my life, and everything before you feels like it was in grayscale." },
+  "07-23": { word: "LIGHT", message: "You are the light I look for at the end of every long day. Rooms are brighter when you walk into them, and so am I." },
+  "07-24": { word: "HAPPY", message: "HAPPY BIRTHDAY, AMY! Today's word required exactly zero brainstorming. I hope this day is even half as wonderful as you've made my life — now go celebrate. And no, this Wordle is not your whole present. I'm not that brave." },
+  "07-25": { word: "SWEET", message: "Sweeter than anything on any dessert menu we've ever ordered from — and you know we've ordered from a lot of dessert menus." },
+  "07-26": { word: "GRACE", message: "You carry yourself with a grace I've never seen in anyone else. You make the hard things look easy and the easy things look beautiful." },
+  "07-27": { word: "FRESH", message: "Every day with you still feels fresh — like the first sip of morning coffee, like the first day we met. It never gets old. You never get old to me." },
+  "07-28": { word: "SMILE", message: "Your smile is my favorite thing in the entire world. It has fixed more of my bad days than you will ever know." },
+  "07-29": { word: "ANGEL", message: "You look out for me, you believe in me, you forgive me when I'm being ridiculous. If that's not an angel, I don't know what is." },
+  "07-30": { word: "HEART", message: "You have the biggest heart of anyone I've ever met — and somehow you decided to share it with me. Luckiest guy alive." },
+  "07-31": { word: "SHINE", message: "You shine without even trying. In a classroom, in a kitchen, in a crowd — my eyes always find you first." },
+  /* ================= AUGUST ================= */
+  "08-01": { word: "BLOOM", message: "Like your favorite lilies, everything around you seems to bloom. Including me." },
+  "08-02": { word: "PEACE", message: "Being with you is the calmest my mind ever gets. You are my quiet place in a loud world." },
+  "08-03": { word: "DREAM", message: "You're the dream I didn't know I was allowed to have. Every plan I make for the future has you in it." },
+  "08-04": { word: "LAUGH", message: "Nobody makes me laugh like you do. Half my camera roll is just moments I wanted to remember because we were laughing." },
+  "08-05": { word: "BRAVE", message: "You're braver than you give yourself credit for. Watching you take on new things inspires me to be braver too." },
+  "08-06": { word: "HONEY", message: "Sweet, warm, and somehow makes everything better — yes, I'm describing you, not the condiment." },
+  "08-07": { word: "LATTE", message: "You're the extra shot in my latte — I could technically function without you, but honestly, why would I ever want to?" },
+  "08-08": { word: "PETAL", message: "Soft, delicate, and quietly the most beautiful part of the whole garden. Yes, this one was always going to be about you." },
+  "08-09": { word: "ADORE", message: "I don't just love you, I adore you — the way you talk with your hands, the way you read menus twice, all of it." },
+  "08-10": { word: "SPARK", message: "Some people bring energy into a room. You bring the spark that starts the whole fire. You did it to my life, too." },
+  "08-11": { word: "MAGIC", message: "I don't really believe in magic — except for whatever it is you do that makes ordinary Tuesdays feel worth remembering." },
+  "08-12": { word: "LUCKY", message: "I've run the numbers from every angle and it still doesn't add up — someone like you choosing someone like me. Luckiest guy alive." },
+  "08-13": { word: "CHARM", message: "You could charm a grumpy barista into a free refill. I've watched you do it. It's honestly a superpower." },
+  "08-14": { word: "BLISS", message: "Bliss is a lazy Sunday, two coffees, no plans, and you stealing all the blankets. I wouldn't trade it for anything." },
+  "08-15": { word: "AMBER", message: "Warm, golden, glowing — amber is what light looks like when it decides to show off. It reminds me of you at sunset." },
+  "08-16": { word: "AROMA", message: "The best smell in the world is fresh coffee in the morning. The best feeling in the world is knowing I get to share it with you." },
+  "08-17": { word: "BELLE", message: "Ma belle. Your French is better than mine, but even I know that word was invented with you in mind." },
+  "08-18": { word: "AMOUR", message: "Mon amour — see, you're rubbing off on me. Some things just sound truer in French, and this is one of them." },
+  "08-19": { word: "CHERI", message: "Ma chérie, my dear, my favorite person in any language. However you say it, it means you." },
+  "08-20": { word: "DAISY", message: "Fresh, bright, and impossible not to smile at — you are basically a daisy in human form, and I mean that as the highest compliment." },
+  "08-21": { word: "TULIP", message: "Did you know tulips keep growing even after they're cut? That's you — always growing, no matter what. I love that about you." },
+  "08-22": { word: "LILAC", message: "Lilacs bloom for just a few weeks a year, which is why people treasure them. You bloom year-round, which is why I treasure you more." },
+  "08-23": { word: "FLORA", message: "If you were a goddess, you'd be Flora — the one who makes everything bloom. My life certainly did after you showed up." },
+  "08-24": { word: "ROSES", message: "Roses are red, violets are blue, this poem is lazy, but my love for you isn't." },
+  "08-25": { word: "PEARL", message: "Pearls take years of patience to form, and they're worth every second of the wait. So were you. So are you." },
+  "08-26": { word: "JEWEL", message: "Diamonds, pearls, emeralds — pretty, sure. But the rarest jewel I ever found was sitting across from me, laughing at my bad jokes." },
+  "08-27": { word: "QUEEN", message: "You run your world with kindness instead of a crown, and honestly, that's more impressive. My queen, always." },
+  "08-28": { word: "ROYAL", message: "You treat everyone like they matter — waiters, strangers, me on my worst days. That's real royalty. The crown is implied." },
+  "08-29": { word: "CROWN", message: "You don't need a crown for me to treat you like royalty. But if you'd like one anyway, I'll figure something out for your birthday." },
+  "08-30": { word: "PRIZE", message: "People spend their whole lives chasing some big prize. I got mine early, and she plays Wordle every morning." },
+  "08-31": { word: "WORTH", message: "You are worth every mile, every time zone, every late-night call. 'Worth it' doesn't even begin to cover it." },
+  /* ================= SEPTEMBER ================= */
+  "09-01": { word: "TREAT", message: "You're my favorite treat — better than dessert, and I say that as someone who takes dessert extremely seriously." },
+  "09-02": { word: "SUGAR", message: "I stopped putting sugar in my coffee a while ago. Turns out life is sweet enough with you in it. (Also, health.)" },
+  "09-03": { word: "SPICE", message: "You're the spice in my life — you keep things interesting, keep me on my toes, and make everything better without even trying." },
+  "09-04": { word: "CANDY", message: "Sweeter than the entire candy aisle, and much better for my heart. Well — better for it in most ways." },
+  "09-05": { word: "PEACH", message: "You're a peach — sweet, a little soft-hearted, and absolutely the best thing about summer. Every season, really." },
+  "09-06": { word: "BERRY", message: "I love you berry much. I'm not sorry about this one. I would say it again." },
+  "09-07": { word: "MANGO", message: "Sweet, sunny, and universally loved — you are the mango of my life. Yes, I just called you a fruit. It's a compliment." },
+  "09-08": { word: "CREAM", message: "You're the cream in my coffee — technically optional, but everything is smoother, sweeter, and better with you in it." },
+  "09-09": { word: "MOCHA", message: "Half coffee, half chocolate, all comfort. If our relationship were a drink, it would absolutely be a mocha." },
+  "09-10": { word: "STEAM", message: "Like steam off a fresh cup, my heart still does a little rising thing every time you walk in. Every single time." },
+  "09-11": { word: "ROAST", message: "You roast me constantly and I somehow love you more for it. That's either true love or a medical condition." },
+  "09-12": { word: "BEANS", message: "The best coffee starts with the best beans, and the best days start with you. This is science. Don't question it." },
+  "09-13": { word: "KNEAD", message: "I knead you. That's it. That's the whole message. (You laughed. I know you laughed.)" },
+  "09-14": { word: "CREPE", message: "One day I'm taking you to Paris for real crêpes. Until then, my questionable pan skills are yours every weekend." },
+  "09-15": { word: "PASTA", message: "Date night rule: when in doubt, pasta. You, me, one big plate, and absolutely zero regrets about sharing." },
+  "09-16": { word: "SUSHI", message: "You're my soy-mate. Also, we are overdue for a sushi date, and I'm formally requesting one via Wordle." },
+  "09-17": { word: "MAPLE", message: "Sweet, warm, and capable of making everything better — maple syrup and you have a lot in common. You win, obviously." },
+  "09-18": { word: "SYRUP", message: "You make life like pancakes with extra syrup: sweeter, stickier in the best way, and impossible not to smile at." },
+  "09-19": { word: "SAVOR", message: "Some things shouldn't be rushed: good coffee, good meals, and every single minute with you. I savor all three daily." },
+  "09-20": { word: "TASTE", message: "You have impeccable taste — in food, in music, and, I'd humbly point out, in boyfriends." },
+  "09-21": { word: "SNACK", message: "Daily reminder that you are, objectively, a snack. This is a certified Wordle fact and cannot be disputed." },
+  "09-22": { word: "BASIL", message: "You're the basil on my margherita — the little touch that makes the whole thing work. Fancy and essential." },
+  "09-23": { word: "OLIVE", message: "Look in a mirror and say today's word slowly. 'Olive you.' See? Even the dictionary agrees with me." },
+  "09-24": { word: "MELTS", message: "My heart melts every time you start laughing at something before you can explain why. It's my favorite thing you do." },
+  "09-25": { word: "CRISP", message: "Like the first crisp morning of fall — you wake up something in me that no amount of coffee ever could." },
+  "09-26": { word: "ZESTY", message: "You bring the zest — the energy, the opinions, the flair. My life before you was decidedly under-seasoned." },
+  "09-27": { word: "PLUSH", message: "You're comfier than any plush blanket, softer than any pillow. My favorite place in the world is still next to you." },
+  "09-28": { word: "COMFY", message: "You're my comfy place. Sweatpants, messy hair, weird 1 a.m. thoughts — that's you at your most beautiful, honestly." },
+  "09-29": { word: "QUILT", message: "A love like ours is a quilt — stitched together from a thousand small moments, and warmer than the sum of its parts." },
+  "09-30": { word: "HOMEY", message: "Home isn't a place for me anymore. It's a person, and it's wherever you're curled up with your book." },
+  /* ================= OCTOBER ================= */
+  "10-01": { word: "HAVEN", message: "You are my haven — the one place where I can be entirely, embarrassingly myself and know that I'm safe." },
+  "10-02": { word: "QUIET", message: "My favorite conversations with you are the quiet ones — the comfortable silences that somehow say more than words do." },
+  "10-03": { word: "RELAX", message: "You're the only person who can un-knot my shoulders with a single text. Consider this your reminder to breathe today, too." },
+  "10-04": { word: "EARLY", message: "I was never a morning person until mornings meant hearing from you. Now early is my favorite time of day." },
+  "10-05": { word: "DAILY", message: "You're my favorite daily habit — better than coffee, more reliable than sunrise, and the only routine I never want to break." },
+  "10-06": { word: "HABIT", message: "They say it takes 21 days to form a habit. It took you about 21 minutes to become my favorite one." },
+  "10-07": { word: "SUNNY", message: "You're the walking definition of a sunny disposition. Even your rainy days somehow leave everyone around you warmer." },
+  "10-08": { word: "RAINY", message: "Rainy days used to be gloomy. Now they're just an excuse for blankets, movies, and you. I actively root for rain now." },
+  "10-09": { word: "CLOUD", message: "Cloud nine is real — I've been living on it since we met. The view is excellent and the rent is free." },
+  "10-10": { word: "STORM", message: "Whatever storms come, I want to be standing next to you in them. Umbrella optional. You, non-negotiable." },
+  "10-11": { word: "SHORE", message: "You're my shore — no matter how far I drift or how long I'm away, you're where I always want to land." },
+  "10-12": { word: "BEACH", message: "Adding it to the list: one beach, two chairs, zero deadlines, and you. We are making that happen soon." },
+  "10-13": { word: "OCEAN", message: "My love for you is like the ocean — deeper than it looks, calmer than it has any right to be, and honestly a little vast." },
+  "10-14": { word: "WAVES", message: "You came into my life the way waves come in — steadily, gently, until suddenly you were everything I could see." },
+  "10-15": { word: "TIDES", message: "Tides come and go, semesters come and go, but us? We stay. That's the whole plan." },
+  "10-16": { word: "CORAL", message: "Coral takes something plain and turns it into a whole world of color. Remind you of anyone? Go look in a mirror." },
+  "10-17": { word: "SHELL", message: "You pulled me out of my shell — and it turns out the world is a lot better out here with you in it." },
+  "10-18": { word: "RIVER", message: "Like a river, you always find your way — around obstacles, through hard weeks, forward. I'd follow you anywhere downstream." },
+  "10-19": { word: "OASIS", message: "In the middle of my busiest, most chaotic weeks, you are the oasis. Five minutes with you fixes hours of noise." },
+  "10-20": { word: "SEEDS", message: "Every little thing we do together is a seed for the life we're building. I can't wait to watch the garden grow." },
+  "10-21": { word: "LOTUS", message: "The lotus grows up through the mud and still comes out beautiful. You've done the same with every hard thing life has handed you." },
+  "10-22": { word: "STARS", message: "Some people wish on stars. I don't have to anymore — my wish already texts me back." },
+  "10-23": { word: "LUNAR", message: "'I love you to the moon and back' is a cliché, but clichés only get to be clichés by being true." },
+  "10-24": { word: "COMET", message: "Some people pass through your life like comets — bright, rare, unforgettable. You showed up and just... stayed. Even better." },
+  "10-25": { word: "ORBIT", message: "I don't believe in gravity half as much as I believe in you — everything in my life just naturally arranges itself around you." },
+  "10-26": { word: "VENUS", message: "Named for the goddess of love, and the brightest thing in the evening sky. The Romans would have simply called it Amy." },
+  "10-27": { word: "NORTH", message: "You're my north star — when I'm lost, overwhelmed, or twelve time zones away, I just look for you." },
+  "10-28": { word: "SKIES", message: "Blue skies, gray skies, night skies — every single one of them is better when you're under it with me." },
+  "10-29": { word: "SOLAR", message: "You're my personal solar power — I genuinely run better, think clearer, and smile more after time with you." },
+  "10-30": { word: "AGLOW", message: "You leave people aglow — every friend, every stranger, every barista. I'm just lucky enough to get the most of it." },
+  "10-31": { word: "SPELL", message: "Happy Halloween. No costume needed on my account — I've been under your spell since day one." },
+  /* ================= NOVEMBER ================= */
+  "11-01": { word: "GLEAM", message: "That gleam in your eye right before you say something mischievous? That's the exact moment I fell for you. Repeatedly." },
+  "11-02": { word: "GLINT", message: "I catch a glint of you in everything now — songs, menus, dumb memes. You're everywhere, and I love it." },
+  "11-03": { word: "EMBER", message: "Some loves burn out fast. Ours is an ember — steady, warm, and somehow getting stronger the longer it burns." },
+  "11-04": { word: "FLAME", message: "You're not just my flame — you're the whole fireplace. Warmth, light, and the reason home feels like home." },
+  "11-05": { word: "BLAZE", message: "You move through life like a blaze — bright, unstoppable, impossible to ignore. Don't ever dim that for anyone." },
+  "11-06": { word: "TORCH", message: "I've been carrying a torch for you since day one, and I plan to carry it forever. My arms aren't tired." },
+  "11-07": { word: "GLORY", message: "Watching you succeed is my favorite spectator sport. Every win of yours feels like glory to me too." },
+  "11-08": { word: "GRAND", message: "The Grand Canyon, the Grand Palace — overrated, all of it. The grandest thing I've ever witnessed is you, mid-laugh, mid-story." },
+  "11-09": { word: "NOBLE", message: "You do the right thing even when nobody is watching. That quiet nobility is one of a hundred reasons I love you." },
+  "11-10": { word: "IDEAL", message: "I used to keep a mental list describing my ideal person. Then you showed up and made the whole list look unambitious." },
+  "11-11": { word: "ALIVE", message: "Nobody makes me feel more alive than you do — every plan feels like an adventure and every ordinary day feels bigger." },
+  "11-12": { word: "AWAKE", message: "You're the reason I actually want to be awake in the morning. Well — you and coffee. Mostly you." },
+  "11-13": { word: "GIDDY", message: "All this time and you still make me giddy. Teenage-crush, can't-stop-smiling giddy. I hope that never wears off." },
+  "11-14": { word: "SWOON", message: "You still make me swoon. Yes, swoon. Like a character in a Victorian novel. I have accepted my fate." },
+  "11-15": { word: "CRUSH", message: "Fun fact: I still get butterflies when your name pops up on my phone. My crush on you never got the memo that I already have you." },
+  "11-16": { word: "BLUSH", message: "The way you blush when I compliment you is exactly why I will never stop complimenting you. You're doing it right now, aren't you?" },
+  "11-17": { word: "FLIRT", message: "Reminder that I am allowed to flirt with you forever. Anyway — hey. Come here often?" },
+  "11-18": { word: "TEASE", message: "You tease me relentlessly and I wouldn't have it any other way. It keeps me humble. It keeps me yours." },
+  "11-19": { word: "CUPID", message: "Cupid didn't just hit me with one arrow — he emptied the entire quiver. Excellent aim. No complaints." },
+  "11-20": { word: "ARROW", message: "Straight and true, no detours — that's how my heart went to you, and it has never once asked for directions back." },
+  "11-21": { word: "YEARN", message: "A fancy word for what happens every single time we're apart. I don't miss you politely — I yearn. Deal with it." },
+  "11-22": { word: "CRAVE", message: "I crave the little things — your voice at the end of a long day, your head on my shoulder, your terrible puns." },
+  "11-23": { word: "TOUCH", message: "You have a way of making everything you touch better — recipes, playlists, rooms, and most of all, me." },
+  "11-24": { word: "SPOON", message: "Big spoon, little spoon — I honestly don't care which one I am, as long as the other one is you." },
+  "11-25": { word: "KOALA", message: "You hug like a koala — full commitment, no early release. It's my favorite way to end any day." },
+  "11-26": { word: "FEAST", message: "Happy Thanksgiving, Amy. Of everything on the table today, you're the thing I'm most thankful for. It's not close." },
+  "11-27": { word: "OTTER", message: "Otters hold hands while they sleep so they don't drift apart. We could learn nothing from them. We already do it." },
+  "11-28": { word: "SWANS", message: "Swans pick one partner and that's it, for life. Smart birds. I made the same call the day I met you." },
+  "11-29": { word: "DOVES", message: "Doves mate for life, look out for each other, and stand for peace. Sound familiar? It's us." },
+  "11-30": { word: "TEDDY", message: "You're my teddy bear — the comfort I reach for on hard nights, and the one thing nobody else could ever replace." },
+  /* ================= DECEMBER ================= */
+  "12-01": { word: "WALTZ", message: "Life with you feels like a waltz — you lead sometimes, I lead sometimes, and somehow we never step on each other." },
+  "12-02": { word: "TANGO", message: "It takes two to tango, and I can't imagine doing a single step of this dance with anyone but you." },
+  "12-03": { word: "DANCE", message: "My favorite version of you is kitchen-dancing you — socks on, music up, dinner slightly burning. Never stop being her." },
+  "12-04": { word: "MUSIC", message: "You're my favorite song — the one I never skip, know every word to, and still turn up every single time." },
+  "12-05": { word: "LYRIC", message: "Every love song lyric I used to roll my eyes at suddenly makes complete sense. You did that. I blame you entirely." },
+  "12-06": { word: "RHYME", message: "We just rhyme, you and me. Two different words, same sound — and it works every single time." },
+  "12-07": { word: "VERSE", message: "If my life were a poem, meeting you was the verse where it finally started making sense." },
+  "12-08": { word: "POEMS", message: "I'd write you poems, but nothing rhymes with 'the most incredible person I've ever met.' So this Wordle will have to do." },
+  "12-09": { word: "PROSE", message: "Some days deserve poetry; most days are plain prose. You make even the prose days worth rereading." },
+  "12-10": { word: "NOVEL", message: "Our story would make a great novel — slow build, great banter, and a love interest wildly out of the protagonist's league." },
+  "12-11": { word: "STORY", message: "Of all the stories I will ever get to tell, ours is my favorite — and we're only just getting to the good chapters." },
+  "12-12": { word: "FABLE", message: "Every fable ends with a moral. Ours is simple: be patient, be kind, and the best person you'll ever meet might just love you back." },
+  "12-13": { word: "DIARY", message: "If I kept a diary, you'd be in every entry — sometimes as the headline, always as the highlight." },
+  "12-14": { word: "PAGES", message: "I want all the pages with you — the exciting ones, the boring ones, and the ones we'll dog-ear so we can read them again." },
+  "12-15": { word: "MOVIE", message: "Movie night with you beats any theater: better commentary, better snacks, and the best seat in the house is the one next to you." },
+  "12-16": { word: "PIANO", message: "You're like a piano — elegant on the surface, endlessly complex underneath, and capable of making me feel everything at once." },
+  "12-17": { word: "DUETS", message: "Solo acts are fine, but everything I actually want to do — travel, build, grow old — I want as a duet with you." },
+  "12-18": { word: "CHORD", message: "You struck a chord in me the day we met, and it has been ringing ever since. Perfect pitch, apparently." },
+  "12-19": { word: "PLATO", message: "Plato wrote that humans were split in two and spend their lives searching for their other half. I stopped searching a while ago." },
+  "12-20": { word: "LOGIC", message: "By every rule of logic, someone as wonderful as you shouldn't exist. And yet here you are, quietly breaking philosophy daily." },
+  "12-21": { word: "TRUTH", message: "Here's an easy truth: I love you more today than yesterday, and tomorrow is already looking bad for yesterday's record." },
+  "12-22": { word: "FAITH", message: "You believe in me on the days I don't believe in myself, and that faith has carried me further than you will ever know." },
+  "12-23": { word: "TRUST", message: "You're my safest place — the person I trust with the unfinished thoughts, the bad drafts, and the whole heart." },
+  "12-24": { word: "COCOA", message: "Christmas Eve calls for cocoa, blankets, and you. Preferably all three at once, preferably starting now." },
+  "12-25": { word: "MERRY", message: "Merry Christmas, my love. The best gift I've ever found under any tree is getting to be yours." },
+  "12-26": { word: "LOYAL", message: "Through busy seasons, long distances, and everything in between — you show up, every time. Your loyalty is a quiet superpower." },
+  "12-27": { word: "EQUAL", message: "The best part of us: we're true equals. Two whole people who chose each other, and who keep choosing, every single day." },
+  "12-28": { word: "UNITY", message: "Two schools, two schedules, sometimes two continents — and still, somehow, always one team. It's my favorite kind of math." },
+  "12-29": { word: "WHOLE", message: "You don't complete me — you make me want to become more complete. And that's a much better deal." },
+  "12-30": { word: "FOUND", message: "Some people search their whole lives for what I stumbled into. I found you, and I am never, ever giving that up." },
+  "12-31": { word: "TOAST", message: "A toast to the year we just had — and to the one we're about to make even better. Happy New Year's Eve." },
+  /* ================= JANUARY ================= */
+  "01-01": { word: "BEGIN", message: "New year, same us. Every January 1st, my only resolution is to love you a little better than I did last year." },
+  "01-02": { word: "CHOSE", message: "Love at first sight is luck. What we have is better — I chose you, and I keep choosing you, on purpose, daily." },
+  "01-03": { word: "YOURS", message: "Whatever else changes — schools, cities, jobs, years — one thing stays fixed: I'm yours. Fully, gladly, permanently." },
+  "01-04": { word: "LOVED", message: "In case today gets long and loud, remember this: you are so deeply, thoroughly loved. Carry it with you until I can say it in person." },
+  "01-05": { word: "DITTO", message: "You know that movie scene where he says 'ditto' instead of 'I love you'? I used to think it was lazy. Now I get it. Ditto, Amy. Always." },
+  "01-06": { word: "PARIS", message: "One day: you, me, Paris, and you showing off your French while I point at pastries. It's on the list. It's happening." },
+  "01-07": { word: "TRIPS", message: "Planes, trains, questionable road-trip playlists — every trip is better with you, and the itinerary of my life has you on every page." },
+  "01-08": { word: "MILES", message: "However many miles sit between us on any given day, remember: the miles are temporary. We're not." },
+  "01-09": { word: "COAST", message: "One day we'll finally get to coast — and when we do, I want it to be down some long highway with you in the passenger seat, feet on the dash." },
+  "01-10": { word: "CABIN", message: "Future plan: a cabin, a fireplace, a snowstorm outside, and nowhere to be. You bring the books, I'll bring the coffee." },
+  "01-11": { word: "HIKES", message: "You make even the uphill parts fun — on hikes, and in life generally. Same trail, always, you and me." },
+  "01-12": { word: "WALKS", message: "Long walks with you are my favorite kind of therapy — no destination, no agenda, just us and whatever we end up talking about." },
+  "01-13": { word: "STUDY", message: "I could study you for years and still keep finding new things to love. Best subject I ever enrolled in, and no exam required." },
+  "01-14": { word: "SMART", message: "You're the smartest person I know, and the fact that you never make anyone feel small about it makes you even smarter." },
+  "01-15": { word: "WITTY", message: "Your comebacks should honestly be studied. Getting out-witted by you on a daily basis is a privilege I do not take lightly." },
+  "01-16": { word: "HUMOR", message: "They say humor is intelligence showing off. You must be showing off constantly, because nobody on earth makes me laugh like you." },
+};
+
+/* Safety net for any date not filled in above (currently: Jan 7 onward).
+   Picks deterministically from the date, so it's still one fixed word per day. */
+const FALLBACK_WORDS = [
+  { word: "SMILE", message: "Your smile is my favorite thing in the entire world. It has fixed more of my bad days than you will ever know." },
+  { word: "ANGEL", message: "You look out for me, you believe in me, you forgive me when I'm being ridiculous. If that's not an angel, I don't know what is." },
+  { word: "HEART", message: "You have the biggest heart of anyone I've ever met — and somehow you decided to share it with me. Luckiest guy alive." },
+  { word: "SHINE", message: "You shine without even trying. In a classroom, in a kitchen, in a crowd — my eyes always find you first." },
+  { word: "BLOOM", message: "Like your favorite lilies, everything around you seems to bloom. Including me." },
+  { word: "PEACE", message: "Being with you is the calmest my mind ever gets. You are my quiet place in a loud world." },
+  { word: "DREAM", message: "You're the dream I didn't know I was allowed to have. Every plan I make for the future has you in it." },
+  { word: "LAUGH", message: "Nobody makes me laugh like you do. Half my camera roll is just moments I wanted to remember because we were laughing." },
+  { word: "BRAVE", message: "You're braver than you give yourself credit for. Watching you take on new things inspires me to be braver too." },
+  { word: "HONEY", message: "Sweet, warm, and somehow makes everything better — yes, I'm describing you, not the condiment." },
+];
+
+/* ========================= CORE GAME ========================= */
+const ROWS = 6, COLS = 5;
+
+const todayDate = new Date();
+const mm = String(todayDate.getMonth() + 1).padStart(2, "0");
+const dd = String(todayDate.getDate()).padStart(2, "0");
+
+/* ---------- Hidden preview mode (for you, not for Amy) ----------
+   Append ?peek=MM-DD to the URL to play any date, e.g.:
+     index.html?peek=07-24   → birthday mode
+     index.html?peek=12-25   → Christmas
+   Add &fresh=1 to wipe that day's saved test progress and replay:
+     index.html?peek=07-24&fresh=1
+   Preview progress is stored under separate "test-" keys, so testing
+   never locks or affects a real day. */
+const params = new URLSearchParams(location.search);
+const peek = params.get("peek");
+const isPeek = !!(peek && /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(peek));
+
+const dateKey = isPeek ? peek : `${mm}-${dd}`;
+const storageKey = (isPeek ? "test-" : "") + `amy-wordle-${todayDate.getFullYear()}-${dateKey}`;
+if (isPeek && params.get("fresh")) {
+  try { localStorage.removeItem(storageKey); } catch (e) {}
+}
+
+function getToday() {
+  const entry = WORDS[dateKey];
+  if (entry && entry.word && entry.word.trim().length === 5) {
+    return { word: entry.word.toUpperCase(), message: entry.message };
+  }
+  const start = new Date(todayDate.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((todayDate - start) / 86400000);
+  return FALLBACK_WORDS[dayOfYear % FALLBACK_WORDS.length];
+}
+
+const today = getToday();
+const ANSWER = today.word.toUpperCase();
+
+let currentRow = 0;
+let currentGuess = "";
+let gameOver = false;
+let boardTiles = [];
+const keyStates = {};
+
+/* Date line in the header */
+document.getElementById("today-line").textContent = isPeek
+  ? "preview · " + dateKey
+  : todayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+/* ---------- Birthday mode (every July 24) ---------- */
+const BIRTHDAY = "07-24";
+if (dateKey === BIRTHDAY) {
+  document.querySelector("header p").textContent = "happy birthday, my love 🎂";
+  setTimeout(() => petalBurst(), 900);        // petal shower as the page opens
+  setTimeout(() => petalBurst(), 2100);       // and one more, because birthday
+}
+
+/* ========================= AMBIENT PETALS ========================= */
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (!reducedMotion) {
+  const PETAL_COUNT = 12;
+  for (let i = 0; i < PETAL_COUNT; i++) {
+    const p = document.createElement("div");
+    p.className = "petal";
+    const size = 9 + Math.random() * 11;
+    p.style.width = size + "px";
+    p.style.height = size * 0.75 + "px";
+    p.style.left = Math.random() * 100 + "vw";
+    p.style.opacity = (0.3 + Math.random() * 0.35).toFixed(2);
+    const dur = 13 + Math.random() * 12;
+    p.style.animationDuration = dur + "s";
+    p.style.animationDelay = -(Math.random() * dur) + "s"; // pre-populate the sky
+    document.body.appendChild(p);
+  }
+}
+
+/* ========================= BOARD ========================= */
+const boardEl = document.getElementById("board");
+for (let r = 0; r < ROWS; r++) {
+  const row = document.createElement("div");
+  row.className = "row grid grid-cols-5 gap-1.5";
+  const tiles = [];
+  for (let c = 0; c < COLS; c++) {
+    const t = document.createElement("div");
+    t.className = "tile";
+    row.appendChild(t);
+    tiles.push(t);
+  }
+  boardEl.appendChild(row);
+  boardTiles.push(tiles);
+}
+
+/* ========================= KEYBOARD ========================= */
+const KEY_ROWS = [
+  ["Q","W","E","R","T","Y","U","I","O","P"],
+  ["A","S","D","F","G","H","J","K","L"],
+  ["ENTER","Z","X","C","V","B","N","M","BACK"],
+];
+const keyboardEl = document.getElementById("keyboard");
+const keyEls = {};
+
+KEY_ROWS.forEach((keys) => {
+  const rowEl = document.createElement("div");
+  rowEl.className = "flex gap-1.5 w-full justify-center";
+  keys.forEach((k) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "key" + (k.length > 1 ? " wide" : "");
+    btn.textContent = k === "BACK" ? "⌫" : k;
+    btn.setAttribute("aria-label", k === "BACK" ? "backspace" : k);
+    btn.addEventListener("click", () => handleKey(k));
+    rowEl.appendChild(btn);
+    keyEls[k] = btn;
+  });
+  keyboardEl.appendChild(rowEl);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "Enter") handleKey("ENTER");
+  else if (e.key === "Backspace") handleKey("BACK");
+  else if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
+});
+
+/* ========================= INPUT ========================= */
+function handleKey(k) {
+  if (gameOver) return;
+  if (k === "ENTER") return submitGuess();
+  if (k === "BACK") {
+    if (currentGuess.length > 0) {
+      currentGuess = currentGuess.slice(0, -1);
+      const t = boardTiles[currentRow][currentGuess.length];
+      t.textContent = "";
+      t.classList.remove("filled");
+    }
+    return;
+  }
+  if (currentGuess.length < COLS) {
+    const t = boardTiles[currentRow][currentGuess.length];
+    t.textContent = k;
+    t.classList.remove("filled");
+    void t.offsetWidth;
+    t.classList.add("filled");
+    currentGuess += k;
+  }
+}
+
+/* ========================= EVALUATION ========================= */
+function evaluate(guess, answer) {
+  const result = new Array(COLS).fill("absent");
+  const remaining = {};
+  for (let i = 0; i < COLS; i++) {
+    if (guess[i] === answer[i]) result[i] = "correct";
+    else remaining[answer[i]] = (remaining[answer[i]] || 0) + 1;
+  }
+  for (let i = 0; i < COLS; i++) {
+    if (result[i] === "correct") continue;
+    if (remaining[guess[i]] > 0) {
+      result[i] = "present";
+      remaining[guess[i]]--;
+    }
+  }
+  return result;
+}
+
+const RANK = { absent: 0, present: 1, correct: 2 };
+function updateKeyStates(guess, result) {
+  for (let i = 0; i < COLS; i++) {
+    const L = guess[i], s = result[i];
+    if (!keyStates[L] || RANK[s] > RANK[keyStates[L]]) keyStates[L] = s;
+  }
+  Object.entries(keyStates).forEach(([L, s]) => {
+    if (keyEls[L]) {
+      keyEls[L].classList.remove("correct", "present", "absent");
+      keyEls[L].classList.add(s);
+    }
+  });
+}
+
+/* ========================= SUBMIT ========================= */
+function submitGuess() {
+  if (currentGuess.length < COLS) {
+    showToast("Not enough letters, love ☕");
+    boardEl.children[currentRow].classList.add("shake");
+    setTimeout(() => boardEl.children[currentRow].classList.remove("shake"), 500);
+    return;
+  }
+
+  const guess = currentGuess;
+  const result = evaluate(guess, ANSWER);
+  const row = boardTiles[currentRow];
+  gameOver = true; // lock input during animation
+
+  row.forEach((tile, i) => {
+    setTimeout(() => {
+      tile.classList.add("flip");
+      setTimeout(() => tile.classList.add(result[i]), 270);
+    }, i * 300);
+  });
+
+  const totalDelay = COLS * 300 + 300;
+  setTimeout(() => {
+    updateKeyStates(guess, result);
+    const won = guess === ANSWER;
+    const rowIndexAtSubmit = currentRow;
+    currentRow++;
+    currentGuess = "";
+    saveState(won ? "won" : currentRow >= ROWS ? "lost" : "playing");
+
+    if (won) {
+      row.forEach((tile, i) => setTimeout(() => tile.classList.add("dance"), i * 90));
+      petalBurst();
+      setTimeout(() => endGame(true, rowIndexAtSubmit + 1), 1000);
+    } else if (currentRow >= ROWS) {
+      setTimeout(() => endGame(false), 400);
+    } else {
+      gameOver = false;
+    }
+  }, totalDelay);
+}
+
+/* ========================= VICTORY PETAL BURST ========================= */
+const BURST_COLORS = ["var(--sage)", "var(--butter)", "var(--rose)", "var(--blushpk)", "var(--lily)"];
+function petalBurst() {
+  if (reducedMotion) return;
+  const rect = boardEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  for (let i = 0; i < 26; i++) {
+    const p = document.createElement("div");
+    p.className = "burst";
+    const size = 8 + Math.random() * 10;
+    p.style.width = size + "px";
+    p.style.height = size * 0.75 + "px";
+    p.style.left = cx + "px";
+    p.style.top = cy + "px";
+    p.style.background = BURST_COLORS[i % BURST_COLORS.length];
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 70 + Math.random() * 150;
+    p.style.setProperty("--tx", Math.cos(angle) * dist + "px");
+    p.style.setProperty("--ty", (Math.sin(angle) * dist - 60) + "px"); // bias upward
+    p.style.setProperty("--rot", (Math.random() * 540 - 270) + "deg");
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1300);
+  }
+}
+
+/* ========================= END / MODAL ========================= */
+const WIN_TITLES = ["Genius!", "Brilliant!", "Wonderful!", "Beautiful!", "You did it!", "Just in time!"];
+
+function endGame(won, attempt) {
+  gameOver = true;
+  const title = won ? WIN_TITLES[Math.min(attempt - 1, WIN_TITLES.length - 1)] : "The word was…";
+  openModal(title);
+}
+
+const backdrop = document.getElementById("modal-backdrop");
+function openModal(title) {
+  document.getElementById("modal-title").textContent = title;
+  document.getElementById("modal-word").textContent = "“" + ANSWER + "”";
+  document.getElementById("modal-message").textContent = today.message;
+  backdrop.classList.add("show");
+  startCountdown();
+}
+document.getElementById("modal-close").addEventListener("click", () => backdrop.classList.remove("show"));
+backdrop.addEventListener("click", (e) => { if (e.target === backdrop) backdrop.classList.remove("show"); });
+
+function startCountdown() {
+  const el = document.getElementById("countdown");
+  function tick() {
+    const now = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    let s = Math.floor((next - now) / 1000);
+    const h = String(Math.floor(s / 3600)).padStart(2, "0");
+    const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+    const sec = String(s % 60).padStart(2, "0");
+    el.textContent = `${h}:${m}:${sec}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+/* ========================= TOAST ========================= */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+/* ========================= PERSISTENCE ========================= */
+function saveState(status) {
+  const guesses = [];
+  for (let r = 0; r < currentRow; r++) {
+    guesses.push(boardTiles[r].map((t) => t.textContent).join(""));
+  }
+  try {
+    localStorage.setItem(storageKey, JSON.stringify({ guesses, status }));
+  } catch (e) { /* private browsing — game still works, just won't persist */ }
+}
+
+function restoreState() {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch (e) { return; }
+  if (!saved || !Array.isArray(saved.guesses)) return;
+
+  saved.guesses.forEach((guess, r) => {
+    const result = evaluate(guess, ANSWER);
+    boardTiles[r].forEach((tile, i) => {
+      tile.textContent = guess[i];
+      tile.classList.add(result[i]);
+    });
+    updateKeyStates(guess, result);
+  });
+  currentRow = saved.guesses.length;
+
+  if (saved.status === "won") {
+    gameOver = true;
+    setTimeout(() => endGame(true, currentRow), 500);
+  } else if (saved.status === "lost") {
+    gameOver = true;
+    setTimeout(() => endGame(false), 500);
+  }
+}
+
+restoreState();
+</script>
+</body>
+</html>
