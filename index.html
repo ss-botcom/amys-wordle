@@ -230,7 +230,9 @@
     transform: translateY(14px) scale(0.98);
     transition: transform 0.3s ease;
     position: relative;
-    overflow: hidden;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   #modal-backdrop.show #modal-card { transform: translateY(0) scale(1); }
   #modal-card::before {
@@ -275,15 +277,72 @@
     line-height: 1;
   }
 
+  /* ---------- Anniversary (every August 1): fireworks + bouquet ---------- */
+  /* The bouquet lives in the love-note card but only exists on the day. */
+  .anniv-only { display: none; }
+  body.anniversary .anniv-only { display: block; }
+
+  .bq {
+    display: block;
+    margin: 0.6rem auto 0;
+    width: min(230px, 70vw);
+    height: auto;
+  }
+  @media (max-height: 700px) {
+    .bq { width: min(180px, 60vw); }
+  }
+
+  /* stems draw themselves upward */
+  .bq .stem { stroke-dasharray: 1; }
+  #modal-backdrop.show .bq .stem { animation: stem-grow 0.55s ease 0.1s both; }
+  @keyframes stem-grow {
+    from { stroke-dashoffset: 1; }
+    to   { stroke-dashoffset: 0; }
+  }
+
+  /* each piece of the bouquet pops in from its base, in order */
+  .bq .bqi { transform-box: fill-box; transform-origin: 50% 85%; }
+  #modal-backdrop.show .bq .bqi { animation: bq-pop 0.7s cubic-bezier(0.2, 0.8, 0.3, 1.2) both; }
+  #modal-backdrop.show .bq .d1 { animation-delay: 0.30s; }  /* paper wrap   */
+  #modal-backdrop.show .bq .d2 { animation-delay: 0.42s; }  /* leaves       */
+  #modal-backdrop.show .bq .d3 { animation-delay: 0.52s; }  /* left rosebud */
+  #modal-backdrop.show .bq .d4 { animation-delay: 0.60s; }  /* right rosebud*/
+  #modal-backdrop.show .bq .d5 { animation-delay: 0.68s; }  /* ribbon bow   */
+  #modal-backdrop.show .bq .d6 { animation-delay: 0.78s; }  /* left lily    */
+  #modal-backdrop.show .bq .d7 { animation-delay: 0.86s; }  /* right lily   */
+  #modal-backdrop.show .bq .d8 { animation-delay: 0.96s; }  /* center lily  */
+  #modal-backdrop.show .bq .d9 { animation-delay: 1.10s; }  /* baby's breath*/
+  @keyframes bq-pop {
+    from { transform: scale(0.2) translateY(10px); opacity: 0; }
+    to   { transform: scale(1)   translateY(0);    opacity: 1; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .tile.flip, .tile.filled, .tile.dance, .row.shake,
-    .rise, .steam path, .lily-icon, .petal, .burst { animation: none !important; }
+    .rise, .steam path, .lily-icon, .petal, .burst,
+    .bq .stem, .bq .bqi { animation: none !important; }
     .rise { opacity: 1; }
     * { transition-duration: 0.01ms !important; }
   }
 </style>
 </head>
 <body class="min-h-screen flex flex-col">
+
+  <!-- Shared gradients for the anniversary bouquet lilies -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <radialGradient id="lilyPetalG" gradientUnits="userSpaceOnUse" cx="50" cy="50" r="47">
+        <stop offset="0%" stop-color="#E5AFB4"/>
+        <stop offset="28%" stop-color="#F3D7DA"/>
+        <stop offset="62%" stop-color="#FBEDEE"/>
+        <stop offset="100%" stop-color="#FFFFFF"/>
+      </radialGradient>
+      <radialGradient id="lilyPetalBackG" gradientUnits="userSpaceOnUse" cx="50" cy="50" r="47">
+        <stop offset="0%" stop-color="#D9A0A5"/>
+        <stop offset="100%" stop-color="#F6E0E2"/>
+      </radialGradient>
+    </defs>
+  </svg>
 
   <!-- ============ HEADER ============ -->
   <header class="w-full border-b relative z-10 rise rise-1" style="border-color: var(--border); background: rgba(253,251,247,0.92);">
@@ -338,6 +397,110 @@
 
       <p id="modal-message" class="text-[0.95rem] leading-relaxed relative z-10" style="color: var(--mocha);"></p>
 
+      <!-- Anniversary bouquet: hand-tied, assembles itself when the note opens.
+           Only rendered on August 1 (body.anniversary). -->
+      <div class="anniv-only">
+        <svg class="bq" viewBox="0 0 240 150" aria-hidden="true">
+          <!-- stems (draw upward first) -->
+          <g stroke="#8AA07F" stroke-width="2.2" stroke-linecap="round" fill="none">
+            <path class="stem" pathLength="1" d="M120 104 C120 82 120 60 120 42"/>
+            <path class="stem" pathLength="1" d="M113 104 C101 86 90 72 82 60"/>
+            <path class="stem" pathLength="1" d="M127 104 C139 86 150 72 158 60"/>
+            <path class="stem" pathLength="1" d="M115 106 C107 96 101 90 97 84"/>
+            <path class="stem" pathLength="1" d="M125 106 C133 96 139 90 143 84"/>
+          </g>
+
+          <!-- leaves -->
+          <g class="bqi d2" fill="#A8BBA0">
+            <path d="M107 82 C99 78 95 70 96 62 C103 66 107 73 107 82 Z"/>
+            <path d="M133 82 C141 78 145 70 144 62 C137 66 133 73 133 82 Z"/>
+            <path d="M118 78 C114 72 114 66 117 61 C121 66 121 72 118 78 Z" opacity="0.9"/>
+          </g>
+
+          <!-- kraft-paper wrap -->
+          <g class="bqi d1">
+            <path d="M120 148 L86 96 Q120 110 154 96 Z" fill="#F3E8D2" stroke="#E4DCD1" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M120 148 L103 100" stroke="#E4D6BC" stroke-width="1" fill="none"/>
+            <path d="M120 148 L137 100" stroke="#E4D6BC" stroke-width="1" fill="none"/>
+          </g>
+
+          <!-- rosebuds -->
+          <g class="bqi d3">
+            <circle cx="97" cy="82" r="7" fill="#F3D7DA" stroke="#E8C7CB" stroke-width="1"/>
+            <path d="M97 82 a3 3 0 0 1 3 3 a4.5 4.5 0 0 1 -6.5 -1.5" fill="none" stroke="#D9A0A5" stroke-width="1.2" stroke-linecap="round"/>
+          </g>
+          <g class="bqi d4">
+            <circle cx="143" cy="82" r="7" fill="#F3D7DA" stroke="#E8C7CB" stroke-width="1"/>
+            <path d="M143 82 a3 3 0 0 0 -3 3 a4.5 4.5 0 0 0 6.5 -1.5" fill="none" stroke="#D9A0A5" stroke-width="1.2" stroke-linecap="round"/>
+          </g>
+
+          <!-- ribbon bow -->
+          <g class="bqi d5">
+            <ellipse cx="111" cy="103" rx="8.5" ry="5" fill="#D9A0A5" opacity="0.95" transform="rotate(-18 111 103)"/>
+            <ellipse cx="129" cy="103" rx="8.5" ry="5" fill="#D9A0A5" opacity="0.95" transform="rotate(18 129 103)"/>
+            <path d="M117 107 C112 118 115 126 110 133" stroke="#D9A0A5" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+            <path d="M123 107 C128 118 125 126 130 133" stroke="#D9A0A5" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+            <circle cx="120" cy="104" r="3.6" fill="#C88A90"/>
+          </g>
+
+          <!-- left lily -->
+          <g transform="translate(82 56) rotate(-14) scale(0.4) translate(-50 -50)">
+            <g class="bqi d6">
+              <g transform="rotate(60 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
+              <g transform="rotate(180 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
+              <g transform="rotate(300 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
+              <g transform="rotate(0 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
+              <g transform="rotate(120 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
+              <g transform="rotate(240 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
+              <circle cx="50" cy="50" r="4" fill="#E6CFA0"/>
+              <circle cx="45" cy="47" r="1.8" fill="#C98F3D"/><circle cx="55" cy="47" r="1.8" fill="#C98F3D"/><circle cx="50" cy="55" r="1.8" fill="#C98F3D"/>
+            </g>
+          </g>
+
+          <!-- right lily -->
+          <g transform="translate(158 56) rotate(14) scale(0.4) translate(-50 -50)">
+            <g class="bqi d7">
+              <g transform="rotate(60 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
+              <g transform="rotate(180 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
+              <g transform="rotate(300 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
+              <g transform="rotate(0 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
+              <g transform="rotate(120 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
+              <g transform="rotate(240 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
+              <circle cx="50" cy="50" r="4" fill="#E6CFA0"/>
+              <circle cx="45" cy="47" r="1.8" fill="#C98F3D"/><circle cx="55" cy="47" r="1.8" fill="#C98F3D"/><circle cx="50" cy="55" r="1.8" fill="#C98F3D"/>
+            </g>
+          </g>
+
+          <!-- center lily (the big one) -->
+          <g transform="translate(120 36) scale(0.5) translate(-50 -50)">
+            <g class="bqi d8">
+              <g transform="rotate(60 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
+              <g transform="rotate(180 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
+              <g transform="rotate(300 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
+              <g transform="rotate(0 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/><circle cx="49" cy="34" r="1.1" fill="#C87E85" opacity="0.5"/><circle cx="51.6" cy="28" r="0.9" fill="#C87E85" opacity="0.5"/></g>
+              <g transform="rotate(120 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/><circle cx="49" cy="34" r="1.1" fill="#C87E85" opacity="0.5"/><circle cx="51.6" cy="28" r="0.9" fill="#C87E85" opacity="0.5"/></g>
+              <g transform="rotate(240 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/><circle cx="49" cy="34" r="1.1" fill="#C87E85" opacity="0.5"/><circle cx="51.6" cy="28" r="0.9" fill="#C87E85" opacity="0.5"/></g>
+              <g stroke="#E6CFA0" stroke-width="1.2">
+                <path d="M50 50 L58 44"/><path d="M50 50 L50 40"/><path d="M50 50 L42 44"/>
+              </g>
+              <circle cx="58.8" cy="43.4" r="1.9" fill="#C98F3D"/><circle cx="50" cy="39" r="1.9" fill="#C98F3D"/><circle cx="41.2" cy="43.4" r="1.9" fill="#C98F3D"/>
+              <circle cx="50" cy="50" r="2.2" fill="#9DB292"/>
+            </g>
+          </g>
+
+          <!-- baby's breath, sprinkled on top -->
+          <g class="bqi d9">
+            <circle cx="92" cy="42" r="2.1" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="92" cy="42" r="0.8" fill="#E3C481"/>
+            <circle cx="148" cy="42" r="2.1" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="148" cy="42" r="0.8" fill="#E3C481"/>
+            <circle cx="104" cy="30" r="1.9" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="104" cy="30" r="0.7" fill="#E3C481"/>
+            <circle cx="136" cy="30" r="1.9" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="136" cy="30" r="0.7" fill="#E3C481"/>
+            <circle cx="120" cy="14" r="2" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="120" cy="14" r="0.75" fill="#E3C481"/>
+            <circle cx="72" cy="46" r="1.8" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="72" cy="46" r="0.7" fill="#E3C481"/>
+            <circle cx="168" cy="46" r="1.8" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="168" cy="46" r="0.7" fill="#E3C481"/>
+          </g>
+        </svg>
+      </div>
+
       <p class="signature">with all my love</p>
 
       <p class="mt-4 text-xs" style="color: var(--taupe);">Next word in <span id="countdown" class="font-semibold" style="color: var(--mocha);"></span></p>
@@ -379,9 +542,9 @@ const WORDS = {
   "07-28": { word: "LATTE", message: "Send me a picture of your Latte art, love" },
   "07-29": { word: "BALLS", message: "So what are you thinking about Amy?" },
   "07-30": { word: "ANGEL", message: "You look out for me, you believe in me, you forgive me when I'm being ridiculous. If that's not an angel, I don't know what is." },
-  "07-31": { word: "OLDER", message: "In the words of the Moganshan Didi Driver: ‘你比你男朋友大几岁啊’" },
+  "07-31": { word: "OLDER", message: "In the words of the Moganshan Didi Driver: '你比你男朋友大几岁啊'" },
   /* ================= AUGUST ================= */
-  "08-01": { word: "GUESS", message: "Six months since I stopped guessing whether you felt the same. Best answer I ever gotten. Happy 6 months, love :)" },
+  "08-01": { word: "GUESS", message: "Six months since I stopped guessing whether you felt the same. Best answer I ever got. Happy 6 months, love :)" },
   "08-02": { word: "SIMPS", message: "Can you believe you're my biggest simp? :)" },
   "08-03": { word: "DRIVE", message: "I'd drive you anywhere:) But I can't wait to passenger prince for you soon" },
   "08-04": { word: "DREAM", message: "You're the dream I didn't know I was allowed to have. Every plan I make for the future has you in it." },
@@ -629,6 +792,14 @@ if (dateKey === BIRTHDAY) {
   setTimeout(() => petalBurst(), 2100);       // and one more, because birthday
 }
 
+/* ---------- Anniversary mode (every August 1) ---------- */
+/* Fireworks behind the love note + a bouquet inside it. */
+const ANNIVERSARY = "08-01";
+if (dateKey === ANNIVERSARY) {
+  document.querySelector("header p").textContent = "happy anniversary, my love 💙";
+  document.body.classList.add("anniversary");
+}
+
 /* ========================= AMBIENT PETALS ========================= */
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 if (!reducedMotion) {
@@ -819,12 +990,132 @@ function petalBurst() {
   }
 }
 
+/* ========================= ANNIVERSARY FIREWORKS ========================= */
+/* Soft fireworks that pop behind the love-note card. The dimmed modal
+   backdrop acts as the night sky, so the sparks glow against it.
+   Launched every time the note opens on August 1. */
+function fireworksShow() {
+  if (reducedMotion) return;
+  if (document.getElementById("fw-canvas")) return; // one show at a time
+
+  const cv = document.createElement("canvas");
+  cv.id = "fw-canvas";
+  cv.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;";
+  const card = document.getElementById("modal-card");
+  backdrop.insertBefore(cv, card);
+
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const W = window.innerWidth, H = window.innerHeight;
+  cv.width = W * DPR;
+  cv.height = H * DPR;
+  const ctx = cv.getContext("2d");
+  ctx.scale(DPR, DPR);
+
+  const COLORS = ["#E8B7BC", "#EFD29A", "#BFD0B6", "#FBE3E5", "#FFF3E2"];
+  let rockets = [], sparks = [], launched = 0;
+  const LAUNCHES = 6;
+
+  function launch() {
+    rockets.push({
+      x: W * (0.15 + Math.random() * 0.7),
+      y: H + 8,
+      vx: (Math.random() - 0.5) * 1.4,
+      vy: -(H * 0.0085 + 2 + Math.random() * 1.5),
+      color: COLORS[launched % COLORS.length],
+    });
+    launched++;
+    if (launched < LAUNCHES) setTimeout(launch, 420 + Math.random() * 480);
+  }
+
+  function explode(x, y, color) {
+    const n = 34 + Math.floor(Math.random() * 14);
+    for (let i = 0; i < n; i++) {
+      const a = (Math.PI * 2 * i) / n + Math.random() * 0.25;
+      const sp = 1.6 + Math.random() * 2.4;
+      sparks.push({
+        x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: 1,
+        decay: 0.011 + Math.random() * 0.011,
+        r: 1.4 + Math.random() * 1.3,
+        color: Math.random() < 0.7 ? color : "#FFF9F0",
+      });
+    }
+  }
+
+  let raf;
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+
+    // rockets: bright streaks climbing
+    for (const r of rockets) {
+      r.x += r.vx;
+      r.y += r.vy;
+      r.vy += 0.07; // gravity slows the climb
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = r.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(r.x - r.vx * 3, r.y - r.vy * 3);
+      ctx.lineTo(r.x, r.y);
+      ctx.stroke();
+    }
+    rockets = rockets.filter(r => {
+      if (r.vy >= -1.2 || r.y < H * 0.22) {
+        explode(r.x, r.y, r.color);
+        return false;
+      }
+      return true;
+    });
+
+    // sparks: glowing embers drifting down
+    for (const s of sparks) {
+      s.x += s.vx;
+      s.y += s.vy;
+      s.vy += 0.035;
+      s.vx *= 0.985;
+      s.vy *= 0.985;
+      s.life -= s.decay;
+      if (s.life > 0) {
+        ctx.globalAlpha = Math.max(s.life, 0);
+        ctx.fillStyle = s.color;
+        ctx.shadowColor = s.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    sparks = sparks.filter(s => s.life > 0);
+
+    if (launched >= LAUNCHES && rockets.length === 0 && sparks.length === 0) {
+      cancelAnimationFrame(raf);
+      cv.remove();
+      return;
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  launch();
+  raf = requestAnimationFrame(frame);
+  setTimeout(() => { // safety cleanup
+    if (cv.isConnected) { cancelAnimationFrame(raf); cv.remove(); }
+  }, 12000);
+}
+
 /* ========================= END / MODAL ========================= */
 const WIN_TITLES = ["Genius!", "Brilliant!", "Wonderful!", "Beautiful!", "You did it!", "Just in time!"];
 
 function endGame(won, attempt) {
   gameOver = true;
-  const title = won ? WIN_TITLES[Math.min(attempt - 1, WIN_TITLES.length - 1)] : "The word was…";
+  const title = dateKey === ANNIVERSARY
+    ? "Happy Anniversary!"
+    : won
+      ? WIN_TITLES[Math.min(attempt - 1, WIN_TITLES.length - 1)]
+      : "The word was…";
   openModal(title);
 }
 
@@ -834,6 +1125,7 @@ function openModal(title) {
   document.getElementById("modal-word").textContent = "“" + ANSWER + "”";
   document.getElementById("modal-message").textContent = today.message;
   backdrop.classList.add("show");
+  if (dateKey === ANNIVERSARY) fireworksShow();
   startCountdown();
 }
 document.getElementById("modal-close").addEventListener("click", () => backdrop.classList.remove("show"));
