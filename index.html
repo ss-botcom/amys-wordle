@@ -1722,7 +1722,7 @@ restoreState();
     10: "boop count: 10. okay. you can stop now.",
     15: "boop count: 15. (don't stop.)",
     25: "boop count: 25 — Awwwwwwwww",
-    50: "boop count: 50. I made this for you and this is what you do with it. I love you."
+    50: "boop count: 50. I made this for you and this is what you do with it. I love you.",
     100: "boop count: 100. Nothing's going to happen....."
   };
 
@@ -1884,9 +1884,9 @@ restoreState();
         el.style.animationDelay = "0ms";
         later(function () { el.classList.add("drop"); }, i * 9);
       });
-    }, landed + 1150);
-    later(function () { if (swarm) swarm.classList.add("clearing"); }, landed + 1650);
-    later(function () { teardown(); revealWinner(); }, landed + 2050);
+    }, landed + 1550);
+    later(function () { if (swarm) swarm.classList.add("clearing"); }, landed + 2050);
+    later(function () { teardown(); revealWinner(); }, landed + 3050);
 
     /* tap anywhere to skip the parade */
     swarm.addEventListener("click", function () { teardown(); revealWinner(); });
