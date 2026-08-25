@@ -1906,6 +1906,931 @@ restoreState();
 })();
 </script>
 
+  <!-- ═══════════════════════════════════════════════════════════════════
+   TOAST DAY · "TOAST"
+   Paste this whole block at the very bottom of index.html, right before
+   the closing </body> tag (i.e. after the NOSE DAY block).
+
+   Needs a folder called  toast/  sitting next to index.html, holding:
+     toast/amy-1.png · toast/amy-2.png   (square-ish face crops)
+   Add more (amy-3.png, amy-4.png…) and list them in FACES below —
+   the toaster cycles through them, one per lever pull.
+
+   Runs only on the date set in TOAST_DAY. Any other day: does nothing.
+   Test it early with:  index.html?peek=08-26&fresh=1
+   ═══════════════════════════════════════════════════════════════════ -->
+<style>
+  /* everything is scoped to body.toastday so no other day can be touched */
+
+  /* ---------- the loaf, full screen ---------- */
+  body.toastday .td-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 58;
+    overflow: hidden;
+    cursor: pointer;
+    background: rgba(253, 251, 247, 0.97);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.6rem;
+    transition: opacity 0.45s ease;
+  }
+  body.toastday .td-stage.clearing { opacity: 0; }
+
+  body.toastday .td-plate {
+    position: relative;
+    width: 320px;
+    height: 210px;
+    transform: scale(var(--pscale, 1));
+  }
+
+  body.toastday .td-board {
+    position: absolute;
+    left: 6px;
+    bottom: 0;
+    width: 308px;
+    height: 15px;
+    border-radius: 4px 4px 7px 7px;
+    background: linear-gradient(180deg, #8A6A50 0%, #6B5142 60%, #5A4234 100%);
+    box-shadow: 0 8px 18px rgba(62, 44, 35, 0.22);
+  }
+  body.toastday .td-board::after {           /* the little handle hole */
+    content: "";
+    position: absolute;
+    right: 9px;
+    top: 5px;
+    width: 12px;
+    height: 4px;
+    border-radius: 3px;
+    background: rgba(62, 44, 35, 0.55);
+  }
+
+  body.toastday .td-loaf {
+    position: absolute;
+    right: 22px;
+    bottom: 13px;
+    width: 152px;
+    height: 118px;
+    border-radius: 46% 46% 10% 10% / 62% 62% 9% 9%;
+    background:
+      linear-gradient(180deg, #C98F3D 0%, #E0AE63 18%, #F1D9AC 46%, #EFD3A0 100%);
+    box-shadow:
+      inset 0 -10px 16px rgba(160, 110, 55, 0.28),
+      inset 0 6px 10px rgba(255, 250, 240, 0.5),
+      0 8px 16px rgba(62, 44, 35, 0.16);
+    transition: width 0.42s cubic-bezier(0.3, 0.8, 0.3, 1);
+  }
+  body.toastday .td-loaf::before,            /* bakery score marks */
+  body.toastday .td-loaf::after {
+    content: "";
+    position: absolute;
+    top: 12px;
+    width: 46px;
+    height: 4px;
+    border-radius: 3px;
+    background: rgba(140, 92, 42, 0.4);
+    transform: rotate(-22deg);
+  }
+  body.toastday .td-loaf::before { left: 22px; }
+  body.toastday .td-loaf::after  { left: 68px; top: 22px; }
+
+  body.toastday .td-cut {
+    position: absolute;
+    bottom: 13px;
+    width: 30px;
+    height: 112px;
+    border-radius: 44% 44% 9% 9% / 58% 58% 8% 8%;
+    background: linear-gradient(180deg, #C98F3D 0%, #E7C289 14%, #F7EBD3 40%, #F2DEB6 100%);
+    box-shadow: 0 4px 10px rgba(62, 44, 35, 0.14);
+    opacity: 0;
+    transform: translateX(46px) rotate(0deg);
+    transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.25, 0.9, 0.35, 1.25);
+  }
+  body.toastday .td-cut.out { opacity: 1; }
+
+  body.toastday .td-knife {
+    position: absolute;
+    right: 4px;
+    top: -74px;
+    width: 176px;
+    height: 40px;
+    transform-origin: 90% 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  body.toastday .td-knife.in { opacity: 1; }
+  body.toastday .td-knife.chop { animation: td-chop 0.5s cubic-bezier(0.4, 0, 0.3, 1); }
+  @keyframes td-chop {
+    0%   { transform: translate(0, 0) rotate(-4deg); }
+    45%  { transform: translate(-6px, 74px) rotate(3deg); }
+    70%  { transform: translate(-6px, 80px) rotate(1deg); }
+    100% { transform: translate(0, 0) rotate(-4deg); }
+  }
+
+  body.toastday .td-cap {
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.75rem;
+    line-height: 1.35;
+    color: var(--mocha);
+    text-align: center;
+    max-width: 300px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  body.toastday .td-cap.show { opacity: 1; transform: translateY(0); }
+
+  body.toastday .td-skip {
+    position: absolute;
+    bottom: 1.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.62rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--taupe);
+  }
+
+  body.toastday .td-fly {
+    transition: transform 0.85s cubic-bezier(0.5, 0, 0.7, 0.2), opacity 0.4s ease 0.5s;
+  }
+
+  /* ---------- the toaster, inside the love note ---------- */
+  body.toastday .td {
+    position: relative;
+    z-index: 10;
+    margin-top: 1.2rem;
+  }
+
+  body.toastday .td-machine {
+    position: relative;
+    width: 210px;
+    height: 196px;
+    margin: 0 auto;
+  }
+
+  /* the slice */
+  body.toastday .td-holder {
+    position: absolute;
+    left: 50%;
+    bottom: 30px;
+    width: 104px;
+    height: 120px;
+    margin-left: -52px;
+    z-index: 2;
+    transform: translateY(72px);
+    transition: transform 0.55s cubic-bezier(0.25, 1.4, 0.4, 1);
+  }
+  body.toastday .td-holder.up { transform: translateY(-38px); }
+
+  body.toastday .td-bread { width: 100%; height: 100%; display: block; overflow: visible; }
+  body.toastday .td-crust { fill: var(--crust); transition: fill 0.5s ease; }
+  body.toastday .td-crumb { fill: var(--crumb); transition: fill 0.5s ease; }
+  body.toastday .td-face  { filter: var(--ftr); transition: filter 0.5s ease; }
+  body.toastday .td-char  { opacity: var(--char); transition: opacity 0.5s ease; }
+  body.toastday .td-vig   { opacity: var(--vig);  transition: opacity 0.5s ease; }
+  body.toastday .td.toasting .td-crust,
+  body.toastday .td.toasting .td-crumb,
+  body.toastday .td.toasting .td-face,
+  body.toastday .td.toasting .td-char,
+  body.toastday .td.toasting .td-vig { transition-duration: 1.5s; }
+
+  /* browning levels — the whole point of the dial */
+  body.toastday .td[data-level="1"] { --crust:#E9CB96; --crumb:#FCF2E0; --char:0;    --vig:0.12; --ftr: sepia(0.16) brightness(1.06) contrast(0.98); }
+  body.toastday .td[data-level="2"] { --crust:#DCAC63; --crumb:#F7E5C6; --char:0.04; --vig:0.26; --ftr: sepia(0.40) brightness(1.01) contrast(1.02); }
+  body.toastday .td[data-level="3"] { --crust:#C4863C; --crumb:#EFD3A4; --char:0.09; --vig:0.40; --ftr: sepia(0.62) brightness(0.96) contrast(1.07); }
+  body.toastday .td[data-level="4"] { --crust:#9C5F26; --crumb:#D9AE73; --char:0.20; --vig:0.55; --ftr: sepia(0.86) brightness(0.83) contrast(1.20); }
+  body.toastday .td[data-level="5"] { --crust:#402714; --crumb:#63401F; --char:0.46; --vig:0.72; --ftr: sepia(1) brightness(0.48) contrast(1.55); }
+
+  body.toastday .td-melt, body.toastday .td-jam { opacity: 0; transition: opacity 0.5s ease; }
+  body.toastday .td.buttered .td-melt { opacity: 1; }
+  body.toastday .td.jammed   .td-jam  { opacity: 0.82; }
+  body.toastday .td.jammed   .td-jam  { animation: td-spread 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+  @keyframes td-spread {
+    from { transform: scale(0.2) rotate(-14deg); }
+    to   { transform: scale(1)   rotate(0deg); }
+  }
+  body.toastday .td-jam { transform-box: fill-box; transform-origin: 50% 50%; }
+
+  /* the pat of butter that falls in */
+  body.toastday .td-pat {
+    position: absolute;
+    left: 50%;
+    top: 4px;
+    width: 30px;
+    height: 20px;
+    margin-left: -15px;
+    border-radius: 5px;
+    background: linear-gradient(160deg, #FBEFC4 0%, #EFCF7E 55%, #DCB358 100%);
+    box-shadow: 0 2px 5px rgba(62, 44, 35, 0.2);
+    opacity: 0;
+    z-index: 4;
+    pointer-events: none;
+  }
+  body.toastday .td-pat.drop { animation: td-pat 1.5s ease-in forwards; }
+  @keyframes td-pat {
+    0%   { opacity: 0; transform: translateY(-52px) rotate(-16deg) scale(1); }
+    18%  { opacity: 1; transform: translateY(-52px) rotate(-16deg) scale(1); }
+    52%  { opacity: 1; transform: translateY(30px)  rotate(4deg)   scale(1); }
+    64%  { opacity: 1; transform: translateY(28px)  rotate(0deg)   scale(1.14, 0.82); }
+    100% { opacity: 0; transform: translateY(34px)  rotate(0deg)   scale(0.3, 0.16); }
+  }
+
+  /* toaster body */
+  body.toastday .td-body {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 200px;
+    height: 98px;
+    margin-left: -100px;
+    z-index: 3;
+    border-radius: 16px 16px 11px 11px;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F6F0E6 42%, #E9E0D3 100%);
+    border: 1px solid var(--border);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -8px 14px rgba(140, 110, 85, 0.1),
+      0 10px 22px rgba(62, 44, 35, 0.15);
+  }
+  body.toastday .td-body::before {          /* chrome highlight */
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 26px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.95) 30%, rgba(255,255,255,0.95) 70%, transparent);
+  }
+  body.toastday .td-slot {
+    position: absolute;
+    left: 50%;
+    top: -5px;
+    width: 118px;
+    height: 11px;
+    margin-left: -59px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #6B5142 0%, #3E2C23 100%);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
+    z-index: 2;
+  }
+  body.toastday .td-glow {
+    position: absolute;
+    left: 50%;
+    top: -1px;
+    width: 106px;
+    height: 4px;
+    margin-left: -53px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #E3742B, #F0A54B, #E3742B);
+    filter: blur(2px);
+    opacity: 0;
+    z-index: 3;
+    transition: opacity 0.4s ease;
+  }
+  body.toastday .td-machine.heating .td-glow { opacity: 1; animation: td-coil 0.9s ease-in-out infinite; }
+  @keyframes td-coil { 50% { opacity: 0.55; } }
+
+  body.toastday .td-feet {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: -5px;
+    height: 6px;
+  }
+  body.toastday .td-feet::before,
+  body.toastday .td-feet::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    width: 16px;
+    height: 6px;
+    border-radius: 0 0 4px 4px;
+    background: var(--taupe);
+  }
+  body.toastday .td-feet::before { left: 0; }
+  body.toastday .td-feet::after  { right: 0; }
+
+  /* lever */
+  body.toastday .td-track {
+    position: absolute;
+    right: 13px;
+    top: 16px;
+    width: 5px;
+    height: 46px;
+    border-radius: 3px;
+    background: rgba(62, 44, 35, 0.14);
+  }
+  body.toastday .td-lever {
+    position: absolute;
+    right: 2px;
+    top: 12px;
+    width: 27px;
+    height: 17px;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    background: linear-gradient(180deg, #E7B4B8 0%, #D9A0A5 60%, #C88A90 100%);
+    box-shadow: 0 2px 5px rgba(62, 44, 35, 0.25);
+    z-index: 4;
+    -webkit-tap-highlight-color: transparent;
+    transition: top 0.28s cubic-bezier(0.3, 0.9, 0.4, 1.2);
+  }
+  body.toastday .td-lever:active { filter: brightness(0.96); }
+  body.toastday .td-machine.heating .td-lever { top: 45px; }
+
+  /* smoke, for the truly burnt */
+  body.toastday .td-smoke {
+    position: absolute;
+    left: 50%;
+    top: -6px;
+    width: 90px;
+    height: 70px;
+    margin-left: -45px;
+    z-index: 1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+  body.toastday .td[data-level="5"] .td-smoke { opacity: 1; }
+  body.toastday .td-smoke i {
+    position: absolute;
+    bottom: 0;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: rgba(107, 81, 66, 0.3);
+    filter: blur(3px);
+    animation: td-smoke 3.2s ease-in-out infinite;
+  }
+  body.toastday .td-smoke i:nth-child(1) { left: 14px; animation-delay: 0s; }
+  body.toastday .td-smoke i:nth-child(2) { left: 40px; animation-delay: 1.1s; }
+  body.toastday .td-smoke i:nth-child(3) { left: 63px; animation-delay: 2.1s; }
+  @keyframes td-smoke {
+    0%   { opacity: 0;    transform: translate(0, 10px) scale(0.5); }
+    30%  { opacity: 0.75; }
+    100% { opacity: 0;    transform: translate(10px, -58px) scale(1.9); }
+  }
+
+  /* dial + buttons */
+  body.toastday .td-dialrow { margin-top: 1.35rem; text-align: center; }
+  body.toastday .td-dl {
+    display: block;
+    font-size: 0.55rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--taupe);
+    margin-bottom: 0.55rem;
+  }
+  body.toastday .td-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 168px;
+    height: 7px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #FCF2E0 0%, #E9CB96 25%, #C4863C 55%, #9C5F26 78%, #402714 100%);
+    border: 1px solid var(--border);
+    outline: none;
+    cursor: pointer;
+    vertical-align: middle;
+  }
+  body.toastday .td-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    background: var(--lily);
+    border: 2px solid var(--rose);
+    box-shadow: 0 2px 6px rgba(62, 44, 35, 0.28);
+    cursor: pointer;
+  }
+  body.toastday .td-range::-moz-range-thumb {
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: var(--lily);
+    border: 2px solid var(--rose);
+    box-shadow: 0 2px 6px rgba(62, 44, 35, 0.28);
+    cursor: pointer;
+  }
+  body.toastday .td-range:focus-visible { box-shadow: 0 0 0 3px rgba(217, 160, 165, 0.4); }
+
+  body.toastday .td-level {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--espresso);
+    margin-top: 0.5rem;
+  }
+  body.toastday .td-verdict {
+    display: block;
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.15rem;
+    color: var(--rose);
+    margin-top: 0.05rem;
+    min-height: 1.3rem;
+  }
+
+  body.toastday .td-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  body.toastday .td-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--key);
+    color: var(--mocha);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.06s ease;
+  }
+  body.toastday .td-btn:active { transform: scale(0.95); }
+  body.toastday .td-btn.done { background: var(--butter); color: #fff; border-color: var(--butter); }
+
+  body.toastday .td-count {
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--mocha);
+    margin-top: 0.85rem;
+    min-height: 1rem;
+  }
+  body.toastday .td-count.pop { animation: td-pop 0.3s ease; }
+  @keyframes td-pop { 50% { transform: scale(1.13); } }
+
+  body.toastday .td-hint {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--taupe);
+    margin-top: 0.65rem;
+    animation: td-pulse 2.4s ease-in-out infinite;
+  }
+  body.toastday .td-hint.gone { display: none; }
+  @keyframes td-pulse { 50% { opacity: 0.45; } }
+
+  /* the little "ding!" that jumps off the toaster */
+  body.toastday .td-ding {
+    position: fixed;
+    z-index: 70;
+    pointer-events: none;
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.5rem;
+    color: var(--rose);
+    text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
+    animation: td-float 1s ease-out forwards;
+  }
+  @keyframes td-float {
+    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+    25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
+  }
+
+  @media (max-height: 780px) {
+    body.toastday .td-machine { transform: scale(0.88); transform-origin: 50% 100%; }
+    body.toastday .td { margin-top: 0.9rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.toastday .td-holder,
+    body.toastday .td-lever { transition: none; }
+    body.toastday .td-pat,
+    body.toastday .td-smoke i,
+    body.toastday .td-hint,
+    body.toastday .td-glow,
+    body.toastday .td-knife.chop,
+    body.toastday .td-ding { animation: none !important; }
+    body.toastday .td-jam { animation: none !important; }
+  }
+</style>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ── change this one line to move the whole thing to another date ── */
+  const TOAST_DAY = "08-26";
+
+  /* where the photos live, relative to index.html — add as many as you like */
+  const DIR = "toast/";
+  const FACES = ["amy-1.png", "amy-2.png"];
+
+  let dk;
+  try { dk = dateKey; } catch (e) { return; }
+  if (dk !== TOAST_DAY) return;
+
+  const card = document.getElementById("modal-card");
+  const sig = card && card.querySelector(".signature");
+  const backdropEl = document.getElementById("modal-backdrop");
+  const titleEl = document.getElementById("modal-title");
+  if (!card || !sig || !backdropEl) return;
+
+  document.body.classList.add("toastday");
+
+  const sub = document.querySelector("header p");
+  if (sub) sub.textContent = "something's in the toaster :)";
+
+  const softMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ═════════ 1. the slice ═════════ */
+
+  const OUTER = "M8 46 C8 21 27 9 50 9 C73 9 92 21 92 46 L92 102 Q92 110 84 110 L16 110 Q8 110 8 102 Z";
+  const INNER = "M16 48 C16 28 31 18 50 18 C69 18 84 28 84 48 L84 98 Q84 102 80 102 L20 102 Q16 102 16 98 Z";
+  const HEART = "M50 74 C42 66 30 58 30 48 C30 41 36 37 42 38 C46 39 49 42 50 45 C51 42 54 39 58 38 C64 37 70 41 70 48 C70 58 58 66 50 74 Z";
+
+  /* if a photo is missing, this stands in so the toaster still works */
+  const PLACEHOLDER =
+    "data:image/svg+xml;utf8," + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+      '<rect width="100" height="100" fill="#F3E8D2"/>' +
+      '<circle cx="38" cy="42" r="4" fill="#6B5142"/><circle cx="62" cy="42" r="4" fill="#6B5142"/>' +
+      '<path d="M34 62 Q50 74 66 62" stroke="#6B5142" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+      '<text x="50" y="92" font-family="sans-serif" font-size="7" fill="#A08A72" text-anchor="middle">her face goes here</text>' +
+      "</svg>");
+
+  const plate = document.createElement("div");
+  plate.className = "td";
+  plate.setAttribute("data-level", "3");
+  plate.innerHTML =
+    '<div class="td-machine">' +
+      '<div class="td-holder">' +
+        '<svg class="td-bread" viewBox="0 0 100 120" aria-label="a slice of toast with Amy on it">' +
+          "<defs>" +
+            '<clipPath id="tdCrumb"><path d="' + INNER + '"/></clipPath>' +
+            '<radialGradient id="tdVig" cx="50%" cy="46%" r="62%">' +
+              '<stop offset="45%" stop-color="#5A3A21" stop-opacity="0"/>' +
+              '<stop offset="100%" stop-color="#5A3A21" stop-opacity="0.95"/>' +
+            "</radialGradient>" +
+            '<radialGradient id="tdMelt" cx="50%" cy="42%" r="55%">' +
+              '<stop offset="0%" stop-color="#FFE9A8" stop-opacity="0.95"/>' +
+              '<stop offset="70%" stop-color="#F2CE7A" stop-opacity="0.45"/>' +
+              '<stop offset="100%" stop-color="#F2CE7A" stop-opacity="0"/>' +
+            "</radialGradient>" +
+          "</defs>" +
+          '<path class="td-crust" d="' + OUTER + '"/>' +
+          '<path class="td-crumb" d="' + INNER + '"/>' +
+          '<g clip-path="url(#tdCrumb)">' +
+            '<image class="td-face" x="12" y="14" width="76" height="94" preserveAspectRatio="xMidYMid slice"/>' +
+            '<rect class="td-vig" x="0" y="0" width="100" height="120" fill="url(#tdVig)"/>' +
+            '<rect class="td-char" x="0" y="0" width="100" height="120" fill="#2A1A0E"/>' +
+            '<ellipse class="td-melt" cx="50" cy="56" rx="40" ry="42" fill="url(#tdMelt)" style="mix-blend-mode:overlay"/>' +
+            '<path class="td-jam" d="' + HEART + '" fill="#B33A48" style="mix-blend-mode:multiply"/>' +
+          "</g>" +
+        "</svg>" +
+        '<div class="td-pat"></div>' +
+      "</div>" +
+      '<div class="td-smoke"><i></i><i></i><i></i></div>' +
+      '<div class="td-body">' +
+        '<div class="td-slot"></div>' +
+        '<div class="td-glow"></div>' +
+        '<div class="td-track"></div>' +
+        '<button class="td-lever" type="button" aria-label="toast another slice"></button>' +
+        '<div class="td-feet"></div>' +
+      "</div>" +
+    "</div>" +
+    '<div class="td-dialrow">' +
+      '<span class="td-dl">how do you like it?</span>' +
+      '<input class="td-range" type="range" min="1" max="5" step="1" value="3" aria-label="browning dial">' +
+      '<span class="td-level"></span>' +
+      '<span class="td-verdict"></span>' +
+    "</div>" +
+    '<div class="td-actions">' +
+      '<button class="td-btn" type="button" data-act="butter">add butter</button>' +
+      '<button class="td-btn" type="button" data-act="jam">add jam</button>' +
+    "</div>" +
+    '<p class="td-hint">(pull the lever)</p>' +
+    '<p class="td-count" role="status"></p>';
+  card.insertBefore(plate, sig);
+
+  const machine = plate.querySelector(".td-machine");
+  const holder = plate.querySelector(".td-holder");
+  const faceEl = plate.querySelector(".td-face");
+  const pat = plate.querySelector(".td-pat");
+  const lever = plate.querySelector(".td-lever");
+  const range = plate.querySelector(".td-range");
+  const levelEl = plate.querySelector(".td-level");
+  const verdictEl = plate.querySelector(".td-verdict");
+  const hint = plate.querySelector(".td-hint");
+  const countEl = plate.querySelector(".td-count");
+
+  function setFace(src) {
+    faceEl.setAttribute("href", src);
+    faceEl.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", src);
+  }
+
+  /* preload, so a missing file falls back quietly instead of showing a gap */
+  const sources = [];
+  let pending = FACES.length;
+  FACES.forEach(function (name, i) {
+    const img = new Image();
+    img.onload = function () { sources[i] = DIR + name; if (!--pending) ready(); };
+    img.onerror = function () { sources[i] = PLACEHOLDER; if (!--pending) ready(); };
+    img.src = DIR + name;
+  });
+
+  let faceIndex = 0;
+  let readyToPop = false;
+  let queued = null;
+  function ready() {
+    setFace(sources[0] || PLACEHOLDER);
+    readyToPop = true;
+    if (queued !== null) { const f = queued; queued = null; pop(f); }
+  }
+
+  /* ═════════ 2. the dial ═════════ */
+
+  const LEVELS = [
+    null,
+    { name: "barely warm",  line: "raw. bold choice." },
+    { name: "golden",       line: "now we're talking." },
+    { name: "just right",   line: "perfect. obviously." },
+    { name: "well done",    line: "someone likes it crispy." },
+    { name: "cremated",     line: "you burnt me. i still love you." }
+  ];
+
+  let level = 3;
+  try { level = parseInt(localStorage.getItem("amy-toast-level") || "3", 10) || 3; } catch (e) {}
+  level = Math.min(5, Math.max(1, level));
+
+  function paint(lv, slow, save) {
+    level = lv;
+    plate.setAttribute("data-level", String(lv));
+    levelEl.textContent = LEVELS[lv].name;
+    verdictEl.textContent = LEVELS[lv].line;
+    if (save !== false) {
+      range.value = String(lv);
+      try { localStorage.setItem("amy-toast-level", String(lv)); } catch (e) {}
+    }
+    if (slow) {
+      plate.classList.add("toasting");
+      setTimeout(function () { plate.classList.remove("toasting"); }, 1600);
+    }
+  }
+  paint(level, false, true);
+
+  range.addEventListener("input", function () { paint(parseInt(range.value, 10), false, true); });
+
+  /* ═════════ 3. butter and jam ═════════ */
+
+  plate.querySelectorAll(".td-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const act = btn.getAttribute("data-act");
+      if (btn.classList.contains("done")) return;
+      btn.classList.add("done");
+      if (act === "butter") {
+        btn.textContent = "buttered";
+        pat.classList.remove("drop");
+        void pat.offsetWidth;
+        pat.classList.add("drop");
+        setTimeout(function () { plate.classList.add("buttered"); }, 850);
+      } else {
+        btn.textContent = "jammed";
+        plate.classList.add("jammed");
+      }
+    });
+  });
+
+  /* ═════════ 4. the lever ═════════ */
+
+  const MILESTONES = {
+    1: "slices toasted: 1",
+    3: "slices toasted: 3 — breakfast is served",
+    5: "slices toasted: 5 · certified toast enthusiast",
+    10: "slices toasted: 10. you really like this one huh",
+    25: "slices toasted: 25. i'm going to run out of bread.",
+    50: "slices toasted: 50. amy. the toaster is tired.",
+    100: "slices toasted: 100. an unreasonable amount of toast. an unreasonable amount of love."
+  };
+
+  let toasts = 0;
+  try { toasts = parseInt(localStorage.getItem("amy-toasts") || "0", 10) || 0; } catch (e) {}
+  function renderCount() { countEl.textContent = MILESTONES[toasts] || "slices toasted: " + toasts; }
+  if (toasts > 0) { renderCount(); hint.classList.add("gone"); }
+
+  function crumbs() {
+    if (softMotion) return;
+    const r = holder.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height * 0.75;
+    const shades = ["#C4863C", "#9C5F26", "#E9CB96", "#6B5142"];
+    for (let i = 0; i < 12; i++) {
+      const p = document.createElement("div");
+      p.className = "burst";                    /* reuses the petal-burst CSS */
+      const s = 3 + Math.random() * 4;
+      p.style.width = s + "px";
+      p.style.height = s + "px";
+      p.style.borderRadius = "2px";
+      p.style.left = (cx + (Math.random() * 60 - 30)) + "px";
+      p.style.top = cy + "px";
+      p.style.background = shades[i % shades.length];
+      p.style.setProperty("--tx", (Math.random() * 50 - 25) + "px");
+      p.style.setProperty("--ty", (60 + Math.random() * 50) + "px");
+      p.style.setProperty("--rot", (Math.random() * 360 - 180) + "deg");
+      document.body.appendChild(p);
+      setTimeout(function () { p.remove(); }, 1300);
+    }
+  }
+
+  function ding(text) {
+    if (softMotion) return;
+    const r = machine.getBoundingClientRect();
+    const fx = document.createElement("div");
+    fx.className = "td-ding";
+    fx.textContent = text;
+    fx.style.left = (r.left + r.width / 2 + (Math.random() * 26 - 13)) + "px";
+    fx.style.top = (r.top + 24) + "px";
+    document.body.appendChild(fx);
+    setTimeout(function () { fx.remove(); }, 1050);
+  }
+
+  const DINGS = ["ding!", "ding.", "*ding*", "ding!!", "d i n g"];
+  let busy = false;
+
+  function pop(first) {
+    if (busy) return;
+    if (!readyToPop) { queued = first; return; }
+    busy = true;
+    hint.classList.add("gone");
+
+    holder.classList.remove("up");
+    machine.classList.add("heating");
+    paint(1, false, false);                             /* starts pale… */
+
+    const wait = softMotion ? 200 : (first ? 900 : 1100);
+    setTimeout(function () {
+      paint(parseInt(range.value, 10) || level, true, true);  /* …and browns as it heats */
+    }, wait * 0.25);
+
+    setTimeout(function () {
+      machine.classList.remove("heating");
+      holder.classList.add("up");
+      ding(DINGS[toasts % DINGS.length]);
+      crumbs();
+      toasts++;
+      try { localStorage.setItem("amy-toasts", String(toasts)); } catch (e) {}
+      renderCount();
+      countEl.classList.remove("pop");
+      void countEl.offsetWidth;
+      countEl.classList.add("pop");
+      if (typeof petalBurst === "function" && first) petalBurst();
+      busy = false;
+    }, wait);
+  }
+
+  lever.addEventListener("click", function () {
+    if (busy) return;
+    faceIndex = (faceIndex + 1) % sources.length;
+    setFace(sources[faceIndex] || PLACEHOLDER);
+    plate.classList.remove("buttered", "jammed");
+    plate.querySelectorAll(".td-btn").forEach(function (b) {
+      b.classList.remove("done");
+      b.textContent = b.getAttribute("data-act") === "butter" ? "add butter" : "add jam";
+    });
+    pop(false);
+  });
+
+  /* ═════════ 5. the loaf, before any of that ═════════ */
+
+  let stage = null, timers = [];
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+
+  function teardown() {
+    clearTimers();
+    if (stage) { stage.remove(); stage = null; }
+  }
+
+  function reveal() {
+    teardown();
+    later(function () {
+      if (!backdropEl.classList.contains("show")) return;
+      const cardRect = card.getBoundingClientRect();
+      const plateRect = plate.getBoundingClientRect();
+      if (plateRect.bottom > cardRect.bottom - 10) {
+        card.scrollTo({ top: Math.max(0, plate.offsetTop - 30), behavior: "smooth" });
+      }
+    }, 300);
+    later(function () { pop(true); }, softMotion ? 100 : 520);
+  }
+
+  function runLoaf() {
+    teardown();
+    if (softMotion) { reveal(); return; }
+
+    stage = document.createElement("div");
+    stage.className = "td-stage";
+    stage.innerHTML =
+      '<div class="td-plate">' +
+        '<div class="td-cut" style="left:16px"></div>' +
+        '<div class="td-cut" style="left:52px"></div>' +
+        '<div class="td-cut" style="left:88px"></div>' +
+        '<div class="td-loaf"></div>' +
+        '<div class="td-knife">' +
+          '<svg viewBox="0 0 176 40" aria-hidden="true">' +
+            '<path d="M4 22 L120 14 Q134 15 134 22 Q134 29 120 30 L4 26 Z" fill="#DDE1E4" stroke="#BFC6CB" stroke-width="1.4"/>' +
+            '<path d="M8 25 L120 28" stroke="#FFFFFF" stroke-width="1.6" opacity="0.9"/>' +
+            '<rect x="132" y="14" width="40" height="15" rx="6" fill="#3E2C23"/>' +
+            '<circle cx="152" cy="21.5" r="1.6" fill="#8A6A50"/><circle cx="162" cy="21.5" r="1.6" fill="#8A6A50"/>' +
+          "</svg>" +
+        "</div>" +
+        '<div class="td-board"></div>' +
+      "</div>" +
+      '<p class="td-cap"></p>' +
+      '<p class="td-skip">tap to skip</p>';
+    document.body.appendChild(stage);
+
+    const loaf = stage.querySelector(".td-loaf");
+    const cuts = stage.querySelectorAll(".td-cut");
+    const knife = stage.querySelector(".td-knife");
+    const cap = stage.querySelector(".td-cap");
+
+    /* fit the scene to small screens */
+    stage.querySelector(".td-plate").style.setProperty(
+      "--pscale", Math.min(1, (window.innerWidth - 40) / 320).toFixed(2));
+
+    function say(text) {
+      cap.classList.remove("show");
+      later(function () { cap.textContent = text; cap.classList.add("show"); }, 220);
+    }
+
+    later(function () { knife.classList.add("in"); }, 350);
+    later(function () { say("a whole loaf. every slice the same."); }, 500);
+
+    [0, 1, 2].forEach(function (i) {
+      const t = 900 + i * 620;
+      later(function () {
+        knife.classList.remove("chop");
+        void knife.offsetWidth;
+        knife.classList.add("chop");
+      }, t);
+      later(function () {
+        loaf.style.width = (152 - (i + 1) * 30) + "px";
+        cuts[i].classList.add("out");
+        cuts[i].style.transform = "translateX(0) rotate(" + (i === 1 ? -4 : i === 2 ? 5 : -2) + "deg)";
+      }, t + 230);
+    });
+
+    later(function () { knife.classList.remove("in"); }, 2600);
+    later(function () { say("…except one."); }, 2900);
+
+    /* the chosen slice grows, then flies up into the toaster */
+    later(function () {
+      loaf.style.opacity = "0";
+      loaf.style.transition = "opacity 0.4s ease, width 0.42s";
+      cuts[0].style.opacity = "0";
+      cuts[2].style.opacity = "0";
+      const hero = cuts[1];
+      hero.style.transition = "transform 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2)";
+      hero.style.transform = "translate(93px, -22px) scale(1.85) rotate(0deg)";
+    }, 3450);
+
+    later(function () {
+      const hero = cuts[1];
+      hero.style.transition = "transform 0.8s cubic-bezier(0.5, 0, 0.7, 0.2), opacity 0.4s ease 0.45s";
+      hero.style.transform = "translate(93px, -" + (window.innerHeight * 0.75) + "px) scale(1.1) rotate(6deg)";
+      hero.style.opacity = "0";
+      cap.classList.remove("show");
+    }, 4450);
+
+    later(function () {
+      if (stage) stage.classList.add("clearing");
+    }, 4900);
+    later(reveal, 5350);
+
+    stage.addEventListener("click", reveal);
+  }
+
+  /* ═════════ 6. fire it when the note opens ═════════ */
+
+  new MutationObserver(function () {
+    if (backdropEl.classList.contains("show")) {
+      if (titleEl) titleEl.textContent = "Golden brown.";
+      holder.classList.remove("up");
+      plate.classList.remove("buttered", "jammed");
+      plate.querySelectorAll(".td-btn").forEach(function (b) {
+        b.classList.remove("done");
+        b.textContent = b.getAttribute("data-act") === "butter" ? "add butter" : "add jam";
+      });
+      runLoaf();
+    } else {
+      teardown();
+      busy = false;
+      holder.classList.remove("up");
+      machine.classList.remove("heating");
+    }
+  }).observe(backdropEl, { attributes: true, attributeFilter: ["class"] });
+})();
+</script>
+  
+
 
   
 </body>
