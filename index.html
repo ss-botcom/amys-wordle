@@ -2829,6 +2829,724 @@ restoreState();
   }).observe(backdropEl, { attributes: true, attributeFilter: ["class"] });
 })();
 </script>
+  <!-- ═══════════════════════════════════════════════════════════════════
+   ROAD DAY · September 7 · "ROADS"
+   Paste this whole block at the very bottom of index.html, right before
+   the closing </body> tag (i.e. after the TOAST DAY block).
+
+   Needs a folder called  roads/  sitting next to index.html, holding:
+     roads/amy-1.png     (the photo — face crop, portrait-ish)
+
+   Runs only on the date set in ROAD_DAY. Any other day: does nothing.
+   Test it early with:  index.html?peek=09-07&fresh=1
+   ═══════════════════════════════════════════════════════════════════ -->
+<style>
+  /* everything is scoped to body.roadsday so no other day can be touched */
+
+  /* ---------- the long drive, full screen ---------- */
+  body.roadsday .rd-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 58;
+    overflow: hidden;
+    cursor: pointer;
+    background: #2A1F1A;
+    transition: opacity 0.45s ease;
+  }
+  body.roadsday .rd-stage.clearing { opacity: 0; }
+
+  /* the world: sky, sun, hills, tarmac. shared by the full-screen
+     drive and the little windshield inside the note. */
+  body.roadsday .rd-world { position: absolute; inset: 0; overflow: hidden; }
+
+  body.roadsday .rd-sky {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 40%;
+    background: linear-gradient(180deg, #6B5142 0%, #C99A7E 52%, #E9BE9A 78%, #F3D7DA 100%);
+  }
+  body.roadsday .rd-sun {
+    position: absolute;
+    left: 50%;
+    top: 40%;
+    width: 26%;
+    padding-bottom: 26%;
+    margin-left: -13%;
+    transform: translateY(-52%);
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #FBE9C6 0%, #E3C481 55%, rgba(227,196,129,0) 72%);
+  }
+  body.roadsday .rd-hills {
+    position: absolute;
+    left: -2%; right: -2%;
+    top: 26%;
+    height: 16%;
+  }
+  body.roadsday .rd-hills i {
+    position: absolute;
+    bottom: 0;
+    border-radius: 50% 50% 0 0;
+    background: #7E8C77;
+    opacity: 0.85;
+  }
+  body.roadsday .rd-hills i:nth-child(1) { left: 2%;  width: 34%; height: 78%; }
+  body.roadsday .rd-hills i:nth-child(2) { left: 26%; width: 30%; height: 100%; background: #6E7D68; }
+  body.roadsday .rd-hills i:nth-child(3) { right: 4%; width: 40%; height: 88%; }
+
+  /* the tarmac plane — a rectangle laid flat with perspective */
+  body.roadsday .rd-road {
+    position: absolute;
+    left: -100%;
+    top: 40%;
+    width: 300%;
+    height: 60%;
+    transform: perspective(150px) rotateX(58deg);
+    transform-origin: 50% 0;
+    background: linear-gradient(180deg, #6E5647 0%, #4A362B 34%, #3E2C23 100%);
+  }
+  body.roadsday .rd-edge {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 0.9%;
+    background: rgba(253, 251, 247, 0.5);
+  }
+  body.roadsday .rd-edge.l { left: 40%; }
+  body.roadsday .rd-edge.r { right: 40%; }
+  body.roadsday .rd-dash {
+    position: absolute;
+    left: 50%;
+    top: 0; bottom: 0;
+    width: 1.6%;
+    margin-left: -0.8%;
+    background-repeat: repeat-y;
+  }
+  /* small windshield dashes */
+  body.roadsday .rd-scene .rd-dash {
+    background-image: repeating-linear-gradient(180deg, #E3C481 0 18px, transparent 18px 46px);
+    background-size: 100% 46px;
+  }
+  body.roadsday .rd-scene.driving .rd-dash { animation: rd-roll-s 0.42s linear infinite; }
+  @keyframes rd-roll-s { to { background-position-y: 46px; } }
+  /* full-screen dashes */
+  body.roadsday .rd-stage .rd-dash {
+    background-image: repeating-linear-gradient(180deg, #E3C481 0 62px, transparent 62px 155px);
+    background-size: 100% 155px;
+    animation: rd-roll-b 0.5s linear infinite;
+  }
+  @keyframes rd-roll-b { to { background-position-y: 155px; } }
+
+  /* mile signs flying past on the long drive */
+  body.roadsday .rd-flyer {
+    position: absolute;
+    left: 50%;
+    top: 39%;
+    z-index: 3;
+    width: 128px;
+    margin-left: -64px;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    color: #FDFBF7;
+    background: #4E6B4A;
+    border: 3px solid rgba(253, 251, 247, 0.9);
+    border-radius: 7px;
+    padding: 0.55rem 0.4rem;
+    opacity: 0;
+    transform-origin: 50% 100%;
+    animation: rd-fly 2.05s cubic-bezier(0.45, 0, 0.75, 0.35) forwards;
+  }
+  body.roadsday .rd-flyer b { display: block; font-size: 1.35rem; font-weight: 700; line-height: 1.1; }
+  body.roadsday .rd-flyer span { display: block; font-size: 0.6rem; letter-spacing: 0.16em; opacity: 0.85; }
+  @keyframes rd-fly {
+    0%   { opacity: 0; transform: translate(0, 0) scale(0.12); }
+    18%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--sx), 62vh) scale(2.8); }
+  }
+
+  body.roadsday .rd-cap {
+    position: absolute;
+    left: 50%;
+    bottom: 16%;
+    z-index: 4;
+    transform: translateX(-50%) translateY(8px);
+    width: min(320px, 84vw);
+    text-align: center;
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.85rem;
+    line-height: 1.35;
+    color: #FDFBF7;
+    text-shadow: 0 2px 14px rgba(42, 31, 26, 0.8);
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  body.roadsday .rd-cap.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  body.roadsday .rd-skip {
+    position: absolute;
+    bottom: 1.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4;
+    font-size: 0.62rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(253, 251, 247, 0.55);
+  }
+
+  /* ---------- the windshield, inside the love note ---------- */
+  body.roadsday .rd {
+    position: relative;
+    z-index: 10;
+    margin-top: 1.6rem;
+  }
+
+  /* rear-view mirror, hanging over the top of the glass */
+  body.roadsday .rd-mirror {
+    position: relative;
+    width: 118px;
+    margin: 0 auto -12px;
+    z-index: 4;
+    opacity: 0;
+    transform: translateY(-10px) rotate(-2deg);
+    transition: opacity 0.5s ease 0.15s, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.3) 0.15s;
+  }
+  body.roadsday .rd.go .rd-mirror { opacity: 1; transform: translateY(0) rotate(-2deg); }
+  body.roadsday .rd-mirror::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -12px;
+    width: 5px;
+    height: 14px;
+    margin-left: -2.5px;
+    border-radius: 3px;
+    background: var(--taupe);
+  }
+  body.roadsday .rd-glass {
+    height: 46px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #2A1F1A;
+    border: 3px solid #E9E0D3;
+    box-shadow: 0 6px 14px rgba(62, 44, 35, 0.24), inset 0 0 0 1px rgba(255,255,255,0.6);
+  }
+  body.roadsday .rd-glass img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 32%;
+    transform: scaleX(-1);          /* it's a reflection */
+  }
+  body.roadsday .rd-mcap {
+    display: block;
+    text-align: center;
+    font-size: 0.5rem;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+    color: var(--taupe);
+    margin-top: 0.3rem;
+  }
+
+  body.roadsday .rd-scene {
+    position: relative;
+    width: min(252px, 68vw);
+    aspect-ratio: 252 / 158;
+    margin: 0 auto;
+    border-radius: 14px 14px 8px 8px;
+    overflow: hidden;
+    background: #2A1F1A;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 24px rgba(62, 44, 35, 0.18);
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
+  }
+  body.roadsday .rd.go .rd-scene { opacity: 1; transform: scale(1); }
+
+  /* the exit sign, coming up on the right */
+  body.roadsday .rd-sign {
+    position: absolute;
+    left: 58%;
+    top: 33%;
+    z-index: 3;
+    transform-origin: 50% 100%;
+    transform: scale(0.1);
+    opacity: 0;
+  }
+  body.roadsday .rd-sign.arrive { animation: rd-approach 1.5s cubic-bezier(0.55, 0, 0.85, 0.5) forwards; }
+  @keyframes rd-approach {
+    0%   { opacity: 0; transform: translate(0, 0) scale(0.1); }
+    22%  { opacity: 1; }
+    100% { opacity: 1; transform: translate(9px, 44px) scale(1); }
+  }
+  body.roadsday .rd-plate {
+    width: 74px;
+    background: #4E6B4A;
+    border: 2px solid rgba(253, 251, 247, 0.92);
+    border-radius: 5px;
+    padding: 4px 4px 5px;
+    text-align: center;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  }
+  body.roadsday .rd-plate img {
+    display: block;
+    width: 30px;
+    height: 30px;
+    margin: 0 auto 3px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: 50% 30%;
+    border: 1.5px solid rgba(253, 251, 247, 0.92);
+  }
+  body.roadsday .rd-plate b {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: #FDFBF7;
+  }
+  body.roadsday .rd-plate small {
+    display: block;
+    font-size: 0.42rem;
+    letter-spacing: 0.14em;
+    color: rgba(253, 251, 247, 0.82);
+  }
+  body.roadsday .rd-post {
+    display: block;
+    width: 3px;
+    height: 26px;
+    margin: 0 auto;
+    background: #BDB2A6;
+  }
+
+  /* the dashboard, with the odometer on it */
+  body.roadsday .rd-dash-panel {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 34px;
+    z-index: 4;
+    border-radius: 60% 60% 0 0 / 26px 26px 0 0;
+    background: linear-gradient(180deg, #4A362B 0%, #3E2C23 100%);
+    box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.3);
+  }
+  body.roadsday .rd-wheel {
+    position: absolute;
+    left: 50%;
+    top: 11px;
+    width: 74px;
+    height: 40px;
+    margin-left: -37px;
+    border: 3px solid #58412F;
+    border-radius: 50%;
+  }
+  body.roadsday .rd-odo {
+    position: absolute;
+    left: 50%;
+    top: 7px;
+    transform: translateX(-50%);
+    text-align: center;
+    line-height: 1;
+    z-index: 2;
+  }
+  body.roadsday .rd-odo b {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    color: #F3D7DA;
+    letter-spacing: 0.02em;
+  }
+  body.roadsday .rd-odo span {
+    display: block;
+    font-size: 0.45rem;
+    letter-spacing: 0.2em;
+    color: rgba(253, 251, 247, 0.6);
+    margin-top: 2px;
+  }
+
+  /* controls, same family as the toaster's */
+  body.roadsday .rd-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  body.roadsday .rd-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.45rem 1.05rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--key);
+    color: var(--mocha);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.06s ease;
+  }
+  body.roadsday .rd-btn:active { transform: scale(0.95); }
+  body.roadsday .rd-btn.go-btn { background: var(--rose); border-color: var(--rose); color: #fff; }
+  body.roadsday .rd-btn[disabled] { opacity: 0.55; cursor: default; }
+
+  body.roadsday .rd-hint {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--taupe);
+    margin-top: 0.65rem;
+    animation: rd-pulse 2.4s ease-in-out infinite;
+  }
+  body.roadsday .rd-hint.gone { display: none; }
+  @keyframes rd-pulse { 50% { opacity: 0.45; } }
+
+  body.roadsday .rd-count {
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--mocha);
+    margin-top: 0.7rem;
+    min-height: 1rem;
+  }
+  body.roadsday .rd-count.pop { animation: rd-pop 0.3s ease; }
+  @keyframes rd-pop { 50% { transform: scale(1.13); } }
+
+  /* little words that jump off the windshield */
+  body.roadsday .rd-fx {
+    position: fixed;
+    z-index: 70;
+    pointer-events: none;
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.5rem;
+    color: var(--rose);
+    text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
+    animation: rd-float 1s ease-out forwards;
+  }
+  @keyframes rd-float {
+    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+    25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
+  }
+
+  @media (max-height: 780px) {
+    body.roadsday .rd { margin-top: 1.1rem; }
+    body.roadsday .rd-scene { width: min(210px, 58vw); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.roadsday .rd-mirror,
+    body.roadsday .rd-scene { opacity: 1 !important; transform: none !important; transition: none; }
+    body.roadsday .rd-dash,
+    body.roadsday .rd-hint,
+    body.roadsday .rd-fx,
+    body.roadsday .rd-flyer { animation: none !important; }
+    body.roadsday .rd-sign.arrive { animation: none !important; opacity: 1; transform: translate(9px, 44px) scale(1); }
+  }
+</style>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ── change this one line to move the whole thing to another date ── */
+  const ROAD_DAY = "09-07";
+
+  /* where the photo lives, relative to index.html */
+  const DIR = "roads/";
+  const FACE = "amy-1.png";
+
+  let dk;
+  try { dk = dateKey; } catch (e) { return; }
+  if (dk !== ROAD_DAY) return;
+
+  const card = document.getElementById("modal-card");
+  const sig = card && card.querySelector(".signature");
+  const backdropEl = document.getElementById("modal-backdrop");
+  const titleEl = document.getElementById("modal-title");
+  if (!card || !sig || !backdropEl) return;
+
+  document.body.classList.add("roadsday");
+
+  const sub = document.querySelector("header p");
+  if (sub) sub.textContent = "eyes on the road, love :)";
+
+  const softMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* if the photo is missing, this stands in so nothing breaks */
+  const PLACEHOLDER =
+    "data:image/svg+xml;utf8," + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+      '<rect width="100" height="100" fill="#F3E8D2"/>' +
+      '<circle cx="38" cy="42" r="4" fill="#6B5142"/><circle cx="62" cy="42" r="4" fill="#6B5142"/>' +
+      '<path d="M34 62 Q50 74 66 62" stroke="#6B5142" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+      "</svg>");
+
+  let SRC = DIR + FACE;
+  const probe = new Image();
+  probe.onerror = function () {
+    SRC = PLACEHOLDER;
+    plate.querySelectorAll("img").forEach(function (im) { im.src = SRC; });
+  };
+  probe.src = SRC;
+
+  /* the road markup, reused at both sizes */
+  function world() {
+    return '<div class="rd-world">' +
+        '<div class="rd-sky"></div>' +
+        '<div class="rd-sun"></div>' +
+        '<div class="rd-hills"><i></i><i></i><i></i></div>' +
+        '<div class="rd-road">' +
+          '<div class="rd-edge l"></div>' +
+          '<div class="rd-edge r"></div>' +
+          '<div class="rd-dash"></div>' +
+        "</div>" +
+      "</div>";
+  }
+
+  /* ═════════ 1. the windshield ═════════ */
+
+  const plate = document.createElement("div");
+  plate.className = "rd";
+  plate.innerHTML =
+    '<div class="rd-mirror">' +
+      '<div class="rd-glass"><img src="' + SRC + '" alt="you, in the mirror" draggable="false"></div>' +
+      '<span class="rd-mcap">objects in mirror are loved more than they appear</span>' +
+    "</div>" +
+    '<div class="rd-scene">' +
+      world() +
+      '<div class="rd-sign">' +
+        '<div class="rd-plate">' +
+          '<img src="' + SRC + '" alt="" draggable="false">' +
+          "<b>AMY</b><small>next exit</small>" +
+        "</div>" +
+        '<i class="rd-post"></i>' +
+      "</div>" +
+      '<div class="rd-dash-panel"><div class="rd-wheel"></div></div>' +
+      '<div class="rd-odo"><b>0</b><span>miles to you</span></div>' +
+    "</div>" +
+    '<div class="rd-actions">' +
+      '<button class="rd-btn go-btn" type="button" data-act="drive">drive</button>' +
+      '<button class="rd-btn" type="button" data-act="honk">honk</button>' +
+    "</div>" +
+    '<p class="rd-hint">(go on, drive)</p>' +
+    '<p class="rd-count" role="status"></p>';
+  card.insertBefore(plate, sig);
+
+  const scene = plate.querySelector(".rd-scene");
+  const sign = plate.querySelector(".rd-sign");
+  const odoNum = plate.querySelector(".rd-odo b");
+  const odoCap = plate.querySelector(".rd-odo span");
+  const hint = plate.querySelector(".rd-hint");
+  const countEl = plate.querySelector(".rd-count");
+  const driveBtn = plate.querySelector('[data-act="drive"]');
+  const honkBtn = plate.querySelector('[data-act="honk"]');
+
+  /* ═════════ 2. the drive ═════════ */
+
+  /* every trip starts a little closer than the last one */
+  const LEGS = [7418, 2140, 916, 214, 43, 6];
+  const ARRIVALS = ["there you are.", "made it.", "hi.", "told you.", "worth it.", "again?"];
+
+  const MILESTONES = {
+    1: "trips made: 1",
+    3: "trips made: 3 — you know the way by heart now",
+    5: "trips made: 5 · certified passenger prince",
+    10: "trips made: 10. we should just live closer.",
+    25: "trips made: 25. i'd like to formally complain about geography.",
+    50: "trips made: 50. gas money is adding up. still going.",
+    100: "trips made: 100. wu. put the phone down and come here."
+  };
+
+  let trips = 0;
+  try { trips = parseInt(localStorage.getItem("amy-roads") || "0", 10) || 0; } catch (e) {}
+  function renderCount() { countEl.textContent = MILESTONES[trips] || "trips made: " + trips; }
+  if (trips > 0) { renderCount(); hint.classList.add("gone"); }
+
+  function fx(text, el) {
+    if (softMotion) return;
+    const r = (el || scene).getBoundingClientRect();
+    const d = document.createElement("div");
+    d.className = "rd-fx";
+    d.textContent = text;
+    d.style.left = (r.left + r.width / 2 + (Math.random() * 26 - 13)) + "px";
+    d.style.top = (r.top + 26) + "px";
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 1050);
+  }
+
+  function hearts(x, y) {
+    if (softMotion) return;
+    const colors = ["var(--rose)", "var(--blushpk)", "var(--lily)", "var(--butter)"];
+    for (let i = 0; i < 12; i++) {
+      const p = document.createElement("div");
+      p.className = "burst";                     /* reuses the petal-burst CSS */
+      const s = 6 + Math.random() * 8;
+      p.style.width = s + "px";
+      p.style.height = s * 0.75 + "px";
+      p.style.left = x + "px";
+      p.style.top = y + "px";
+      p.style.background = colors[i % colors.length];
+      const a = Math.random() * Math.PI * 2;
+      const d = 34 + Math.random() * 60;
+      p.style.setProperty("--tx", Math.cos(a) * d + "px");
+      p.style.setProperty("--ty", (Math.sin(a) * d - 30) + "px");
+      p.style.setProperty("--rot", (Math.random() * 400 - 200) + "deg");
+      document.body.appendChild(p);
+      setTimeout(function () { p.remove(); }, 1300);
+    }
+  }
+
+  let busy = false, raf = 0;
+
+  function setOdo(n) { odoNum.textContent = Math.round(n).toLocaleString("en-US"); }
+
+  function drive() {
+    if (busy) return;
+    busy = true;
+    driveBtn.disabled = true;
+    hint.classList.add("gone");
+
+    const start = LEGS[trips % LEGS.length];
+    const DUR = softMotion ? 400 : 2500;
+    odoCap.textContent = "miles to you";
+    setOdo(start);
+    scene.classList.add("driving");
+    sign.classList.remove("arrive");
+    void sign.offsetWidth;
+
+    if (!softMotion) setTimeout(function () { sign.classList.add("arrive"); }, DUR - 1350);
+
+    const t0 = performance.now();
+    cancelAnimationFrame(raf);
+    (function step(now) {
+      const p = Math.min(1, (now - t0) / DUR);
+      const eased = 1 - Math.pow(1 - p, 2.2);          /* slows as we pull in */
+      setOdo(start * (1 - eased));
+      if (p < 1) { raf = requestAnimationFrame(step); return; }
+
+      setOdo(0);
+      odoCap.textContent = "arrived";
+      scene.classList.remove("driving");
+      if (softMotion) sign.classList.add("arrive");
+
+      trips++;
+      try { localStorage.setItem("amy-roads", String(trips)); } catch (e) {}
+      renderCount();
+      countEl.classList.remove("pop");
+      void countEl.offsetWidth;
+      countEl.classList.add("pop");
+
+      fx(ARRIVALS[(trips - 1) % ARRIVALS.length]);
+      const r = scene.getBoundingClientRect();
+      hearts(r.left + r.width / 2, r.top + r.height * 0.45);
+
+      driveBtn.textContent = "drive again";
+      driveBtn.disabled = false;
+      busy = false;
+    })(t0);
+  }
+
+  const HONKS = ["beep", "beep beep", "*honk*", "beeeep", "honk!"];
+  let honks = 0;
+  honkBtn.addEventListener("click", function () {
+    honks++;
+    fx(HONKS[honks % HONKS.length], honkBtn);
+    const r = honkBtn.getBoundingClientRect();
+    hearts(r.left + r.width / 2, r.top);
+  });
+  driveBtn.addEventListener("click", drive);
+
+  /* ═════════ 3. the long drive, before any of that ═════════ */
+
+  let stage = null, timers = [];
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+
+  function teardown() {
+    clearTimers();
+    if (stage) { stage.remove(); stage = null; }
+  }
+
+  function reveal() {
+    teardown();
+    plate.classList.add("go");
+    later(function () {
+      if (!backdropEl.classList.contains("show")) return;
+      const cardRect = card.getBoundingClientRect();
+      const plateRect = plate.getBoundingClientRect();
+      if (plateRect.bottom > cardRect.bottom - 10) {
+        card.scrollTo({ top: Math.max(0, plate.offsetTop - 30), behavior: "smooth" });
+      }
+    }, 620);
+  }
+
+  const FLYERS = [
+    { n: "7,418", t: "miles to amy" },
+    { n: "2,140", t: "miles to amy" },
+    { n: "916",   t: "miles to amy" },
+    { n: "43",    t: "miles to amy" },
+    { n: "0",     t: "you are here" }
+  ];
+
+  function runDrive() {
+    teardown();
+    if (softMotion) { reveal(); return; }
+
+    stage = document.createElement("div");
+    stage.className = "rd-stage";
+    stage.innerHTML = world() + '<p class="rd-cap"></p><p class="rd-skip">tap to skip</p>';
+    document.body.appendChild(stage);
+
+    const cap = stage.querySelector(".rd-cap");
+    function say(text) {
+      cap.classList.remove("show");
+      later(function () { cap.textContent = text; cap.classList.add("show"); }, 240);
+    }
+
+    FLYERS.forEach(function (f, i) {
+      later(function () {
+        if (!stage) return;
+        const el = document.createElement("div");
+        el.className = "rd-flyer";
+        el.style.setProperty("--sx", (i % 2 ? 46 : -46) + "vw");
+        el.innerHTML = "<b>" + f.n + "</b><span>" + f.t + "</span>";
+        stage.appendChild(el);
+        setTimeout(function () { el.remove(); }, 2200);
+      }, 380 + i * 780);
+    });
+
+    later(function () { say("i've taken a lot of roads."); }, 500);
+    later(function () { say("they all do the same thing."); }, 2500);
+    later(function () { say("they end up at you."); }, 4300);
+
+    later(function () { if (stage) stage.classList.add("clearing"); }, 5400);
+    later(reveal, 5850);
+
+    stage.addEventListener("click", reveal);
+  }
+
+  /* ═════════ 4. fire it when the note opens ═════════ */
+
+  new MutationObserver(function () {
+    if (backdropEl.classList.contains("show")) {
+      if (titleEl) titleEl.textContent = "Arrived.";
+      cancelAnimationFrame(raf);
+      busy = false;
+      driveBtn.disabled = false;
+      driveBtn.textContent = trips > 0 ? "drive again" : "drive";
+      scene.classList.remove("driving");
+      sign.classList.remove("arrive");
+      setOdo(LEGS[trips % LEGS.length]);
+      odoCap.textContent = "miles to you";
+      runDrive();
+    } else {
+      teardown();
+      cancelAnimationFrame(raf);
+      busy = false;
+      plate.classList.remove("go");   /* so it replays next time she opens the note */
+      scene.classList.remove("driving");
+    }
+  }).observe(backdropEl, { attributes: true, attributeFilter: ["class"] });
+})();
+
+</script>
   
 
 
