@@ -1,1329 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Amy's Daily Wordle</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet" />
-<link rel="apple-touch-icon" href="apple-touch-icon.png" />
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Amy's Wordle" />
-<meta name="theme-color" content="#FDFBF7" />
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-  :root {
-    --latte:    #FDFBF7;  /* warm latte cream background     */
-    --espresso: #3E2C23;  /* rich espresso brown             */
-    --mocha:    #6B5142;  /* softer brown for secondary text */
-    --lily:     #FFFFFF;  /* lily white                      */
-    --sage:     #A8BBA0;  /* soft sage green  = correct      */
-    --butter:   #E3C481;  /* warm buttery gold = present     */
-    --taupe:    #C7BCB1;  /* muted taupe gray = absent       */
-    --rose:     #D9A0A5;  /* gentle rose-pink accent         */
-    --blushpk:  #F3D7DA;  /* pale petal pink                 */
-    --border:   #E4DCD1;  /* light coffee-cream border       */
-    --key:      #F1EAE0;  /* keyboard key resting color      */
-  }
-
-  html, body {
-    background: var(--latte);
-    color: var(--espresso);
-    font-family: 'Inter', sans-serif;
-    -webkit-tap-highlight-color: transparent;
-    overflow-x: hidden;
-  }
-
-  .font-display { font-family: 'Playfair Display', serif; }
-  .font-script  { font-family: 'Great Vibes', cursive; }
-
-  /* ---------- Page-load reveal ---------- */
-  .rise { animation: rise 0.7s ease both; }
-  .rise-1 { animation-delay: 0.05s; }
-  .rise-2 { animation-delay: 0.18s; }
-  .rise-3 { animation-delay: 0.32s; }
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ---------- Coffee steam ---------- */
-  .steam path {
-    opacity: 0;
-    animation: steam-rise 2.8s ease-in-out infinite;
-  }
-  .steam path:nth-child(2) { animation-delay: 0.7s; }
-  .steam path:nth-child(3) { animation-delay: 1.4s; }
-  @keyframes steam-rise {
-    0%   { opacity: 0;   transform: translateY(2px); }
-    35%  { opacity: 0.8; }
-    100% { opacity: 0;   transform: translateY(-4px); }
-  }
-
-  /* ---------- Lily sway ---------- */
-  .lily-icon {
-    animation: sway 5.5s ease-in-out infinite;
-    transform-origin: 50% 100%;
-  }
-  @keyframes sway {
-    0%, 100% { transform: rotate(-4deg); }
-    50%      { transform: rotate(4deg); }
-  }
-
-  /* ---------- Drifting lily petals (ambient background) ---------- */
-  .petal {
-    position: fixed;
-    top: -4rem;
-    z-index: 0;
-    pointer-events: none;
-    background: radial-gradient(ellipse at 30% 30%, var(--lily) 0%, var(--blushpk) 75%);
-    border-radius: 65% 35% 60% 40% / 55% 45% 65% 35%;
-    box-shadow: 0 1px 3px rgba(217, 160, 165, 0.15);
-    animation: petal-fall linear infinite;
-  }
-  @keyframes petal-fall {
-    0%   { transform: translateY(-6vh)  translateX(0)       rotate(0deg); }
-    25%  { transform: translateY(26vh)  translateX(2.4rem)  rotate(75deg); }
-    50%  { transform: translateY(52vh)  translateX(-1.6rem) rotate(160deg); }
-    75%  { transform: translateY(78vh)  translateX(2rem)    rotate(235deg); }
-    100% { transform: translateY(110vh) translateX(-1rem)   rotate(330deg); }
-  }
-
-  /* ---------- Victory petal burst ---------- */
-  .burst {
-    position: fixed;
-    z-index: 45;
-    pointer-events: none;
-    border-radius: 65% 35% 60% 40% / 55% 45% 65% 35%;
-    animation: burst 1.2s cubic-bezier(0.16, 0.6, 0.4, 1) forwards;
-  }
-  @keyframes burst {
-    0%   { transform: translate(0, 0) rotate(0deg) scale(0.6); opacity: 1; }
-    100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(1); opacity: 0; }
-  }
-
-  /* ---------- Tiles ---------- */
-  .tile {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: clamp(1.4rem, 6vw, 2rem);
-    font-weight: 700;
-    text-transform: uppercase;
-    border: 2px solid var(--border);
-    border-radius: 0.5rem;
-    background: var(--lily);
-    color: var(--espresso);
-    user-select: none;
-    box-shadow: 0 1px 2px rgba(62, 44, 35, 0.04);
-    transition: transform 0.1s ease, border-color 0.15s ease;
-  }
-  .tile.filled {
-    border-color: var(--mocha);
-    animation: pop 0.12s ease;
-  }
-  @keyframes pop {
-    0%   { transform: scale(1); }
-    50%  { transform: scale(1.08); }
-    100% { transform: scale(1); }
-  }
-
-  .tile.flip { animation: flip 0.55s ease forwards; }
-  @keyframes flip {
-    0%   { transform: rotateX(0deg); }
-    50%  { transform: rotateX(90deg); }
-    100% { transform: rotateX(0deg); }
-  }
-  .tile.correct { background: var(--sage);   border-color: var(--sage);   color: #FFFFFF; }
-  .tile.present { background: var(--butter); border-color: var(--butter); color: #FFFFFF; }
-  .tile.absent  { background: var(--taupe);  border-color: var(--taupe);  color: #FFFFFF; }
-
-  .row.shake { animation: shake 0.45s ease; }
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
-  }
-
-  .tile.dance { animation: dance 0.5s ease; }
-  @keyframes dance {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-10px); }
-  }
-
-  /* ---------- Keyboard ---------- */
-  .key {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: clamp(0.8rem, 3.2vw, 0.95rem);
-    text-transform: uppercase;
-    background: var(--key);
-    color: var(--espresso);
-    border-radius: 0.45rem;
-    height: 3.4rem;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    border: none;
-    transition: background 0.15s ease, color 0.15s ease, transform 0.05s ease;
-    user-select: none;
-  }
-  .key:active { transform: scale(0.94); }
-  .key.wide { flex: 1.6; font-size: 0.72rem; letter-spacing: 0.03em; }
-  .key.correct { background: var(--sage);   color: #fff; }
-  .key.present { background: var(--butter); color: #fff; }
-  .key.absent  { background: var(--taupe);  color: #fff; }
-
-  /* ---------- Toast ---------- */
-  #toast {
-    position: fixed;
-    top: 6.5rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--espresso);
-    color: var(--latte);
-    padding: 0.6rem 1.2rem;
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-    z-index: 60;
-  }
-  #toast.show { opacity: 1; }
-
-  /* ---------- Modal (love-note card) ---------- */
-  #modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(62, 44, 35, 0.45);
-    backdrop-filter: blur(3px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-    z-index: 50;
-  }
-  #modal-backdrop.show { opacity: 1; pointer-events: auto; }
-  #modal-card {
-    background: var(--lily);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
-    max-width: 26rem;
-    width: 100%;
-    padding: 2.25rem 2rem 1.75rem;
-    text-align: center;
-    box-shadow: 0 20px 50px rgba(62, 44, 35, 0.18);
-    transform: translateY(14px) scale(0.98);
-    transition: transform 0.3s ease;
-    position: relative;
-    max-height: calc(100vh - 3rem);
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-  #modal-backdrop.show #modal-card { transform: translateY(0) scale(1); }
-  #modal-card::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 5px;
-    background: linear-gradient(90deg, var(--sage), var(--butter), var(--rose));
-  }
-  /* faint lily watermark behind the note */
-  #modal-card::after {
-    content: "";
-    position: absolute;
-    right: -2.5rem;
-    bottom: -2.5rem;
-    width: 11rem;
-    height: 11rem;
-    background: radial-gradient(ellipse at 30% 30%, var(--blushpk), transparent 70%);
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
-  .divider-heart {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    color: var(--rose);
-    margin: 1.1rem 0;
-  }
-  .divider-heart::before, .divider-heart::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  .signature {
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.7rem;
-    color: var(--rose);
-    margin-top: 1rem;
-    line-height: 1;
-  }
-
-  /* ---------- Anniversary (every August 1): fireworks + bouquet ---------- */
-  /* The bouquet lives in the love-note card but only exists on the day. */
-  .anniv-only { display: none; }
-  body.anniversary .anniv-only { display: block; }
-
-  .bq {
-    display: block;
-    margin: 0.6rem auto 0;
-    width: min(230px, 70vw);
-    height: auto;
-  }
-  @media (max-height: 700px) {
-    .bq { width: min(180px, 60vw); }
-  }
-
-  /* stems draw themselves upward */
-  .bq .stem { stroke-dasharray: 1; }
-  #modal-backdrop.show .bq .stem { animation: stem-grow 0.55s ease 0.1s both; }
-  @keyframes stem-grow {
-    from { stroke-dashoffset: 1; }
-    to   { stroke-dashoffset: 0; }
-  }
-
-  /* each piece of the bouquet pops in from its base, in order */
-  .bq .bqi { transform-box: fill-box; transform-origin: 50% 85%; }
-  #modal-backdrop.show .bq .bqi { animation: bq-pop 0.7s cubic-bezier(0.2, 0.8, 0.3, 1.2) both; }
-  #modal-backdrop.show .bq .d1 { animation-delay: 0.30s; }  /* paper wrap   */
-  #modal-backdrop.show .bq .d2 { animation-delay: 0.42s; }  /* leaves       */
-  #modal-backdrop.show .bq .d3 { animation-delay: 0.52s; }  /* left rosebud */
-  #modal-backdrop.show .bq .d4 { animation-delay: 0.60s; }  /* right rosebud*/
-  #modal-backdrop.show .bq .d5 { animation-delay: 0.68s; }  /* ribbon bow   */
-  #modal-backdrop.show .bq .d6 { animation-delay: 0.78s; }  /* left lily    */
-  #modal-backdrop.show .bq .d7 { animation-delay: 0.86s; }  /* right lily   */
-  #modal-backdrop.show .bq .d8 { animation-delay: 0.96s; }  /* center lily  */
-  #modal-backdrop.show .bq .d9 { animation-delay: 1.10s; }  /* baby's breath*/
-  @keyframes bq-pop {
-    from { transform: scale(0.2) translateY(10px); opacity: 0; }
-    to   { transform: scale(1)   translateY(0);    opacity: 1; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .tile.flip, .tile.filled, .tile.dance, .row.shake,
-    .rise, .steam path, .lily-icon, .petal, .burst,
-    .bq .stem, .bq .bqi { animation: none !important; }
-    .rise { opacity: 1; }
-    * { transition-duration: 0.01ms !important; }
-  }
-</style>
-</head>
-<body class="min-h-screen flex flex-col">
-
-  <!-- Shared gradients for the anniversary bouquet lilies -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <defs>
-      <radialGradient id="lilyPetalG" gradientUnits="userSpaceOnUse" cx="50" cy="50" r="47">
-        <stop offset="0%" stop-color="#E5AFB4"/>
-        <stop offset="28%" stop-color="#F3D7DA"/>
-        <stop offset="62%" stop-color="#FBEDEE"/>
-        <stop offset="100%" stop-color="#FFFFFF"/>
-      </radialGradient>
-      <radialGradient id="lilyPetalBackG" gradientUnits="userSpaceOnUse" cx="50" cy="50" r="47">
-        <stop offset="0%" stop-color="#D9A0A5"/>
-        <stop offset="100%" stop-color="#F6E0E2"/>
-      </radialGradient>
-    </defs>
-  </svg>
-
-  <!-- ============ HEADER ============ -->
-  <header class="w-full border-b relative z-10 rise rise-1" style="border-color: var(--border); background: rgba(253,251,247,0.92);">
-    <div class="max-w-lg mx-auto flex items-center justify-center gap-3.5 py-4 px-4">
-      <!-- Coffee cup with rising steam -->
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--mocha)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <g class="steam">
-          <path d="M8 7c.6-.9-.6-1.7 0-2.8"/>
-          <path d="M11.5 7c.6-.9-.6-1.7 0-2.8"/>
-          <path d="M15 7c.6-.9-.6-1.7 0-2.8"/>
-        </g>
-        <path d="M17 10h1a3 3 0 0 1 0 6h-1"/>
-        <path d="M4 10h13v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-5z"/>
-      </svg>
-
-      <div class="text-center">
-        <h1 class="font-display text-2xl sm:text-3xl font-semibold tracking-wide" style="color: var(--espresso);">Amy's Daily Wordle</h1>
-        <p class="text-[0.7rem] uppercase tracking-[0.25em] mt-0.5" style="color: var(--rose);">a word a day, from me to you</p>
-        <p id="today-line" class="text-[0.7rem] mt-1 font-medium" style="color: var(--mocha);"></p>
-      </div>
-
-      <!-- Swaying lily -->
-      <svg class="lily-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--rose)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 22V10"/>
-        <path d="M12 10C12 6 9 3 6 2c0 4 1.5 7 6 8z"/>
-        <path d="M12 10c0-4 3-7 6-8 0 4-1.5 7-6 8z"/>
-        <path d="M12 14c-1.5 1-4 1.2-6 .5 1.2 2.4 3.8 3.5 6 2.5"/>
-        <path d="M12 14c1.5 1 4 1.2 6 .5-1.2 2.4-3.8 3.5-6 2.5"/>
-      </svg>
-    </div>
-  </header>
-
-  <!-- ============ TOAST ============ -->
-  <div id="toast" role="status"></div>
-
-  <!-- ============ GAME ============ -->
-  <main class="flex-1 w-full max-w-lg mx-auto flex flex-col items-center justify-between px-3 py-4 gap-4 relative z-10">
-    <div id="board" class="grid grid-rows-6 gap-1.5 w-full max-w-[21rem] rise rise-2" aria-label="game board"></div>
-    <div id="keyboard" class="w-full max-w-[32rem] flex flex-col gap-1.5 pb-2 rise rise-3" aria-label="on-screen keyboard"></div>
-  </main>
-
-  <!-- ============ MODAL ============ -->
-  <div id="modal-backdrop">
-    <div id="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <p class="text-[0.65rem] uppercase tracking-[0.3em] mb-2" style="color: var(--mocha);">Amy's Daily Wordle</p>
-      <h2 id="modal-title" class="font-display text-3xl font-semibold mb-1" style="color: var(--espresso);"></h2>
-      <p id="modal-word" class="font-display italic text-xl" style="color: var(--rose);"></p>
-
-      <div class="divider-heart" aria-hidden="true">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--rose)"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.6 2.4 5 5.8 5c2 0 3.4 1.1 4.2 2.4h4c.8-1.3 2.2-2.4 4.2-2.4 3.4 0 5.4 3.6 3.8 6.7C19.5 16.2 12 21 12 21z" transform="scale(0.9) translate(1.3,1.3)"/></svg>
-      </div>
-
-      <p id="modal-message" class="text-[0.95rem] leading-relaxed relative z-10" style="color: var(--mocha);"></p>
-
-      <!-- Anniversary bouquet: hand-tied, assembles itself when the note opens.
-           Only rendered on August 1 (body.anniversary). -->
-      <div class="anniv-only">
-        <svg class="bq" viewBox="0 0 240 150" aria-hidden="true">
-          <!-- stems (draw upward first) -->
-          <g stroke="#8AA07F" stroke-width="2.2" stroke-linecap="round" fill="none">
-            <path class="stem" pathLength="1" d="M120 104 C120 82 120 60 120 42"/>
-            <path class="stem" pathLength="1" d="M113 104 C101 86 90 72 82 60"/>
-            <path class="stem" pathLength="1" d="M127 104 C139 86 150 72 158 60"/>
-            <path class="stem" pathLength="1" d="M115 106 C107 96 101 90 97 84"/>
-            <path class="stem" pathLength="1" d="M125 106 C133 96 139 90 143 84"/>
-          </g>
-
-          <!-- leaves -->
-          <g class="bqi d2" fill="#A8BBA0">
-            <path d="M107 82 C99 78 95 70 96 62 C103 66 107 73 107 82 Z"/>
-            <path d="M133 82 C141 78 145 70 144 62 C137 66 133 73 133 82 Z"/>
-            <path d="M118 78 C114 72 114 66 117 61 C121 66 121 72 118 78 Z" opacity="0.9"/>
-          </g>
-
-          <!-- kraft-paper wrap -->
-          <g class="bqi d1">
-            <path d="M120 148 L86 96 Q120 110 154 96 Z" fill="#F3E8D2" stroke="#E4DCD1" stroke-width="1.5" stroke-linejoin="round"/>
-            <path d="M120 148 L103 100" stroke="#E4D6BC" stroke-width="1" fill="none"/>
-            <path d="M120 148 L137 100" stroke="#E4D6BC" stroke-width="1" fill="none"/>
-          </g>
-
-          <!-- rosebuds -->
-          <g class="bqi d3">
-            <circle cx="97" cy="82" r="7" fill="#F3D7DA" stroke="#E8C7CB" stroke-width="1"/>
-            <path d="M97 82 a3 3 0 0 1 3 3 a4.5 4.5 0 0 1 -6.5 -1.5" fill="none" stroke="#D9A0A5" stroke-width="1.2" stroke-linecap="round"/>
-          </g>
-          <g class="bqi d4">
-            <circle cx="143" cy="82" r="7" fill="#F3D7DA" stroke="#E8C7CB" stroke-width="1"/>
-            <path d="M143 82 a3 3 0 0 0 -3 3 a4.5 4.5 0 0 0 6.5 -1.5" fill="none" stroke="#D9A0A5" stroke-width="1.2" stroke-linecap="round"/>
-          </g>
-
-          <!-- ribbon bow -->
-          <g class="bqi d5">
-            <ellipse cx="111" cy="103" rx="8.5" ry="5" fill="#D9A0A5" opacity="0.95" transform="rotate(-18 111 103)"/>
-            <ellipse cx="129" cy="103" rx="8.5" ry="5" fill="#D9A0A5" opacity="0.95" transform="rotate(18 129 103)"/>
-            <path d="M117 107 C112 118 115 126 110 133" stroke="#D9A0A5" stroke-width="3.4" stroke-linecap="round" fill="none"/>
-            <path d="M123 107 C128 118 125 126 130 133" stroke="#D9A0A5" stroke-width="3.4" stroke-linecap="round" fill="none"/>
-            <circle cx="120" cy="104" r="3.6" fill="#C88A90"/>
-          </g>
-
-          <!-- left lily -->
-          <g transform="translate(82 56) rotate(-14) scale(0.4) translate(-50 -50)">
-            <g class="bqi d6">
-              <g transform="rotate(60 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
-              <g transform="rotate(180 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
-              <g transform="rotate(300 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
-              <g transform="rotate(0 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
-              <g transform="rotate(120 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
-              <g transform="rotate(240 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
-              <circle cx="50" cy="50" r="4" fill="#E6CFA0"/>
-              <circle cx="45" cy="47" r="1.8" fill="#C98F3D"/><circle cx="55" cy="47" r="1.8" fill="#C98F3D"/><circle cx="50" cy="55" r="1.8" fill="#C98F3D"/>
-            </g>
-          </g>
-
-          <!-- right lily -->
-          <g transform="translate(158 56) rotate(14) scale(0.4) translate(-50 -50)">
-            <g class="bqi d7">
-              <g transform="rotate(60 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
-              <g transform="rotate(180 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
-              <g transform="rotate(300 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
-              <g transform="rotate(0 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
-              <g transform="rotate(120 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
-              <g transform="rotate(240 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/></g>
-              <circle cx="50" cy="50" r="4" fill="#E6CFA0"/>
-              <circle cx="45" cy="47" r="1.8" fill="#C98F3D"/><circle cx="55" cy="47" r="1.8" fill="#C98F3D"/><circle cx="50" cy="55" r="1.8" fill="#C98F3D"/>
-            </g>
-          </g>
-
-          <!-- center lily (the big one) -->
-          <g transform="translate(120 36) scale(0.5) translate(-50 -50)">
-            <g class="bqi d8">
-              <g transform="rotate(60 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
-              <g transform="rotate(180 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
-              <g transform="rotate(300 50 50) translate(50 50) scale(0.88) translate(-50 -50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalBackG)"/></g>
-              <g transform="rotate(0 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/><circle cx="49" cy="34" r="1.1" fill="#C87E85" opacity="0.5"/><circle cx="51.6" cy="28" r="0.9" fill="#C87E85" opacity="0.5"/></g>
-              <g transform="rotate(120 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/><circle cx="49" cy="34" r="1.1" fill="#C87E85" opacity="0.5"/><circle cx="51.6" cy="28" r="0.9" fill="#C87E85" opacity="0.5"/></g>
-              <g transform="rotate(240 50 50)"><path d="M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z" fill="url(#lilyPetalG)"/><path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#DFA9AE" stroke-width="1" opacity="0.55" fill="none"/><circle cx="49" cy="34" r="1.1" fill="#C87E85" opacity="0.5"/><circle cx="51.6" cy="28" r="0.9" fill="#C87E85" opacity="0.5"/></g>
-              <g stroke="#E6CFA0" stroke-width="1.2">
-                <path d="M50 50 L58 44"/><path d="M50 50 L50 40"/><path d="M50 50 L42 44"/>
-              </g>
-              <circle cx="58.8" cy="43.4" r="1.9" fill="#C98F3D"/><circle cx="50" cy="39" r="1.9" fill="#C98F3D"/><circle cx="41.2" cy="43.4" r="1.9" fill="#C98F3D"/>
-              <circle cx="50" cy="50" r="2.2" fill="#9DB292"/>
-            </g>
-          </g>
-
-          <!-- baby's breath, sprinkled on top -->
-          <g class="bqi d9">
-            <circle cx="92" cy="42" r="2.1" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="92" cy="42" r="0.8" fill="#E3C481"/>
-            <circle cx="148" cy="42" r="2.1" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="148" cy="42" r="0.8" fill="#E3C481"/>
-            <circle cx="104" cy="30" r="1.9" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="104" cy="30" r="0.7" fill="#E3C481"/>
-            <circle cx="136" cy="30" r="1.9" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="136" cy="30" r="0.7" fill="#E3C481"/>
-            <circle cx="120" cy="14" r="2" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="120" cy="14" r="0.75" fill="#E3C481"/>
-            <circle cx="72" cy="46" r="1.8" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="72" cy="46" r="0.7" fill="#E3C481"/>
-            <circle cx="168" cy="46" r="1.8" fill="#FFFFFF" stroke="#EFE7DA" stroke-width="0.6"/><circle cx="168" cy="46" r="0.7" fill="#E3C481"/>
-          </g>
-        </svg>
-      </div>
-
-      <p class="signature">with all my love</p>
-
-      <p class="mt-4 text-xs" style="color: var(--taupe);">Next word in <span id="countdown" class="font-semibold" style="color: var(--mocha);"></span></p>
-
-      <button id="modal-close" class="mt-4 px-6 py-2.5 rounded-full text-sm font-semibold transition hover:opacity-90 relative z-10"
-              style="background: var(--espresso); color: var(--latte);">
-        See the board
-      </button>
-    </div>
-  </div>
-
-<script>
-/* ==========================================================================
-   AMY'S DAILY WORDLE — word calendar
-   ==========================================================================
-   HOW IT WORKS:
-   - Keys are "MM-DD" (perpetual calendar — the same word repeats each year,
-     so a fully filled calendar runs forever).
-   - `word` must be exactly 5 letters. Guesses aren't dictionary-checked,
-     so invented words are fine too. Stray spaces get trimmed automatically.
-   - `message` is the note revealed in the pop-up when the round ends.
-   - Any date not listed below automatically falls back to FALLBACK_WORDS,
-     so the game never breaks.
-   - Currently filled: July 21 through January 16. Add more any
-     time using the same format:
-     "MM-DD": { word: "XXXXX", message: "Your note to Amy here." },
-   ========================================================================== */
-
-const WORDS = {
-  /* ================= JULY ================= */
-  "07-21": { word: "HELLO", message: "Welcome to your Wordle, Amy — day one. A word a day, every day, and every single one is a reason I love you. Hello, my love. There are 179 more where this came from." },
-  "07-22": { word: "HONEY", message: "Sweet, warm, and somehow makes everything better — you or actual honey?" },
-  "07-23": { word: "LIGHT", message: "You are the light I look for at the end of every long day. Rooms are brighter when you walk into them, and so am I." },
-  "07-24": { word: "HAPPY", message: "HAPPY BIRTHDAY, AMY! Today's word required exactly zero brainstorming. I hope this day is even half as wonderful as you've made my life — now go celebrate. And no, this Wordle is not your whole present. I'm not that brave." },
-  "07-25": { word: "GRACE", message: "You carry yourself with such grace I've never seen in anyone else. And it's your sister's name..." },
-  "07-26": { word: "SWEAT", message: "The perfect word to describe you :) Did I spell sweet wrong?" },
-  "07-27": { word: "HIKES", message: "Can't believe we walked to a hike in DC... But with you I'd go every day :)" },
-  "07-28": { word: "LATTE", message: "Send me a picture of your Latte art, love" },
-  "07-29": { word: "BALLS", message: "__" },
-  "07-30": { word: "ANGEL", message: "You look out for me, you believe in me, you forgive me when I'm being ridiculous. If that's not an angel, I don't know what is." },
-  "07-31": { word: "OLDER", message: "In the words of the Moganshan Didi Driver: '你比你男朋友大几岁啊'" },
-  /* ================= AUGUST ================= */
-  "08-01": { word: "GUESS", message: "Six months since I stopped guessing whether you felt the same. Best answer I ever got. Happy 6 months, love :)" },
-  "08-02": { word: "SIMPS", message: "Can you believe you're my biggest simp? :)" },
-  "08-03": { word: "DRIVE", message: "I'd drive you anywhere:) But I can't wait to passenger prince for you soon" },
-  "08-04": { word: "DREAM", message: "You're the dream I didn't know I was allowed to have :)" },
-  "08-05": { word: "AMYWU", message: "LOOK IT FITS!" },
-  "08-06": { word: "ICHEN", message: "Can't believe this wasn't your first guess after yesterday's word Wu...." },
-  "08-07": { word: "ADORE", message: "I adore you, Wu :)" },
-  "08-08": { word: "MAGIC", message: "I didn't really believe in magic until you made ordinary trips to grocery stores magical :))" },
-  "08-09": { word: "ROSES", message: "Roses are red, violets are blue, sunflowers are yellow, I bet you were expecting something romantic but no, here's some gardening facts. " },
-  "08-10": { word: "BELLE", message: "Surprise :) There's French too, Ma Belle " },
-  "08-11": { word: "BERRY", message: "Why do you like strawberries?" },
-  "08-12": { word: "我非常爱你", message: "Chinese plot twist. You've been getting too many right. " },
-  "08-13": { word: "WUUUU", message: "WUUUUUUUUUUUUUUUUU bet you didn't get this one either :)" },
-  "08-14": { word: "TEETH", message: "Did you brush love?" },
-  "08-15": { word: "LUCKY", message: "My Lucky Charm :)" },
-  "08-16": { word: "CHERI", message: "Mon Chéri :) Time to think trilingually :)" },
-  "08-17": { word: "NOSES", message: "I've seen a lot of noses. But yours is best :>) Now give it a nice big click" },
-  "08-18": { word: "MOMMY", message: "No words... Why was this your guess" },
-  "08-19": { word: "SODAS", message: "Are you a soda? Because you look soda-licious" },
-  "08-20": { word: "SNORE", message: "ZZZZZZzzzzzzzzzzzzzzzzzz" },
-  "08-21": { word: "PHONE", message: "Pick up, I'm calling in 5. " },
-  "08-22": { word: "MISSU", message: "Maybe it's not a real word but its a real feeling :)" },
-  "08-23": { word: "MOCHA", message: "Can't believe that's all I use to drink before I met you..." },
-  "08-24": { word: "FALLS", message: "I falls for you" },
-  "08-25": { word: "TOAST", message: "Are you toast becuase I loaf you" },
-  "08-26": { word: "DROOL", message: "You drool a little sometimes when you sleep" },
-  "08-27": { word: "MOIST", message: "No reason..." },
-  "08-28": { word: "SUSHI", message: "Can't believe I got a sidehug at Hama Sushi. " },
-  "08-29": { word: "PARKS", message: "Century Park :0" },
-  "08-30": { word: "PRIZE", message: "People spend their whole lives chasing some big prize. I got mine early :)." },
-  "08-31": { word: "GOONS", message: "Verb. A hired thug or violent criminal paid to threaten or hurt people." },
-  /* ================= SEPTEMBER ================= */
-  "09-01": { word: "SEVEN", message: "Happy 7 months love :)" },
-  "09-02": { word: "BUTTS", message: "Wu?" },
-  "09-03": { word: "BERRY", message: "I love you berry much wu" },
-  "09-04": { word: "LeCul", message: "Wu? Again in French? " },
-  "09-05": { word: "RIGHT", message: "Look to your right. I'm here :)" },
-  "09-06": { word: "PATCH", message: "Off to the pumpkin farmers..." },
-  "09-07": { word: "ROADS", message: "I'd take any road to get to wu" },
-  "09-08": { word: "CREAM", message: "You're the cream in my coffee — technically optional, but everything is smoother, sweeter, and better with you in it." },
-  "09-09": { word: "APPLE", message: "I promise I'll eat your apple soon..." },
-  "09-10": { word: "FREAK", message: "Freaky Wu" },
-  "09-11": { word: "Cwtch", message: "Adj. A Welsh word meaning a loving, welcoming hug or a safe place. (You)" },
-  "09-12": { word: "BEANS", message: "The best coffee starts with the best beans, and the best days start with you. This is science. Don't question it." },
-  "09-13": { word: "KNEAD", message: "I knead Wu." },
-  "09-14": { word: "CREPE", message: "One day I'm taking you to Paris for real crêpes. Until then, my questionable pan skills are yours every weekend." },
-  "09-15": { word: "PASTA", message: "Date night rule: when in doubt, pasta. You, me, one big plate, and absolutely zero regrets about sharing." },
-  "09-16": { word: "CHUDS", message: "Can we be :)" },
-  "09-17": { word: "MAPLE", message: "Would maple syrup go well in coffee." },
-  "09-18": { word: "Râler", message: "Your professional raler :) ( French Word)" },
-  "09-19": { word: "BREST", message: "Not the opposite of crest apparently." },
-  "09-20": { word: "Drone ", message: "Can't believe you didn't join drone club :(" },
-  "09-21": { word: "Bisou ", message: " I Bisou so much" },
-  "09-22": { word: "OLIVE", message: "Olive you a lot." },
-  "09-23": { word: "GREGS", message: "I should be where greg is." },
-  "09-24": { word: "WEEKS", message: "2 more weeks :)" },
-  "09-25": { word: "CRISP", message: "Like the first crisp morning of fall — you wake up something in me that no amount of coffee ever could." },
-  "09-26": { word: "FROTH", message: "Still waiting on that latte art pic btw... so I made you some instead. Don't laugh at mine :)" },
-  "09-27": { word: "GOURD", message: "Oh my gourd you're cute" },
-  "09-28": { word: "CIDER", message: "Apple cider date when I see you? Not a question btw :)" },
-  "09-29": { word: "CALIN", message: "Câlin. French for cuddle. I'm owed like 40 of these" },
-  "09-30": { word: "SLEPT", message: "Did you actually sleep or were you on your phone till 3 again" },
-  /* ================= OCTOBER ================= */
-  "10-01": { word: "CLOSE", message: "1 more week :)" },
-  "10-02": { word: "PEACH", message: "Peach. No reason. Don't look into it..." },
-  "10-03": { word: "BAGEL", message: "Everything bagel. Because you're my everything. That one was bad I'm sorry" },
-  "10-04": { word: "GRAPE", message: "I'm so grape-ful for you. 4 more days" },
-  "10-05": { word: "SPICY", message: "Pumpkin spice or just spicy? Both. 3 days :)" },
-  "10-06": { word: "HANDS", message: "2 days. Keep both of yours free. They're reserved :)" },
-  "10-07": { word: "NIGHT", message: "Last night of this. Tomorrow's word is the best one" },
-  /* ---- she's in Pittsburgh ---- */
-  "10-08": { word: "HIIII", message: "HIIIIIIIIIIIIII. Welcome to Pittsburgh :) Look up, I'm right here" },
-  "10-09": { word: "NEBBY", message: "Pittsburgh word of the day: nebby. Adj. Nosy. Like you reading my texts over my shoulder" },
-  "10-10": { word: "SAMMY", message: "Primanti's today. Yes the fries go in the sandwich. No I won't explain" },
-  "10-11": { word: "VIEWS", message: "Mt Washington view was nice I guess. Wasn't really looking at it though :)" },
-  "10-12": { word: "STAYS", message: "Can you just stay. I'll share my fries. Even the ones in the sandwich" },
-  /* ---- she left ---- */
-  "10-13": { word: "QUIET", message: "It's way too quiet here now" },
-  "10-14": { word: "AGAIN", message: "When are you coming back. Asking for me" },
-  "10-15": { word: "TIDES", message: "Tides come and go, semesters come and go, but us? We stay. That's the whole plan." },
-  "10-16": { word: "CORAL", message: "Coral takes something plain and turns it into a whole world of color. Remind you of anyone? Go look in a mirror." },
-  "10-17": { word: "SHELL", message: "You pulled me out of my shell — and it turns out the world is a lot better out here with you in it." },
-  "10-18": { word: "RIVER", message: "Like a river, you always find your way — around obstacles, through hard weeks, forward. I'd follow you anywhere downstream." },
-  "10-19": { word: "OASIS", message: "In the middle of my busiest, most chaotic weeks, you are the oasis. Five minutes with you fixes hours of noise." },
-  "10-20": { word: "SEEDS", message: "Every little thing we do together is a seed for the life we're building. I can't wait to watch the garden grow." },
-  "10-21": { word: "LOTUS", message: "The lotus grows up through the mud and still comes out beautiful. You've done the same with every hard thing life has handed you." },
-  "10-22": { word: "STARS", message: "Some people wish on stars. I don't have to anymore — my wish already texts me back." },
-  "10-23": { word: "LUNAR", message: "'I love you to the moon and back' is a cliché, but clichés only get to be clichés by being true." },
-  "10-24": { word: "COMET", message: "Some people pass through your life like comets — bright, rare, unforgettable. You showed up and just... stayed. Even better." },
-  "10-25": { word: "ORBIT", message: "I don't believe in gravity half as much as I believe in you — everything in my life just naturally arranges itself around you." },
-  "10-26": { word: "VENUS", message: "Named for the goddess of love, and the brightest thing in the evening sky. The Romans would have simply called it Amy." },
-  "10-27": { word: "NORTH", message: "You're my north star — when I'm lost, overwhelmed, or twelve time zones away, I just look for you." },
-  "10-28": { word: "SKIES", message: "Blue skies, gray skies, night skies — every single one of them is better when you're under it with me." },
-  "10-29": { word: "SOLAR", message: "You're my personal solar power — I genuinely run better, think clearer, and smile more after time with you." },
-  "10-30": { word: "AGLOW", message: "You leave people aglow — every friend, every stranger, every barista. I'm just lucky enough to get the most of it." },
-  "10-31": { word: "SPELL", message: "Happy Halloween. No costume needed on my account — I've been under your spell since day one." },
-  /* ================= NOVEMBER ================= */
-  "11-01": { word: "GLEAM", message: "That gleam in your eye right before you say something mischievous? That's the exact moment I fell for you. Repeatedly." },
-  "11-02": { word: "GLINT", message: "I catch a glint of you in everything now — songs, menus, dumb memes. You're everywhere, and I love it." },
-  "11-03": { word: "EMBER", message: "Some loves burn out fast. Ours is an ember — steady, warm, and somehow getting stronger the longer it burns." },
-  "11-04": { word: "FLAME", message: "You're not just my flame — you're the whole fireplace. Warmth, light, and the reason home feels like home." },
-  "11-05": { word: "BLAZE", message: "You move through life like a blaze — bright, unstoppable, impossible to ignore. Don't ever dim that for anyone." },
-  "11-06": { word: "TORCH", message: "I've been carrying a torch for you since day one, and I plan to carry it forever. My arms aren't tired." },
-  "11-07": { word: "GLORY", message: "Watching you succeed is my favorite spectator sport. Every win of yours feels like glory to me too." },
-  "11-08": { word: "GRAND", message: "The Grand Canyon, the Grand Palace — overrated, all of it. The grandest thing I've ever witnessed is you, mid-laugh, mid-story." },
-  "11-09": { word: "NOBLE", message: "You do the right thing even when nobody is watching. That quiet nobility is one of a hundred reasons I love you." },
-  "11-10": { word: "IDEAL", message: "I used to keep a mental list describing my ideal person. Then you showed up and made the whole list look unambitious." },
-  "11-11": { word: "ALIVE", message: "Nobody makes me feel more alive than you do — every plan feels like an adventure and every ordinary day feels bigger." },
-  "11-12": { word: "AWAKE", message: "You're the reason I actually want to be awake in the morning. Well — you and coffee. Mostly you." },
-  "11-13": { word: "GIDDY", message: "All this time and you still make me giddy. Teenage-crush, can't-stop-smiling giddy. I hope that never wears off." },
-  "11-14": { word: "SWOON", message: "You still make me swoon. Yes, swoon. Like a character in a Victorian novel. I have accepted my fate." },
-  "11-15": { word: "CRUSH", message: "Fun fact: I still get butterflies when your name pops up on my phone. My crush on you never got the memo that I already have you." },
-  "11-16": { word: "BLUSH", message: "The way you blush when I compliment you is exactly why I will never stop complimenting you. You're doing it right now, aren't you?" },
-  "11-17": { word: "FLIRT", message: "Reminder that I am allowed to flirt with you forever. Anyway — hey. Come here often?" },
-  "11-18": { word: "TEASE", message: "You tease me relentlessly and I wouldn't have it any other way. It keeps me humble. It keeps me yours." },
-  "11-19": { word: "CUPID", message: "Cupid didn't just hit me with one arrow — he emptied the entire quiver. Excellent aim. No complaints." },
-  "11-20": { word: "ARROW", message: "Straight and true, no detours — that's how my heart went to you, and it has never once asked for directions back." },
-  "11-21": { word: "YEARN", message: "A fancy word for what happens every single time we're apart. I don't miss you politely — I yearn. Deal with it." },
-  "11-22": { word: "CRAVE", message: "I crave the little things — your voice at the end of a long day, your head on my shoulder, your terrible puns." },
-  "11-23": { word: "TOUCH", message: "You have a way of making everything you touch better — recipes, playlists, rooms, and most of all, me." },
-  "11-24": { word: "SPOON", message: "Big spoon, little spoon — I honestly don't care which one I am, as long as the other one is you." },
-  "11-25": { word: "KOALA", message: "You hug like a koala — full commitment, no early release. It's my favorite way to end any day." },
-  "11-26": { word: "FEAST", message: "Happy Thanksgiving, Amy. Of everything on the table today, you're the thing I'm most thankful for. It's not close." },
-  "11-27": { word: "OTTER", message: "Otters hold hands while they sleep so they don't drift apart. We could learn nothing from them. We already do it." },
-  "11-28": { word: "SWANS", message: "Swans pick one partner and that's it, for life. Smart birds. I made the same call the day I met you." },
-  "11-29": { word: "DOVES", message: "Doves mate for life, look out for each other, and stand for peace. Sound familiar? It's us." },
-  "11-30": { word: "TEDDY", message: "You're my teddy bear — the comfort I reach for on hard nights, and the one thing nobody else could ever replace." },
-  /* ================= DECEMBER ================= */
-  "12-01": { word: "WALTZ", message: "Life with you feels like a waltz — you lead sometimes, I lead sometimes, and somehow we never step on each other." },
-  "12-02": { word: "TANGO", message: "It takes two to tango, and I can't imagine doing a single step of this dance with anyone but you." },
-  "12-03": { word: "DANCE", message: "My favorite version of you is kitchen-dancing you — socks on, music up, dinner slightly burning. Never stop being her." },
-  "12-04": { word: "MUSIC", message: "You're my favorite song — the one I never skip, know every word to, and still turn up every single time." },
-  "12-05": { word: "LYRIC", message: "Every love song lyric I used to roll my eyes at suddenly makes complete sense. You did that. I blame you entirely." },
-  "12-06": { word: "RHYME", message: "We just rhyme, you and me. Two different words, same sound — and it works every single time." },
-  "12-07": { word: "VERSE", message: "If my life were a poem, meeting you was the verse where it finally started making sense." },
-  "12-08": { word: "POEMS", message: "I'd write you poems, but nothing rhymes with 'the most incredible person I've ever met.' So this Wordle will have to do." },
-  "12-09": { word: "PROSE", message: "Some days deserve poetry; most days are plain prose. You make even the prose days worth rereading." },
-  "12-10": { word: "NOVEL", message: "Our story would make a great novel — slow build, great banter, and a love interest wildly out of the protagonist's league." },
-  "12-11": { word: "STORY", message: "Of all the stories I will ever get to tell, ours is my favorite — and we're only just getting to the good chapters." },
-  "12-12": { word: "FABLE", message: "Every fable ends with a moral. Ours is simple: be patient, be kind, and the best person you'll ever meet might just love you back." },
-  "12-13": { word: "DIARY", message: "If I kept a diary, you'd be in every entry — sometimes as the headline, always as the highlight." },
-  "12-14": { word: "PAGES", message: "I want all the pages with you — the exciting ones, the boring ones, and the ones we'll dog-ear so we can read them again." },
-  "12-15": { word: "MOVIE", message: "Movie night with you beats any theater: better commentary, better snacks, and the best seat in the house is the one next to you." },
-  "12-16": { word: "PIANO", message: "You're like a piano — elegant on the surface, endlessly complex underneath, and capable of making me feel everything at once." },
-  "12-17": { word: "DUETS", message: "Solo acts are fine, but everything I actually want to do — travel, build, grow old — I want as a duet with you." },
-  "12-18": { word: "CHORD", message: "You struck a chord in me the day we met, and it has been ringing ever since. Perfect pitch, apparently." },
-  "12-19": { word: "PLATO", message: "Plato wrote that humans were split in two and spend their lives searching for their other half. I stopped searching a while ago." },
-  "12-20": { word: "LOGIC", message: "By every rule of logic, someone as wonderful as you shouldn't exist. And yet here you are, quietly breaking philosophy daily." },
-  "12-21": { word: "TRUTH", message: "Here's an easy truth: I love you more today than yesterday, and tomorrow is already looking bad for yesterday's record." },
-  "12-22": { word: "FAITH", message: "You believe in me on the days I don't believe in myself, and that faith has carried me further than you will ever know." },
-  "12-23": { word: "TRUST", message: "You're my safest place — the person I trust with the unfinished thoughts, the bad drafts, and the whole heart." },
-  "12-24": { word: "COCOA", message: "Christmas Eve calls for cocoa, blankets, and you. Preferably all three at once, preferably starting now." },
-  "12-25": { word: "MERRY", message: "Merry Christmas, my love. The best gift I've ever found under any tree is getting to be yours." },
-  "12-26": { word: "LOYAL", message: "Through busy seasons, long distances, and everything in between — you show up, every time. Your loyalty is a quiet superpower." },
-  "12-27": { word: "EQUAL", message: "The best part of us: we're true equals. Two whole people who chose each other, and who keep choosing, every single day." },
-  "12-28": { word: "UNITY", message: "Two schools, two schedules, sometimes two continents — and still, somehow, always one team. It's my favorite kind of math." },
-  "12-29": { word: "WHOLE", message: "You don't complete me — you make me want to become more complete. And that's a much better deal." },
-  "12-30": { word: "FOUND", message: "Some people search their whole lives for what I stumbled into. I found you, and I am never, ever giving that up." },
-  "12-31": { word: "TOAST", message: "A toast to the year we just had — and to the one we're about to make even better. Happy New Year's Eve." },
-  /* ================= JANUARY ================= */
-  "01-01": { word: "BEGIN", message: "New year, same us. Every January 1st, my only resolution is to love you a little better than I did last year." },
-  "01-02": { word: "CHOSE", message: "Love at first sight is luck. What we have is better — I chose you, and I keep choosing you, on purpose, daily." },
-  "01-03": { word: "YOURS", message: "Whatever else changes — schools, cities, jobs, years — one thing stays fixed: I'm yours. Fully, gladly, permanently." },
-  "01-04": { word: "LOVED", message: "In case today gets long and loud, remember this: you are so deeply, thoroughly loved. Carry it with you until I can say it in person." },
-  "01-05": { word: "DITTO", message: "You know that movie scene where he says 'ditto' instead of 'I love you'? I used to think it was lazy. Now I get it. Ditto, Amy. Always." },
-  "01-06": { word: "PARIS", message: "One day: you, me, Paris, and you showing off your French while I point at pastries. It's on the list. It's happening." },
-  "01-07": { word: "TRIPS", message: "Planes, trains, questionable road-trip playlists — every trip is better with you, and the itinerary of my life has you on every page." },
-  "01-08": { word: "MILES", message: "However many miles sit between us on any given day, remember: the miles are temporary. We're not." },
-  "01-09": { word: "COAST", message: "One day we'll finally get to coast — and when we do, I want it to be down some long highway with you in the passenger seat, feet on the dash." },
-  "01-10": { word: "CABIN", message: "Future plan: a cabin, a fireplace, a snowstorm outside, and nowhere to be. You bring the books, I'll bring the coffee." },
-  "01-11": { word: "HIKES", message: "You make even the uphill parts fun — on hikes, and in life generally. Same trail, always, you and me." },
-  "01-12": { word: "WALKS", message: "Long walks with you are my favorite kind of therapy — no destination, no agenda, just us and whatever we end up talking about." },
-  "01-13": { word: "STUDY", message: "I could study you for years and still keep finding new things to love. Best subject I ever enrolled in, and no exam required." },
-  "01-14": { word: "SMART", message: "You're the smartest person I know, and the fact that you never make anyone feel small about it makes you even smarter." },
-  "01-15": { word: "WITTY", message: "Your comebacks should honestly be studied. Getting out-witted by you on a daily basis is a privilege I do not take lightly." },
-  "01-16": { word: "HUMOR", message: "They say humor is intelligence showing off. You must be showing off constantly, because nobody on earth makes me laugh like you." },
-};
-
-/* Safety net for any date not filled in above (currently: Jan 17 onward).
-   Picks deterministically from the date, so it's still one fixed word per day. */
-const FALLBACK_WORDS = [
-  { word: "SMILE", message: "Your smile is my favorite thing in the entire world. It has fixed more of my bad days than you will ever know." },
-  { word: "ANGEL", message: "You look out for me, you believe in me, you forgive me when I'm being ridiculous. If that's not an angel, I don't know what is." },
-  { word: "HEART", message: "You have the biggest heart of anyone I've ever met — and somehow you decided to share it with me. Luckiest guy alive." },
-  { word: "SHINE", message: "You shine without even trying. In a classroom, in a kitchen, in a crowd — my eyes always find you first." },
-  { word: "BLOOM", message: "Like your favorite lilies, everything around you seems to bloom. Including me." },
-  { word: "PEACE", message: "Being with you is the calmest my mind ever gets. You are my quiet place in a loud world." },
-  { word: "DREAM", message: "You're the dream I didn't know I was allowed to have. Every plan I make for the future has you in it." },
-  { word: "LAUGH", message: "Nobody makes me laugh like you do. Half my camera roll is just moments I wanted to remember because we were laughing." },
-  { word: "BRAVE", message: "You're braver than you give yourself credit for. Watching you take on new things inspires me to be braver too." },
-  { word: "HONEY", message: "Sweet, warm, and somehow makes everything better — yes, I'm describing you, not the condiment." },
-];
-
-/* ========================= CORE GAME ========================= */
-const ROWS = 6, COLS = 5;
-
-const todayDate = new Date();
-const mm = String(todayDate.getMonth() + 1).padStart(2, "0");
-const dd = String(todayDate.getDate()).padStart(2, "0");
-
-/* ---------- Hidden preview mode (for you, not for Amy) ----------
-   Append ?peek=MM-DD to the URL to play any date, e.g.:
-     index.html?peek=07-24   → birthday mode
-     index.html?peek=09-26   → froth day
-   Add &fresh=1 to wipe that day's saved test progress and replay:
-     index.html?peek=09-26&fresh=1
-   Preview progress is stored under separate "test-" keys, so testing
-   never locks or affects a real day. */
-const params = new URLSearchParams(location.search);
-const peek = params.get("peek");
-const isPeek = !!(peek && /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(peek));
-
-const dateKey = isPeek ? peek : `${mm}-${dd}`;
-const storageKey = (isPeek ? "test-" : "") + `amy-wordle-${todayDate.getFullYear()}-${dateKey}`;
-if (isPeek && params.get("fresh")) {
-  try { localStorage.removeItem(storageKey); } catch (e) {}
-}
-
-function getToday() {
-  const entry = WORDS[dateKey];
-  if (entry && entry.word && entry.word.trim().length === 5) {
-    return { word: entry.word.trim().toUpperCase(), message: entry.message };
-  }
-  const start = new Date(todayDate.getFullYear(), 0, 0);
-  const dayOfYear = Math.floor((todayDate - start) / 86400000);
-  return FALLBACK_WORDS[dayOfYear % FALLBACK_WORDS.length];
-}
-
-const today = getToday();
-const ANSWER = today.word.toUpperCase();
-
-let currentRow = 0;
-let currentGuess = "";
-let gameOver = false;
-let boardTiles = [];
-const keyStates = {};
-
-/* Date line in the header */
-document.getElementById("today-line").textContent = isPeek
-  ? "preview · " + dateKey
-  : todayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-
-/* ---------- Birthday mode (every July 24) ---------- */
-const BIRTHDAY = "07-24";
-if (dateKey === BIRTHDAY) {
-  document.querySelector("header p").textContent = "happy birthday, my love 🎂";
-  setTimeout(() => petalBurst(), 900);        // petal shower as the page opens
-  setTimeout(() => petalBurst(), 2100);       // and one more, because birthday
-}
-
-/* ---------- Anniversary mode (every August 1) ---------- */
-/* Fireworks behind the love note + a bouquet inside it. */
-const ANNIVERSARY = "08-01";
-if (dateKey === ANNIVERSARY) {
-  document.querySelector("header p").textContent = "happy anniversary, my love 💙";
-  document.body.classList.add("anniversary");
-}
-
-/* ========================= AMBIENT PETALS ========================= */
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-if (!reducedMotion) {
-  const PETAL_COUNT = 12;
-  for (let i = 0; i < PETAL_COUNT; i++) {
-    const p = document.createElement("div");
-    p.className = "petal";
-    const size = 9 + Math.random() * 11;
-    p.style.width = size + "px";
-    p.style.height = size * 0.75 + "px";
-    p.style.left = Math.random() * 100 + "vw";
-    p.style.opacity = (0.3 + Math.random() * 0.35).toFixed(2);
-    const dur = 13 + Math.random() * 12;
-    p.style.animationDuration = dur + "s";
-    p.style.animationDelay = -(Math.random() * dur) + "s"; // pre-populate the sky
-    document.body.appendChild(p);
-  }
-}
-
-/* ========================= BOARD ========================= */
-const boardEl = document.getElementById("board");
-for (let r = 0; r < ROWS; r++) {
-  const row = document.createElement("div");
-  row.className = "row grid grid-cols-5 gap-1.5";
-  const tiles = [];
-  for (let c = 0; c < COLS; c++) {
-    const t = document.createElement("div");
-    t.className = "tile";
-    row.appendChild(t);
-    tiles.push(t);
-  }
-  boardEl.appendChild(row);
-  boardTiles.push(tiles);
-}
-
-/* ========================= KEYBOARD ========================= */
-const KEY_ROWS = [
-  ["Q","W","E","R","T","Y","U","I","O","P"],
-  ["A","S","D","F","G","H","J","K","L"],
-  ["ENTER","Z","X","C","V","B","N","M","BACK"],
-];
-const keyboardEl = document.getElementById("keyboard");
-const keyEls = {};
-
-KEY_ROWS.forEach((keys) => {
-  const rowEl = document.createElement("div");
-  rowEl.className = "flex gap-1.5 w-full justify-center";
-  keys.forEach((k) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "key" + (k.length > 1 ? " wide" : "");
-    btn.textContent = k === "BACK" ? "⌫" : k;
-    btn.setAttribute("aria-label", k === "BACK" ? "backspace" : k);
-    btn.addEventListener("click", () => handleKey(k));
-    rowEl.appendChild(btn);
-    keyEls[k] = btn;
-  });
-  keyboardEl.appendChild(rowEl);
-});
-
-document.addEventListener("keydown", (e) => {
-  if (e.metaKey || e.ctrlKey || e.altKey) return;
-  if (e.key === "Enter") handleKey("ENTER");
-  else if (e.key === "Backspace") handleKey("BACK");
-  else if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
-});
-
-/* ========================= INPUT ========================= */
-function handleKey(k) {
-  if (gameOver) return;
-  if (k === "ENTER") return submitGuess();
-  if (k === "BACK") {
-    if (currentGuess.length > 0) {
-      currentGuess = currentGuess.slice(0, -1);
-      const t = boardTiles[currentRow][currentGuess.length];
-      t.textContent = "";
-      t.classList.remove("filled");
-    }
-    return;
-  }
-  if (currentGuess.length < COLS) {
-    const t = boardTiles[currentRow][currentGuess.length];
-    t.textContent = k;
-    t.classList.remove("filled");
-    void t.offsetWidth;
-    t.classList.add("filled");
-    currentGuess += k;
-  }
-}
-
-/* ========================= EVALUATION ========================= */
-function evaluate(guess, answer) {
-  const result = new Array(COLS).fill("absent");
-  const remaining = {};
-  for (let i = 0; i < COLS; i++) {
-    if (guess[i] === answer[i]) result[i] = "correct";
-    else remaining[answer[i]] = (remaining[answer[i]] || 0) + 1;
-  }
-  for (let i = 0; i < COLS; i++) {
-    if (result[i] === "correct") continue;
-    if (remaining[guess[i]] > 0) {
-      result[i] = "present";
-      remaining[guess[i]]--;
-    }
-  }
-  return result;
-}
-
-const RANK = { absent: 0, present: 1, correct: 2 };
-function updateKeyStates(guess, result) {
-  for (let i = 0; i < COLS; i++) {
-    const L = guess[i], s = result[i];
-    if (!keyStates[L] || RANK[s] > RANK[keyStates[L]]) keyStates[L] = s;
-  }
-  Object.entries(keyStates).forEach(([L, s]) => {
-    if (keyEls[L]) {
-      keyEls[L].classList.remove("correct", "present", "absent");
-      keyEls[L].classList.add(s);
-    }
-  });
-}
-
-/* ========================= SUBMIT ========================= */
-function submitGuess() {
-  if (currentGuess.length < COLS) {
-    showToast("Not enough letters, love ☕");
-    boardEl.children[currentRow].classList.add("shake");
-    setTimeout(() => boardEl.children[currentRow].classList.remove("shake"), 500);
-    return;
-  }
-
-  const guess = currentGuess;
-  const result = evaluate(guess, ANSWER);
-  const row = boardTiles[currentRow];
-  gameOver = true; // lock input during animation
-
-  row.forEach((tile, i) => {
-    setTimeout(() => {
-      tile.classList.add("flip");
-      setTimeout(() => tile.classList.add(result[i]), 270);
-    }, i * 300);
-  });
-
-  const totalDelay = COLS * 300 + 300;
-  setTimeout(() => {
-    updateKeyStates(guess, result);
-    const won = guess === ANSWER;
-    const rowIndexAtSubmit = currentRow;
-    currentRow++;
-    currentGuess = "";
-    saveState(won ? "won" : currentRow >= ROWS ? "lost" : "playing");
-
-    if (won) {
-      row.forEach((tile, i) => setTimeout(() => tile.classList.add("dance"), i * 90));
-      petalBurst();
-      setTimeout(() => endGame(true, rowIndexAtSubmit + 1), 1000);
-    } else if (currentRow >= ROWS) {
-      setTimeout(() => endGame(false), 400);
-    } else {
-      gameOver = false;
-    }
-  }, totalDelay);
-}
-
-/* ========================= VICTORY PETAL BURST ========================= */
-const BURST_COLORS = ["var(--sage)", "var(--butter)", "var(--rose)", "var(--blushpk)", "var(--lily)"];
-function petalBurst() {
-  if (reducedMotion) return;
-  const rect = boardEl.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  for (let i = 0; i < 26; i++) {
-    const p = document.createElement("div");
-    p.className = "burst";
-    const size = 8 + Math.random() * 10;
-    p.style.width = size + "px";
-    p.style.height = size * 0.75 + "px";
-    p.style.left = cx + "px";
-    p.style.top = cy + "px";
-    p.style.background = BURST_COLORS[i % BURST_COLORS.length];
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 70 + Math.random() * 150;
-    p.style.setProperty("--tx", Math.cos(angle) * dist + "px");
-    p.style.setProperty("--ty", (Math.sin(angle) * dist - 60) + "px"); // bias upward
-    p.style.setProperty("--rot", (Math.random() * 540 - 270) + "deg");
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 1300);
-  }
-}
-
-/* ========================= ANNIVERSARY FIREWORKS ========================= */
-/* Soft fireworks that pop behind the love-note card. The dimmed modal
-   backdrop acts as the night sky, so the sparks glow against it.
-   Launched every time the note opens on August 1. */
-function fireworksShow() {
-  if (reducedMotion) return;
-  if (document.getElementById("fw-canvas")) return; // one show at a time
-
-  const cv = document.createElement("canvas");
-  cv.id = "fw-canvas";
-  cv.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;";
-  const card = document.getElementById("modal-card");
-  backdrop.insertBefore(cv, card);
-
-  const DPR = Math.min(window.devicePixelRatio || 1, 2);
-  const W = window.innerWidth, H = window.innerHeight;
-  cv.width = W * DPR;
-  cv.height = H * DPR;
-  const ctx = cv.getContext("2d");
-  ctx.scale(DPR, DPR);
-
-  const COLORS = ["#E8B7BC", "#EFD29A", "#BFD0B6", "#FBE3E5", "#FFF3E2"];
-  let rockets = [], sparks = [], launched = 0;
-  const LAUNCHES = 6;
-
-  function launch() {
-    rockets.push({
-      x: W * (0.15 + Math.random() * 0.7),
-      y: H + 8,
-      vx: (Math.random() - 0.5) * 1.4,
-      vy: -(H * 0.0085 + 2 + Math.random() * 1.5),
-      color: COLORS[launched % COLORS.length],
-    });
-    launched++;
-    if (launched < LAUNCHES) setTimeout(launch, 420 + Math.random() * 480);
-  }
-
-  function explode(x, y, color) {
-    const n = 34 + Math.floor(Math.random() * 14);
-    for (let i = 0; i < n; i++) {
-      const a = (Math.PI * 2 * i) / n + Math.random() * 0.25;
-      const sp = 1.6 + Math.random() * 2.4;
-      sparks.push({
-        x, y,
-        vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp,
-        life: 1,
-        decay: 0.011 + Math.random() * 0.011,
-        r: 1.4 + Math.random() * 1.3,
-        color: Math.random() < 0.7 ? color : "#FFF9F0",
-      });
-    }
-  }
-
-  let raf;
-  function frame() {
-    ctx.clearRect(0, 0, W, H);
-
-    // rockets: bright streaks climbing
-    for (const r of rockets) {
-      r.x += r.vx;
-      r.y += r.vy;
-      r.vy += 0.07; // gravity slows the climb
-      ctx.globalAlpha = 0.9;
-      ctx.strokeStyle = r.color;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(r.x - r.vx * 3, r.y - r.vy * 3);
-      ctx.lineTo(r.x, r.y);
-      ctx.stroke();
-    }
-    rockets = rockets.filter(r => {
-      if (r.vy >= -1.2 || r.y < H * 0.22) {
-        explode(r.x, r.y, r.color);
-        return false;
-      }
-      return true;
-    });
-
-    // sparks: glowing embers drifting down
-    for (const s of sparks) {
-      s.x += s.vx;
-      s.y += s.vy;
-      s.vy += 0.035;
-      s.vx *= 0.985;
-      s.vy *= 0.985;
-      s.life -= s.decay;
-      if (s.life > 0) {
-        ctx.globalAlpha = Math.max(s.life, 0);
-        ctx.fillStyle = s.color;
-        ctx.shadowColor = s.color;
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = 1;
-    sparks = sparks.filter(s => s.life > 0);
-
-    if (launched >= LAUNCHES && rockets.length === 0 && sparks.length === 0) {
-      cancelAnimationFrame(raf);
-      cv.remove();
-      return;
-    }
-    raf = requestAnimationFrame(frame);
-  }
-
-  launch();
-  raf = requestAnimationFrame(frame);
-  setTimeout(() => { // safety cleanup
-    if (cv.isConnected) { cancelAnimationFrame(raf); cv.remove(); }
-  }, 12000);
-}
-
-/* ========================= END / MODAL ========================= */
-const WIN_TITLES = ["Genius!", "Brilliant!", "Wonderful!", "Beautiful!", "You did it!", "Just in time!"];
-
-function endGame(won, attempt) {
-  gameOver = true;
-  const title = dateKey === ANNIVERSARY
-    ? "Happy Anniversary!"
-    : won
-      ? WIN_TITLES[Math.min(attempt - 1, WIN_TITLES.length - 1)]
-      : "The word was…";
-  openModal(title);
-}
-
-const backdrop = document.getElementById("modal-backdrop");
-function openModal(title) {
-  document.getElementById("modal-title").textContent = title;
-  document.getElementById("modal-word").textContent = "“" + ANSWER + "”";
-  document.getElementById("modal-message").textContent = today.message;
-  backdrop.classList.add("show");
-  if (dateKey === ANNIVERSARY) fireworksShow();
-  startCountdown();
-}
-document.getElementById("modal-close").addEventListener("click", () => backdrop.classList.remove("show"));
-backdrop.addEventListener("click", (e) => { if (e.target === backdrop) backdrop.classList.remove("show"); });
-
-function startCountdown() {
-  const el = document.getElementById("countdown");
-  function tick() {
-    const now = new Date();
-    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    let s = Math.floor((next - now) / 1000);
-    const h = String(Math.floor(s / 3600)).padStart(2, "0");
-    const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
-    const sec = String(s % 60).padStart(2, "0");
-    el.textContent = `${h}:${m}:${sec}`;
-  }
-  tick();
-  setInterval(tick, 1000);
-}
-
-/* ========================= TOAST ========================= */
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
-}
-
-/* ========================= PERSISTENCE ========================= */
-function saveState(status) {
-  const guesses = [];
-  for (let r = 0; r < currentRow; r++) {
-    guesses.push(boardTiles[r].map((t) => t.textContent).join(""));
-  }
-  try {
-    localStorage.setItem(storageKey, JSON.stringify({ guesses, status }));
-  } catch (e) { /* private browsing — game still works, just won't persist */ }
-}
-
-function restoreState() {
-  let saved;
-  try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch (e) { return; }
-  if (!saved || !Array.isArray(saved.guesses)) return;
-
-  saved.guesses.forEach((guess, r) => {
-    const result = evaluate(guess, ANSWER);
-    boardTiles[r].forEach((tile, i) => {
-      tile.textContent = guess[i];
-      tile.classList.add(result[i]);
-    });
-    updateKeyStates(guess, result);
-  });
-  currentRow = saved.guesses.length;
-
-  if (saved.status === "won") {
-    gameOver = true;
-    setTimeout(() => endGame(true, currentRow), 500);
-  } else if (saved.status === "lost") {
-    gameOver = true;
-    setTimeout(() => endGame(false), 500);
-  }
-}
-
-restoreState();
-</script>
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-   FROTH DAY · September 26 · "FROTH"
-
-   Optional: a folder called  froth/  sitting next to index.html, holding:
-     froth/amy-1.png     (a face crop — becomes a "latte portrait")
-   If it's missing, that one design just quietly gets skipped.
-
-   Runs only on the date set in FROTH_DAY. Any other day: does nothing.
-   Test it early with:  index.html?peek=09-26&fresh=1
+<!-- ═══════════════════════════════════════════════════════════════════
+   SLEPT DAY · September 30 · "SLEPT"
+   Paste this whole block (and the SPICY block under it) at the very
+   bottom of index.html, right before the closing </body> tag,
+   i.e. right after the FROTH DAY block.
+
+   Needs:  toast/amy-4.png   (the glasses / finger-on-lip photo)
+
+   Runs only on the date set in SLEPT_DAY. Any other day: does nothing.
+   Test it early with:  index.html?peek=09-30&fresh=1
    ═══════════════════════════════════════════════════════════════════ -->
 <style>
-  /* everything is scoped to body.frothday so no other day can be touched */
+  /* everything is scoped to body.sleptday so no other day can be touched */
 
-  /* ---------- the cup (shared by the intro and the note) ---------- */
-  body.frothday .fr-cupwrap {
-    position: relative;
-    width: 200px;
-    aspect-ratio: 1 / 1;
-    margin: 0 auto;
-  }
-  body.frothday .fr-cup { display: block; width: 100%; height: 100%; overflow: visible; }
-
-  body.frothday .fr-liquid {
-    transform-box: view-box;
-    transform-origin: 100px 100px;
-    transition: transform 0.6s cubic-bezier(0.3, 0.8, 0.3, 1), opacity 0.45s ease;
-  }
-  body.frothday .fr-stain { opacity: 0; transition: opacity 0.5s ease 0.2s; }
-
-  /* latte art blooming out from where the milk hits */
-  body.frothday .fr-design {
-    transform-box: view-box;
-    transform-origin: 100px 100px;
-    animation: fr-bloom 0.95s cubic-bezier(0.2, 0.85, 0.3, 1.15) both;
-  }
-  @keyframes fr-bloom {
-    0%   { opacity: 0; transform: scale(0.08) rotate(-28deg); }
-    35%  { opacity: 1; }
-    70%  { transform: scale(1.05) rotate(3deg); }
-    100% { opacity: 1; transform: scale(1) rotate(0deg); }
-  }
-  body.frothday .fr-design.out { animation: fr-swirl 0.45s ease-in forwards; }
-  @keyframes fr-swirl { to { opacity: 0; transform: scale(0.35) rotate(160deg); } }
-  body.frothday .fr-design.wobble { animation: fr-wobble 0.9s ease-in-out; }
-  @keyframes fr-wobble {
-    0%, 100% { transform: rotate(0deg) scale(1); }
-    25%      { transform: rotate(-7deg) scale(1.03, 0.97); }
-    55%      { transform: rotate(5deg) scale(0.98, 1.02); }
-    80%      { transform: rotate(-2deg); }
-  }
-  body.frothday .fr-face { filter: sepia(1) saturate(0.55) brightness(1.3) contrast(0.85); }
-
-  /* milk pitcher + the pour */
-  body.frothday .fr-pitcher {
-    position: absolute;
-    left: 49%;
-    top: -33%;
-    width: 30%;
-    height: 25%;
-    opacity: 0;
-    transform-origin: 3% 16%;          /* tips from the spout */
-    transform: rotate(0deg);
-    transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.3, 0.8, 0.3, 1);
-    z-index: 3;
-    pointer-events: none;
-  }
-  body.frothday .pouring .fr-pitcher { opacity: 1; transform: rotate(-32deg); }
-
-  body.frothday .fr-stream {
-    position: absolute;
-    left: 50%;
-    top: -29%;
-    width: 2.6%;
-    height: 79%;
-    margin-left: -1.3%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #EADBC6 0%, #FFFFFF 50%, #EADBC6 100%);
-    z-index: 2;
-    pointer-events: none;
-    -webkit-clip-path: inset(0 0 100% 0);
-    clip-path: inset(0 0 100% 0);
-  }
-  body.frothday .pouring .fr-stream { animation: fr-stream 1.25s ease 0.3s forwards; }
-  @keyframes fr-stream {
-    0%   { -webkit-clip-path: inset(0 0 100% 0); clip-path: inset(0 0 100% 0); }
-    28%  { -webkit-clip-path: inset(0 0 0 0);    clip-path: inset(0 0 0 0); }
-    76%  { -webkit-clip-path: inset(0 0 0 0);    clip-path: inset(0 0 0 0); }
-    100% { -webkit-clip-path: inset(100% 0 0 0); clip-path: inset(100% 0 0 0); }
-  }
-
-  /* ---------- the intro, full screen ---------- */
-  body.frothday .fr-stage {
+  /* ---------- the intro: 3am, full screen ---------- */
+  body.sleptday .sl-stage {
     position: fixed;
     inset: 0;
     z-index: 58;
     overflow: hidden;
     cursor: pointer;
-    background: rgba(253, 251, 247, 0.97);
+    background: radial-gradient(ellipse at 50% 45%, #3A2E3E 0%, #221A24 60%, #16111A 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1.4rem;
+    gap: 1.3rem;
     transition: opacity 0.45s ease;
   }
-  body.frothday .fr-stage.clearing { opacity: 0; }
-  body.frothday .fr-stage .fr-cupwrap { width: min(280px, 72vw); margin-top: 90px; }
-  body.frothday .fr-stage .fr-liquid {
-    transform: scale(0.1);
-    opacity: 0;
-    transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.4s ease;
-  }
-  body.frothday .fr-stage .shot .fr-liquid { transform: scale(1); opacity: 1; }
+  body.sleptday .sl-stage.clearing { opacity: 0; }
 
-  body.frothday .fr-cap {
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.75rem;
-    line-height: 1.35;
-    color: var(--mocha);
-    text-align: center;
-    max-width: 300px;
+  body.sleptday .sl-bigclock {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 3.2rem;
+    line-height: 1;
+    color: #F3D7DA;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 18px rgba(217, 160, 165, 0.55);
+  }
+  body.sleptday .sl-bigclock small { font-size: 1rem; margin-left: 0.35rem; opacity: 0.7; }
+
+  body.sleptday .sl-glow {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid rgba(253, 251, 247, 0.18);
+    box-shadow: 0 0 44px 12px rgba(140, 170, 255, 0.35);
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+  }
+  body.sleptday .sl-glow.show { opacity: 1; transform: scale(1); }
+  body.sleptday .sl-glow img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 55% 55%;
+    filter: brightness(0.92) saturate(0.7);
+  }
+  body.sleptday .sl-glow::after {        /* blue phone light on her face */
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 75%, rgba(150, 180, 255, 0.3), rgba(40, 50, 90, 0.3));
+    mix-blend-mode: screen;
+  }
+
+  body.sleptday .sl-cap {
+    width: min(320px, 84vw);
     min-height: 2.4rem;
+    text-align: center;
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.85rem;
+    line-height: 1.35;
+    color: #FDFBF7;
     opacity: 0;
     transform: translateY(8px);
     transition: opacity 0.5s ease, transform 0.5s ease;
   }
-  body.frothday .fr-cap.show { opacity: 1; transform: translateY(0); }
+  body.sleptday .sl-cap.show { opacity: 1; transform: translateY(0); }
 
-  body.frothday .fr-skip {
+  body.sleptday .sl-skip {
     position: absolute;
     bottom: 1.6rem;
     left: 50%;
@@ -1331,39 +91,214 @@ restoreState();
     font-size: 0.62rem;
     letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: var(--taupe);
+    color: rgba(253, 251, 247, 0.5);
   }
 
-  /* ---------- the cup, inside the love note ---------- */
-  body.frothday .fr {
+  /* ---------- the bedroom, inside the love note ---------- */
+  body.sleptday .sl {
     position: relative;
     z-index: 10;
-    margin-top: 1.2rem;
-    padding-top: 72px;                 /* room for the pitcher */
+    margin-top: 1.3rem;
+    --bri: 1;
+    --pg: 0.6;
   }
-  body.frothday .fr .fr-cupwrap {
+  body.sleptday .sl[data-drowse="1"] { --bri: 0.93; --pg: 0.48; }
+  body.sleptday .sl[data-drowse="2"] { --bri: 0.85; --pg: 0.34; }
+  body.sleptday .sl[data-drowse="3"] { --bri: 0.77; --pg: 0.22; }
+  body.sleptday .sl[data-drowse="4"] { --bri: 0.7;  --pg: 0.1; }
+  body.sleptday .sl[data-drowse="5"] { --bri: 0.62; --pg: 0; }
+
+  body.sleptday .sl-scene {
+    position: relative;
+    width: min(252px, 68vw);
+    aspect-ratio: 252 / 184;
+    margin: 0 auto;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #221A2B 0%, #3A2C3E 62%, #4A3844 100%);
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 24px rgba(62, 44, 35, 0.2);
     opacity: 0;
     transform: scale(0.9);
     transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
   }
-  body.frothday .fr.go .fr-cupwrap { opacity: 1; transform: scale(1); }
-  body.frothday .fr.sipping .fr-cupwrap { animation: fr-slurp 0.4s ease; }
-  @keyframes fr-slurp { 40% { transform: scale(1.04, 0.96); } }
+  body.sleptday .sl.go .sl-scene { opacity: 1; transform: scale(1); }
 
-  /* sips: the coffee level drops (it's a tapered cup, seen from above) */
-  body.frothday .fr[data-sip="1"] .fr-liquid { transform: scale(0.88); }
-  body.frothday .fr[data-sip="2"] .fr-liquid { transform: scale(0.74); }
-  body.frothday .fr[data-sip="3"] .fr-liquid { transform: scale(0.55); opacity: 0; }
-  body.frothday .fr[data-sip="3"] .fr-stain  { opacity: 0.45; }
+  body.sleptday .sl-stars { position: absolute; inset: 0; }
+  body.sleptday .sl-stars i {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: #FDFBF7;
+    animation: sl-twinkle 2.6s ease-in-out infinite;
+  }
+  @keyframes sl-twinkle { 50% { opacity: 0.2; } }
 
-  body.frothday .fr-labels { text-align: center; margin-top: 0.9rem; min-height: 2.6rem; }
-  body.frothday .fr-name {
+  body.sleptday .sl-moon {
+    position: absolute;
+    right: 9%;
+    top: 8%;
+    width: 11%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    box-shadow: inset 7px -3px 0 0 #F6DFA8;
+    filter: drop-shadow(0 0 5px rgba(246, 223, 168, 0.35));
+    transition: filter 0.8s ease;
+  }
+  body.sleptday .sl.asleep .sl-moon { filter: drop-shadow(0 0 14px rgba(246, 223, 168, 0.9)); }
+
+  body.sleptday .sl-clock {
+    position: absolute;
+    right: 7%;
+    top: 29%;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    color: rgba(243, 215, 218, 0.85);
+    font-variant-numeric: tabular-nums;
+  }
+  body.sleptday .sl-clock b { font-size: 0.8rem; font-weight: 600; }
+
+  /* the thought bubble the sheep jump through */
+  body.sleptday .sl-bubble {
+    position: absolute;
+    left: 3%;
+    top: 5%;
+    width: 46%;
+    height: 28%;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(253, 251, 247, 0.1);
+    border: 1px dashed rgba(253, 251, 247, 0.35);
+  }
+  body.sleptday .sl-fence {
+    position: absolute;
+    left: 50%;
+    bottom: 8%;
+    width: 22%;
+    margin-left: -11%;
+  }
+  body.sleptday .sl-fence svg { display: block; width: 100%; }
+
+  body.sleptday .sl-sheep {
+    position: absolute;
+    bottom: 10%;
+    left: -30%;
+    width: 30%;
+    animation: sl-run 1.4s linear forwards;
+  }
+  @keyframes sl-run { to { left: 105%; } }
+  body.sleptday .sl-hop { animation: sl-hop 1.4s ease-in-out forwards; }
+  @keyframes sl-hop {
+    0%, 34%   { transform: translateY(0) rotate(0deg); }
+    50%       { transform: translateY(-62%) rotate(-8deg); }
+    66%, 100% { transform: translateY(0) rotate(0deg); }
+  }
+  body.sleptday .sl-sheep svg { display: block; width: 100%; }
+
+  /* the bed */
+  body.sleptday .sl-pillow {
+    position: absolute;
+    left: 50%;
+    bottom: 16%;
+    width: 62%;
+    height: 36%;
+    margin-left: -31%;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #FDFBF7 0%, #EDE3D6 100%);
+    opacity: 0.95;
+  }
+  body.sleptday .sl-face {
+    position: absolute;
+    left: 50%;
+    bottom: 20%;
+    width: 34%;
+    aspect-ratio: 1 / 1;
+    margin-left: -17%;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #FDFBF7;
+    z-index: 2;
+    box-shadow: 0 0 22px 5px rgba(150, 180, 255, var(--pg));
+    transition: box-shadow 0.7s ease;
+  }
+  body.sleptday .sl-face img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 55% 55%;
+    filter: brightness(var(--bri));
+    transition: filter 0.7s ease;
+  }
+
+  body.sleptday .sl-phone {
+    position: absolute;
+    left: 66%;
+    bottom: 24%;
+    width: 8%;
+    height: 17%;
+    z-index: 3;
+    border-radius: 4px;
+    border: 2px solid #2B2233;
+    background: linear-gradient(160deg, #DCE7FF 0%, #9FB8F0 100%);
+    box-shadow: 0 0 12px 3px rgba(160, 190, 255, var(--pg));
+    transform: rotate(-12deg);
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.6s ease, box-shadow 0.7s ease;
+  }
+  body.sleptday .sl-phone.nope { animation: sl-nope 0.45s ease; }
+  @keyframes sl-nope {
+    0%, 100% { transform: rotate(-12deg); }
+    30%      { transform: rotate(-26deg) translateX(-2px); }
+    60%      { transform: rotate(2deg) translateX(2px); }
+  }
+  body.sleptday .sl.asleep .sl-phone { transform: translate(10px, 70px) rotate(50deg); opacity: 0; }
+
+  body.sleptday .sl-blanket {
+    position: absolute;
+    left: 4%;
+    right: 4%;
+    bottom: -4%;
+    height: 36%;
+    z-index: 4;
+    border-radius: 20px 20px 0 0;
+    border-top: 2px dashed rgba(253, 251, 247, 0.5);
+    background:
+      repeating-linear-gradient(90deg, transparent 0 16px, rgba(255, 255, 255, 0.16) 16px 17px),
+      repeating-linear-gradient(0deg, transparent 0 16px, rgba(255, 255, 255, 0.16) 16px 17px),
+      linear-gradient(180deg, #D9A0A5 0%, #C88A90 100%);
+    box-shadow: 0 -3px 8px rgba(0, 0, 0, 0.25);
+    transform: translateY(14%);
+    transition: transform 0.9s cubic-bezier(0.3, 0.8, 0.3, 1);
+  }
+  body.sleptday .sl.asleep .sl-blanket { transform: translateY(-12%); }
+
+  body.sleptday .sl-z {
+    position: absolute;
+    left: 63%;
+    top: 30%;
+    z-index: 5;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    color: #F3D7DA;
+    pointer-events: none;
+    animation: sl-z 2.4s ease-out forwards;
+  }
+  @keyframes sl-z {
+    0%   { opacity: 0; transform: translate(0, 0) scale(0.6); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(26px, -46px) scale(1.3); }
+  }
+
+  /* labels + controls, same family as the other days */
+  body.sleptday .sl-labels { text-align: center; margin-top: 0.9rem; min-height: 2.6rem; }
+  body.sleptday .sl-name {
     display: block;
     font-family: 'Playfair Display', serif;
     font-size: 1rem;
     color: var(--espresso);
   }
-  body.frothday .fr-line {
+  body.sleptday .sl-line {
     display: block;
     font-family: 'Great Vibes', cursive;
     font-size: 1.15rem;
@@ -1371,14 +306,13 @@ restoreState();
     margin-top: 0.05rem;
     min-height: 1.3rem;
   }
-
-  body.frothday .fr-actions {
+  body.sleptday .sl-actions {
     display: flex;
     justify-content: center;
     gap: 0.5rem;
     margin-top: 0.9rem;
   }
-  body.frothday .fr-btn {
+  body.sleptday .sl-btn {
     font-family: 'Inter', sans-serif;
     font-size: 0.7rem;
     font-weight: 600;
@@ -1389,23 +323,22 @@ restoreState();
     color: var(--mocha);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.06s ease;
+    transition: transform 0.06s ease;
   }
-  body.frothday .fr-btn:active { transform: scale(0.95); }
-  body.frothday .fr-btn.pour { background: var(--rose); border-color: var(--rose); color: #fff; }
-  body.frothday .fr-btn[disabled] { opacity: 0.55; cursor: default; }
+  body.sleptday .sl-btn:active { transform: scale(0.95); }
+  body.sleptday .sl-btn.main { background: #4A3844; border-color: #4A3844; color: #F3D7DA; }
 
-  body.frothday .fr-hint {
+  body.sleptday .sl-hint {
     text-align: center;
     font-size: 0.72rem;
     color: var(--taupe);
     margin-top: 0.65rem;
-    animation: fr-pulse 2.4s ease-in-out infinite;
+    animation: sl-pulse 2.4s ease-in-out infinite;
   }
-  body.frothday .fr-hint.gone { display: none; }
-  @keyframes fr-pulse { 50% { opacity: 0.45; } }
+  body.sleptday .sl-hint.gone { display: none; }
+  @keyframes sl-pulse { 50% { opacity: 0.45; } }
 
-  body.frothday .fr-count {
+  body.sleptday .sl-count {
     text-align: center;
     font-size: 0.72rem;
     font-weight: 600;
@@ -1413,11 +346,10 @@ restoreState();
     margin-top: 0.7rem;
     min-height: 1rem;
   }
-  body.frothday .fr-count.pop { animation: fr-pop 0.3s ease; }
-  @keyframes fr-pop { 50% { transform: scale(1.13); } }
+  body.sleptday .sl-count.pop { animation: sl-pop 0.3s ease; }
+  @keyframes sl-pop { 50% { transform: scale(1.13); } }
 
-  /* little words that float off the cup */
-  body.frothday .fr-fx {
+  body.sleptday .sl-fx {
     position: fixed;
     z-index: 70;
     pointer-events: none;
@@ -1425,29 +357,25 @@ restoreState();
     font-size: 1.5rem;
     color: var(--rose);
     text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
-    animation: fr-float 1s ease-out forwards;
+    animation: sl-float 1s ease-out forwards;
   }
-  @keyframes fr-float {
+  @keyframes sl-float {
     0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
     25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
     100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
   }
 
   @media (max-height: 780px) {
-    body.frothday .fr { margin-top: 0.8rem; padding-top: 60px; }
-    body.frothday .fr .fr-cupwrap { width: 172px; }
+    body.sleptday .sl { margin-top: 0.9rem; }
+    body.sleptday .sl-scene { width: min(214px, 60vw); }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    body.frothday .fr-design,
-    body.frothday .fr-design.out,
-    body.frothday .fr-design.wobble,
-    body.frothday .pouring .fr-stream,
-    body.frothday .fr-hint,
-    body.frothday .fr-fx,
-    body.frothday .fr.sipping .fr-cupwrap { animation: none !important; }
-    body.frothday .fr .fr-cupwrap { opacity: 1 !important; transform: none !important; transition: none; }
-    body.frothday .fr-pitcher { display: none; }
+    body.sleptday .sl-scene { opacity: 1 !important; transform: none !important; transition: none; }
+    body.sleptday .sl-stars i,
+    body.sleptday .sl-hint,
+    body.sleptday .sl-fx,
+    body.sleptday .sl-phone.nope { animation: none !important; }
   }
 </style>
 
@@ -1456,15 +384,15 @@ restoreState();
   "use strict";
 
   /* ── change this one line to move the whole thing to another date ── */
-  const FROTH_DAY = "09-26";
+  const SLEPT_DAY = "09-30";
 
-  /* optional photo for the "latte portrait", relative to index.html */
-  const DIR = "froth/";
-  const FACE = "amy-1.png";
+  /* photo, relative to index.html */
+  const DIR = "toast/";
+  const FACE = "amy-4.png";
 
   let dk;
   try { dk = dateKey; } catch (e) { return; }
-  if (dk !== FROTH_DAY) return;
+  if (dk !== SLEPT_DAY) return;
 
   const card = document.getElementById("modal-card");
   const sig = card && card.querySelector(".signature");
@@ -1472,322 +400,243 @@ restoreState();
   const titleEl = document.getElementById("modal-title");
   if (!card || !sig || !backdropEl) return;
 
-  document.body.classList.add("frothday");
+  document.body.classList.add("sleptday");
 
   const sub = document.querySelector("header p");
-  if (sub) sub.textContent = "one latte, extra foam :)";
+  if (sub) sub.textContent = "it's past your bedtime :)";
 
   const softMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const NS = "http://www.w3.org/2000/svg";
 
-  /* ═════════ 1. the cup, seen from above ═════════
-     p = an id prefix, so the intro cup and the note cup don't share ids */
+  /* if the photo is missing, this stands in so nothing breaks */
+  const PLACEHOLDER =
+    "data:image/svg+xml;utf8," + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+      '<rect width="100" height="100" fill="#F3E8D2"/>' +
+      '<path d="M32 44 Q38 48 44 44" stroke="#6B5142" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
+      '<path d="M56 44 Q62 48 68 44" stroke="#6B5142" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
+      '<path d="M40 64 Q50 70 60 64" stroke="#6B5142" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
+      "</svg>");
 
-  function cupSVG(p) {
-    return '<svg class="fr-cup" viewBox="0 0 200 200" aria-hidden="true"><defs>' +
-        '<radialGradient id="' + p + 'Crema" cx="50%" cy="50%" r="50%">' +
-          '<stop offset="0%" stop-color="#4A2E1B"/><stop offset="55%" stop-color="#6B4226"/>' +
-          '<stop offset="86%" stop-color="#94602F"/><stop offset="100%" stop-color="#B98350"/>' +
-        "</radialGradient>" +
-        '<radialGradient id="' + p + 'Foam" gradientUnits="userSpaceOnUse" cx="100" cy="96" r="62">' +
-          '<stop offset="0%" stop-color="#FFFBF4"/><stop offset="65%" stop-color="#F7EAD7"/>' +
-          '<stop offset="100%" stop-color="#E8D0AE"/>' +
-        "</radialGradient>" +
-        '<radialGradient id="' + p + 'FoamB" cx="50%" cy="45%" r="60%">' +
-          '<stop offset="0%" stop-color="#FFFBF4"/><stop offset="70%" stop-color="#F6E6D0"/>' +
-          '<stop offset="100%" stop-color="#E8D0AE"/>' +
-        "</radialGradient>" +
-        '<radialGradient id="' + p + 'Fade">' +
-          '<stop offset="0%" stop-color="#fff"/><stop offset="62%" stop-color="#fff"/>' +
-          '<stop offset="100%" stop-color="#000"/>' +
-        "</radialGradient>" +
-        '<mask id="' + p + 'Mask" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200">' +
-          '<circle cx="100" cy="100" r="54" fill="url(#' + p + 'Fade)"/>' +
-        "</mask>" +
-        '<clipPath id="' + p + 'Clip"><circle cx="100" cy="100" r="60"/></clipPath>' +
-      "</defs>" +
-      /* saucer */
-      '<circle cx="100" cy="100" r="96" fill="#FFFFFF" stroke="#E4DCD1" stroke-width="1.5"/>' +
-      '<circle cx="100" cy="100" r="80" fill="none" stroke="#EFE7DA" stroke-width="1.2"/>' +
-      /* handle */
-      '<rect x="158" y="89" width="38" height="22" rx="11" fill="#FFFFFF" stroke="#E4DCD1" stroke-width="1.5"/>' +
-      /* cup */
-      '<circle cx="100" cy="100" r="70" fill="#FFFFFF" stroke="#E4DCD1" stroke-width="1.5"/>' +
-      '<circle cx="100" cy="100" r="64" fill="#F4EDE3"/>' +
-      '<circle class="fr-stain" cx="100" cy="100" r="46" fill="none" stroke="#B98350" stroke-width="2.2"/>' +
-      /* the coffee + whatever's drawn on it */
-      '<g class="fr-liquid">' +
-        '<circle cx="100" cy="100" r="60" fill="url(#' + p + 'Crema)"/>' +
-        '<g class="fr-art" clip-path="url(#' + p + 'Clip)"></g>' +
-      "</g>" +
-      /* little shine on the rim */
-      '<path d="M48.7 56.9 A67 67 0 0 1 77.1 37.0" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.6"/>' +
-    "</svg>";
-  }
-
-  const PITCHER =
-    '<svg class="fr-pitcher" viewBox="0 0 60 50" aria-hidden="true">' +
-      '<path d="M46 18 C58 18 58 36 44 38" fill="none" stroke="#BFC6CB" stroke-width="4" stroke-linecap="round"/>' +
-      '<path d="M2 8 L12 11 L46 11 L42 45 Q41 49 37 49 L19 49 Q15 49 14 45 L11 17 Z" fill="#DDE1E4" stroke="#BFC6CB" stroke-width="1.4" stroke-linejoin="round"/>' +
-      '<path d="M16 20 L18 42" stroke="#FFFFFF" stroke-width="2" opacity="0.8" stroke-linecap="round"/>' +
-    "</svg>";
-
-  function cupHTML(p) {
-    return '<div class="fr-cupwrap">' + cupSVG(p) + '<div class="fr-stream"></div>' + PITCHER + "</div>";
-  }
-
-  /* ═════════ 2. the latte art ═════════ */
-
-  const CREMA_LINE = "#6B4226";
-  const HEART_D = "M100 134 C86 122 68 110 68 92 C68 79 77 71 88 71 C95 71 99 75 100 80 C101 75 105 71 112 71 C123 71 132 79 132 92 C132 110 114 122 100 134 Z";
-  const PETAL_D = "M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z";
-
-  function foam(p, d) {
-    return '<path d="' + d + '" fill="url(#' + p + 'Foam)" stroke="#A87548" stroke-opacity="0.4" stroke-width="1.6"/>';
-  }
-  function crescent(p, y, w, h) {
-    return foam(p, "M" + (100 - w) + " " + y + " Q100 " + (y + 2 * h) + " " + (100 + w) + " " + y +
-      " Q100 " + (y + 0.7 * h) + " " + (100 - w) + " " + y + " Z");
-  }
-  function pull(y1, y2) {
-    return '<path d="M100 ' + y1 + " L100 " + y2 + '" stroke="' + CREMA_LINE + '" stroke-width="2.2" stroke-linecap="round"/>';
-  }
-  function tail(p, y1, y2) {
-    return '<path d="M100 ' + y1 + " Q101 " + ((y1 + y2) / 2) + " 99 " + y2 +
-      '" stroke="url(#' + p + 'Foam)" stroke-width="2.6" stroke-linecap="round" fill="none"/>';
-  }
-
-  let faceSrc = null;
-
-  const ART = {
-    heart: function (p) {
-      return foam(p, HEART_D) + tail(p, 133, 150);
-    },
-    tulip: function (p) {
-      return crescent(p, 112, 31, 20) + crescent(p, 92, 25, 17) + crescent(p, 75, 19, 14) +
-        '<ellipse cx="100" cy="64" rx="10" ry="8.5" fill="url(#' + p + 'Foam)"/>' +
-        pull(58, 128) + tail(p, 131, 150);
-    },
-    rosetta: function (p) {
-      let s = "";
-      for (let i = 0; i < 9; i++) s += crescent(p, 124 - i * 8.5, 34 - i * 2.9, 11 - i * 0.4);
-      return s + '<ellipse cx="100" cy="47" rx="6.5" ry="5.5" fill="url(#' + p + 'Foam)"/>' +
-        pull(45, 132) + tail(p, 133, 152);
-    },
-    lily: function (p) {
-      let s = '<g transform="translate(100 100) scale(1.12) translate(-50 -50)">';
-      [60, 180, 300].forEach(function (a) {
-        s += '<g transform="rotate(' + a + ' 50 50) translate(50 50) scale(0.86) translate(-50 -50)">' +
-          '<path d="' + PETAL_D + '" fill="url(#' + p + 'FoamB)" opacity="0.72"/></g>';
-      });
-      [0, 120, 240].forEach(function (a) {
-        s += '<g transform="rotate(' + a + ' 50 50)">' +
-          '<path d="' + PETAL_D + '" fill="url(#' + p + 'FoamB)" stroke="#A87548" stroke-opacity="0.35" stroke-width="1.2"/>' +
-          '<path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#C9A27E" stroke-width="0.9" opacity="0.6" fill="none"/></g>';
-      });
-      return s + '<circle cx="50" cy="50" r="3.4" fill="' + CREMA_LINE + '"/></g>';
-    },
-    wu: function (p) {
-      return '<text x="100" y="118" text-anchor="middle" font-family="\'Great Vibes\', cursive" font-size="54" ' +
-        'fill="url(#' + p + 'Foam)" stroke="#A87548" stroke-opacity="0.35" stroke-width="1">Wu</text>' +
-        '<g transform="translate(131 72) scale(0.24) translate(-100 -100)">' +
-          '<path d="' + HEART_D + '" fill="url(#' + p + 'FoamB)"/></g>';
-    },
-    blob: function (p) {
-      return foam(p, "M76 96 C66 78 90 62 110 68 C130 74 140 94 126 108 C116 118 122 132 104 136 C86 140 68 126 78 114 C84 106 82 102 76 96 Z") +
-        '<ellipse cx="134" cy="126" rx="6" ry="4" fill="url(#' + p + 'Foam)"/>' +
-        '<circle cx="70" cy="74" r="3.4" fill="url(#' + p + 'Foam)"/>' +
-        '<circle cx="138" cy="80" r="2" fill="url(#' + p + 'Foam)"/>';
-    },
-    face: function (p) {
-      return '<image class="fr-face" x="46" y="46" width="108" height="108" preserveAspectRatio="xMidYMid slice" ' +
-        'mask="url(#' + p + 'Mask)" href="' + faceSrc + '"/>' +
-        '<circle cx="100" cy="100" r="55" fill="none" stroke="url(#' + p + 'Foam)" stroke-width="4" opacity="0.8"/>';
-    }
-  };
-
-  /* the order she gets them in, one per pour */
-  const DESIGNS = [
-    { key: "heart",   name: "heart",        line: "the classic :)" },
-    { key: "tulip",   name: "tulip",        line: "flowers for you" },
-    { key: "rosetta", name: "rosetta",      line: "fancy. i had to google the name" },
-    { key: "lily",    name: "lily",         line: "your favorite :)" },
-    { key: "wu",      name: "custom order", line: "extra wu" },
-    { key: "blob",    name: "mine",         line: "it's a swan. obviously." }
-  ];
-
-  /* the portrait only joins the rotation if the photo actually exists */
+  let SRC = DIR + FACE;
   const probe = new Image();
-  probe.onload = function () {
-    faceSrc = DIR + FACE;
-    DESIGNS.push({ key: "face", name: "latte portrait", line: "prettiest thing i've ever put in a cup" });
+  probe.onerror = function () {
+    SRC = PLACEHOLDER;
+    document.querySelectorAll(".sl-face img, .sl-glow img").forEach(function (im) { im.src = SRC; });
   };
-  probe.src = DIR + FACE;
+  probe.src = SRC;
 
-  function drawDesign(artEl, p, key) {
-    const g = document.createElementNS(NS, "g");
-    g.setAttribute("class", "fr-design");
-    g.innerHTML = ART[key](p);
-    const im = g.querySelector("image");
-    if (im) im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", im.getAttribute("href"));
-    artEl.appendChild(g);
-    return g;
-  }
+  const SHEEP =
+    '<svg viewBox="0 0 40 28" aria-hidden="true">' +
+      '<g fill="#3E2C23">' +
+        '<rect x="12" y="19" width="2.4" height="8" rx="1"/><rect x="17" y="20" width="2.4" height="7" rx="1"/>' +
+        '<rect x="25" y="20" width="2.4" height="7" rx="1"/><rect x="30" y="19" width="2.4" height="8" rx="1"/>' +
+      "</g>" +
+      '<g fill="#FFFFFF" stroke="#E4DCD1" stroke-width="0.8">' +
+        '<circle cx="13" cy="14" r="7"/><circle cx="20" cy="10.5" r="7.5"/><circle cx="27" cy="13" r="7"/>' +
+        '<circle cx="19.5" cy="17" r="7"/><circle cx="26" cy="18" r="5.5"/>' +
+      "</g>" +
+      '<ellipse cx="34" cy="12" rx="5" ry="4.3" fill="#3E2C23"/>' +
+      '<ellipse cx="31.5" cy="8.6" rx="2.2" ry="1.2" fill="#3E2C23" transform="rotate(-25 31.5 8.6)"/>' +
+      '<circle cx="35.6" cy="11" r="0.9" fill="#FDFBF7"/>' +
+    "</svg>";
 
-  function clearArt(artEl, animate) {
-    artEl.querySelectorAll(".fr-design").forEach(function (g) {
-      if (animate && !softMotion) {
-        g.classList.add("out");
-        setTimeout(function () { g.remove(); }, 460);
-      } else {
-        g.remove();
-      }
-    });
-  }
+  const FENCE =
+    '<svg viewBox="0 0 40 22" aria-hidden="true"><g fill="#C7BCB1">' +
+      '<rect x="4" y="2" width="4" height="20" rx="1"/><rect x="18" y="2" width="4" height="20" rx="1"/>' +
+      '<rect x="32" y="2" width="4" height="20" rx="1"/>' +
+      '<rect x="0" y="6" width="40" height="3" rx="1"/><rect x="0" y="14" width="40" height="3" rx="1"/>' +
+    "</g></svg>";
 
-  /* ═════════ 3. the note ═════════ */
+  /* ═════════ 1. the bedroom ═════════ */
 
   const plate = document.createElement("div");
-  plate.className = "fr";
-  plate.setAttribute("data-sip", "0");
+  plate.className = "sl";
+  plate.setAttribute("data-drowse", "0");
   plate.innerHTML =
-    cupHTML("frN") +
-    '<div class="fr-labels"><span class="fr-name"></span><span class="fr-line"></span></div>' +
-    '<div class="fr-actions">' +
-      '<button class="fr-btn pour" type="button">pour</button>' +
-      '<button class="fr-btn sip" type="button">sip</button>' +
+    '<div class="sl-scene">' +
+      '<div class="sl-stars"></div>' +
+      '<div class="sl-moon"></div>' +
+      '<div class="sl-clock"><b>3:07</b> am</div>' +
+      '<div class="sl-bubble"><div class="sl-fence">' + FENCE + "</div></div>" +
+      '<div class="sl-pillow"></div>' +
+      '<div class="sl-face"><img src="' + SRC + '" alt="someone who should be asleep" draggable="false"></div>' +
+      '<div class="sl-phone"></div>' +
+      '<div class="sl-blanket"></div>' +
     "</div>" +
-    '<p class="fr-hint">(pour another)</p>' +
-    '<p class="fr-count" role="status"></p>';
+    '<div class="sl-labels"><span class="sl-name"></span><span class="sl-line"></span></div>' +
+    '<div class="sl-actions">' +
+      '<button class="sl-btn main" type="button">count a sheep</button>' +
+      '<button class="sl-btn phone" type="button">take her phone</button>' +
+    "</div>" +
+    '<p class="sl-hint">(she won\'t go to sleep on her own)</p>' +
+    '<p class="sl-count" role="status"></p>';
   card.insertBefore(plate, sig);
 
-  const wrap = plate.querySelector(".fr-cupwrap");
-  const art = plate.querySelector(".fr-art");
-  const nameEl = plate.querySelector(".fr-name");
-  const lineEl = plate.querySelector(".fr-line");
-  const pourBtn = plate.querySelector(".fr-btn.pour");
-  const sipBtn = plate.querySelector(".fr-btn.sip");
-  const hint = plate.querySelector(".fr-hint");
-  const countEl = plate.querySelector(".fr-count");
+  const scene = plate.querySelector(".sl-scene");
+  const bubble = plate.querySelector(".sl-bubble");
+  const clockEl = plate.querySelector(".sl-clock b");
+  const phoneEl = plate.querySelector(".sl-phone");
+  const nameEl = plate.querySelector(".sl-name");
+  const lineEl = plate.querySelector(".sl-line");
+  const sheepBtn = plate.querySelector(".sl-btn.main");
+  const phoneBtn = plate.querySelector(".sl-btn.phone");
+  const hint = plate.querySelector(".sl-hint");
+  const countEl = plate.querySelector(".sl-count");
+
+  const starBox = plate.querySelector(".sl-stars");
+  for (let i = 0; i < 12; i++) {
+    const s = document.createElement("i");
+    s.style.left = (Math.random() * 96 + 2) + "%";
+    s.style.top = (Math.random() * 46 + 2) + "%";
+    s.style.animationDelay = -(Math.random() * 2.6) + "s";
+    if (Math.random() < 0.3) { s.style.width = "3px"; s.style.height = "3px"; }
+    starBox.appendChild(s);
+  }
+
+  const STATES = [
+    { name: "wide awake.",      line: "it's 3am wu" },
+    { name: "still scrolling.", line: "one sheep. she didn't notice" },
+    { name: "yawning.",         line: "it's working" },
+    { name: "eyes closing.",    line: "ok NOW take the phone" },
+    { name: "almost…",          line: "shhh" },
+    { name: "asleep.",          line: "finally. goodnight wu :)" }
+  ];
+
+  const EXCUSES = ["5 more minutes", "one more video", "i'm not even tired", "no :)", "wait i'm texting you"];
 
   const MILESTONES = {
-    1: "lattes poured: 1",
-    3: "lattes poured: 3 — ok barista",
-    5: "lattes poured: 5 · wu you're so caffeinated rn",
-    10: "lattes poured: 10. we're opening a café. you're hired.",
-    25: "lattes poured: 25. can't believe i only used to drink mochas",
-    50: "lattes poured: 50. still waiting on my real one :)",
-    100: "lattes poured: 100. ok now go make me an actual one"
+    1: "sheep counted: 1",
+    5: "sheep counted: 5 · she's still up isn't she",
+    10: "sheep counted: 10. i've run out of sheep names",
+    25: "sheep counted: 25. the sheep are tired now too",
+    50: "sheep counted: 50. wu. bed.",
+    100: "sheep counted: 100. ok you're doing this on purpose"
   };
-  const POURS = ["voilà :)", "ta-da", "one latte for wu", "extra foam", "*chef's kiss*"];
-  const SIPS = ["sip.", "*sip*", "*foam mustache*"];
 
-  let lattes = 0;
-  try { lattes = parseInt(localStorage.getItem("amy-lattes") || "0", 10) || 0; } catch (e) {}
-  function renderCount() { countEl.textContent = MILESTONES[lattes] || "lattes poured: " + lattes; }
-  if (lattes > 0) renderCount();
-  if (lattes > 1) hint.classList.add("gone");
+  let sheep = 0;
+  try { sheep = parseInt(localStorage.getItem("amy-sheep") || "0", 10) || 0; } catch (e) {}
+  function renderCount() { countEl.textContent = MILESTONES[sheep] || "sheep counted: " + sheep; }
+  if (sheep > 0) { renderCount(); hint.classList.add("gone"); }
 
   function fx(text, el) {
     if (softMotion) return;
     const r = el.getBoundingClientRect();
     const d = document.createElement("div");
-    d.className = "fr-fx";
+    d.className = "sl-fx";
     d.textContent = text;
     d.style.left = (r.left + r.width / 2 + (Math.random() * 26 - 13)) + "px";
-    d.style.top = (r.top + 26) + "px";
+    d.style.top = (r.top + 20) + "px";
     document.body.appendChild(d);
     setTimeout(function () { d.remove(); }, 1050);
-  }
-
-  function sparkle(x, y) {
-    if (softMotion) return;
-    const colors = ["var(--rose)", "var(--blushpk)", "#FFFBF4", "var(--butter)", "#C98F3D"];
-    for (let i = 0; i < 12; i++) {
-      const p = document.createElement("div");
-      p.className = "burst";                     /* reuses the petal-burst CSS */
-      const s = 6 + Math.random() * 8;
-      p.style.width = s + "px";
-      p.style.height = s * 0.75 + "px";
-      p.style.left = x + "px";
-      p.style.top = y + "px";
-      p.style.background = colors[i % colors.length];
-      const a = Math.random() * Math.PI * 2;
-      const d = 34 + Math.random() * 60;
-      p.style.setProperty("--tx", Math.cos(a) * d + "px");
-      p.style.setProperty("--ty", (Math.sin(a) * d - 30) + "px");
-      p.style.setProperty("--rot", (Math.random() * 400 - 200) + "deg");
-      document.body.appendChild(p);
-      setTimeout(function () { p.remove(); }, 1300);
-    }
   }
 
   let stage = null, timers = [];
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
   function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
 
-  let idx = -1, busy = false, level = 0;
-  function setSip(n) { level = n; plate.setAttribute("data-sip", String(n)); }
+  /* ═════════ 2. getting her to sleep ═════════ */
 
-  function pour(first) {
-    if (busy) return;
-    busy = true;
-    pourBtn.disabled = true;
-    if (!first) hint.classList.add("gone");
+  let drowse = 0, asleep = false, minutes = 187, session = 0, sheepBusy = false, excuse = 0, zTimer = null;
 
-    idx = (idx + 1) % DESIGNS.length;
-    const d = DESIGNS[idx];
+  function fmt(min) {
+    const h = Math.floor(min / 60) % 12 || 12;
+    return h + ":" + String(min % 60).padStart(2, "0");
+  }
+  function setClock() { clockEl.textContent = fmt(minutes); }
 
-    clearArt(art, true);
-    setSip(0);                                   /* refills as it pours */
-    wrap.classList.remove("pouring");
-    void wrap.offsetWidth;
-    if (!softMotion) wrap.classList.add("pouring");
+  function paint() {
+    plate.setAttribute("data-drowse", String(drowse));
+    nameEl.textContent = STATES[drowse].name;
+    lineEl.textContent = STATES[drowse].line;
+  }
 
-    later(function () { drawDesign(art, "frN", d.key); }, softMotion ? 0 : 620);
+  function spawnZ() {
+    const z = document.createElement("span");
+    z.className = "sl-z";
+    z.textContent = Math.random() < 0.5 ? "z" : "Z";
+    z.style.fontSize = (0.8 + Math.random() * 0.5) + "rem";
+    scene.appendChild(z);
+    setTimeout(function () { z.remove(); }, 2500);
+  }
+  function zLoop() {
+    if (!asleep) return;
+    if (!softMotion) spawnZ();
+    zTimer = setTimeout(zLoop, 1100);
+  }
+  function stopZ() { clearTimeout(zTimer); zTimer = null; }
+
+  function fallAsleep() {
+    if (asleep) return;
+    asleep = true;
+    drowse = 5;
+    paint();
+    plate.classList.add("asleep");
+    later(function () { fx("goodnight :)", scene); }, 500);
+    zLoop();
+  }
+
+  function countSheep() {
+    if (sheepBusy) return;
+    sheepBusy = true;
+    hint.classList.add("gone");
+
+    if (!softMotion) {
+      const s = document.createElement("div");
+      s.className = "sl-sheep";
+      s.innerHTML = '<div class="sl-hop">' + SHEEP + "</div>";
+      bubble.appendChild(s);
+      setTimeout(function () { s.remove(); }, 1500);
+    }
 
     later(function () {
-      wrap.classList.remove("pouring");
-      nameEl.textContent = d.name;
-      lineEl.textContent = d.line;
-
-      lattes++;
-      try { localStorage.setItem("amy-lattes", String(lattes)); } catch (e) {}
+      session++;
+      sheep++;
+      try { localStorage.setItem("amy-sheep", String(sheep)); } catch (e) {}
       renderCount();
       countEl.classList.remove("pop");
       void countEl.offsetWidth;
       countEl.classList.add("pop");
 
-      fx(POURS[lattes % POURS.length], wrap);
-      const r = wrap.getBoundingClientRect();
-      sparkle(r.left + r.width / 2, r.top + r.height / 2);
-      if (first && typeof petalBurst === "function") petalBurst();
+      minutes += 4;                                /* sheep take time */
+      setClock();
+      fx(String(session), bubble);
 
-      pourBtn.textContent = "pour another";
-      pourBtn.disabled = false;
-      busy = false;
-    }, softMotion ? 150 : 1650);
+      if (!asleep) {
+        if (drowse + 1 >= 5) fallAsleep();
+        else { drowse++; paint(); }
+      }
+      sheepBusy = false;
+    }, softMotion ? 150 : 900);
   }
 
-  function sip() {
-    if (busy) return;
-    if (!art.querySelector(".fr-design")) { fx("pour one first", sipBtn); return; }
-    if (level >= 3) { fx("it's empty wu", sipBtn); return; }
-    setSip(level + 1);
-    plate.classList.remove("sipping");
-    void plate.offsetWidth;
-    plate.classList.add("sipping");
-    fx(SIPS[level - 1], wrap);
-    if (level === 3) {
-      nameEl.textContent = "empty.";
-      lineEl.textContent = "that was fast. refill?";
+  function takePhone() {
+    hint.classList.add("gone");
+    if (asleep) { fx("already got it :)", phoneBtn); return; }
+    if (drowse < 3) {                              /* she's not tired enough to let go */
+      fx(EXCUSES[excuse++ % EXCUSES.length], phoneEl);
+      phoneEl.classList.remove("nope");
+      void phoneEl.offsetWidth;
+      phoneEl.classList.add("nope");
+      return;
     }
+    fx("got it.", phoneEl);
+    fallAsleep();
   }
 
-  pourBtn.addEventListener("click", function () { pour(false); });
-  sipBtn.addEventListener("click", sip);
+  sheepBtn.addEventListener("click", countSheep);
+  phoneBtn.addEventListener("click", takePhone);
 
-  /* ═════════ 4. the intro: me, trying ═════════ */
+  function reset() {
+    stopZ();
+    asleep = false; drowse = 0; minutes = 187; session = 0; sheepBusy = false; excuse = 0;
+    plate.classList.remove("asleep");
+    scene.querySelectorAll(".sl-z, .sl-sheep").forEach(function (n) { n.remove(); });
+    setClock();
+    paint();
+  }
+  reset();
+
+  /* ═════════ 3. the intro: 3am ═════════ */
 
   function teardown() {
     clearTimers();
@@ -1802,10 +651,9 @@ restoreState();
       const cardRect = card.getBoundingClientRect();
       const plateRect = plate.getBoundingClientRect();
       if (plateRect.bottom > cardRect.bottom - 10) {
-        card.scrollTo({ top: Math.max(0, plate.offsetTop - 10), behavior: "smooth" });
+        card.scrollTo({ top: Math.max(0, plate.offsetTop - 30), behavior: "smooth" });
       }
     }, 620);
-    later(function () { pour(true); }, softMotion ? 100 : 560);
   }
 
   function runIntro() {
@@ -1813,57 +661,742 @@ restoreState();
     if (softMotion) { reveal(); return; }
 
     stage = document.createElement("div");
-    stage.className = "fr-stage";
-    stage.innerHTML = cupHTML("frS") + '<p class="fr-cap"></p><p class="fr-skip">tap to skip</p>';
+    stage.className = "sl-stage";
+    stage.innerHTML =
+      '<div class="sl-bigclock"><span>2:58</span><small>am</small></div>' +
+      '<div class="sl-glow"><img src="' + SRC + '" alt="" draggable="false"></div>' +
+      '<p class="sl-cap"></p>' +
+      '<p class="sl-skip">tap to skip</p>';
     document.body.appendChild(stage);
 
-    const bigWrap = stage.querySelector(".fr-cupwrap");
-    const bigArt = stage.querySelector(".fr-art");
-    const cap = stage.querySelector(".fr-cap");
+    const clk = stage.querySelector(".sl-bigclock span");
+    const glow = stage.querySelector(".sl-glow");
+    const cap = stage.querySelector(".sl-cap");
     function say(text) {
       cap.classList.remove("show");
       later(function () { cap.textContent = text; cap.classList.add("show"); }, 220);
     }
 
-    let blob = null;
-    later(function () { say("one shot of espresso."); }, 300);
-    later(function () { bigWrap.classList.add("shot"); }, 550);
-    later(function () { say("a little milk. a lot of wrist."); bigWrap.classList.add("pouring"); }, 1800);
-    later(function () { blob = drawDesign(bigArt, "frS", "blob"); }, 2450);
-    later(function () { bigWrap.classList.remove("pouring"); }, 3400);
-    later(function () { say("…it was supposed to be a heart."); if (blob) blob.classList.add("wobble"); }, 3550);
-    later(function () { say("yours are better. teach me?"); }, 4900);
-    later(function () { if (stage) stage.classList.add("clearing"); }, 6100);
-    later(reveal, 6550);
+    for (let i = 1; i <= 9; i++) {
+      (function (n) { later(function () { clk.textContent = fmt(178 + n); }, 300 + n * 110); })(i);
+    }
+    later(function () { say("it's 3am."); }, 1400);
+    later(function () { glow.classList.add("show"); say("and someone's still on her phone."); }, 2600);
+    later(function () { say("go to sleep wu."); }, 4300);
+    later(function () { if (stage) stage.classList.add("clearing"); }, 5500);
+    later(reveal, 5950);
 
     stage.addEventListener("click", reveal);
   }
 
-  /* ═════════ 5. fire it when the note opens ═════════ */
+  /* ═════════ 4. fire it when the note opens ═════════ */
 
   new MutationObserver(function () {
     if (backdropEl.classList.contains("show")) {
-      if (titleEl) titleEl.textContent = "Extra foam.";
-      busy = false;
-      idx = -1;                                  /* always starts with the heart */
-      setSip(0);
-      clearArt(art, false);
-      wrap.classList.remove("pouring");
-      nameEl.textContent = "";
-      lineEl.textContent = "";
-      pourBtn.disabled = false;
-      pourBtn.textContent = "pour";
+      if (titleEl) titleEl.textContent = "Bedtime.";
+      reset();
       runIntro();
     } else {
       teardown();
-      busy = false;
-      pourBtn.disabled = false;
-      wrap.classList.remove("pouring");
-      plate.classList.remove("go");              /* so it replays next time she opens the note */
+      stopZ();
+      sheepBusy = false;
+      plate.classList.remove("go");                /* so it replays next time she opens the note */
     }
   }).observe(backdropEl, { attributes: true, attributeFilter: ["class"] });
 })();
 </script>
 
-</body>
-</html>
+  <!-- ═══════════════════════════════════════════════════════════════════
+   SPICY DAY · October 5 · "SPICY"
+   Paste right under the SLEPT DAY block, before the closing </body> tag.
+
+   Needs:  toast/amy-5.png   (the scrunched-nose photo)
+
+   Runs only on the date set in SPICY_DAY. Any other day: does nothing.
+   Test it early with:  index.html?peek=10-05&fresh=1
+   ═══════════════════════════════════════════════════════════════════ -->
+<style>
+  /* everything is scoped to body.spicyday so no other day can be touched */
+
+  /* ---------- the intro: pumpkin spice vs spicy ---------- */
+  body.spicyday .sp-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 58;
+    overflow: hidden;
+    cursor: pointer;
+    background: rgba(253, 251, 247, 0.97);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.4rem;
+    transition: opacity 0.45s ease;
+  }
+  body.spicyday .sp-stage.clearing { opacity: 0; }
+
+  body.spicyday .sp-duo { position: relative; width: min(320px, 86vw); height: 210px; }
+
+  body.spicyday .sp-item {
+    position: absolute;
+    top: 50%;
+    width: 92px;
+    margin-top: -60px;
+    opacity: 1;
+    transform: scale(0);
+    transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.4), opacity 0.4s ease;
+  }
+  body.spicyday .sp-item svg { display: block; width: 100%; }
+  body.spicyday .sp-item.cup { left: 10%; }
+  body.spicyday .sp-item.pep { right: 10%; margin-top: -46px; }
+  body.spicyday .sp-item.cup.in { transform: scale(1) rotate(-6deg); }
+  body.spicyday .sp-item.pep.in { transform: scale(1) rotate(8deg); }
+  body.spicyday .sp-item.merge {
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.6, 0, 0.8, 0.4), opacity 0.45s ease;
+  }
+  body.spicyday .sp-item.cup.merge { transform: translateX(90px) scale(0.2) rotate(30deg); }
+  body.spicyday .sp-item.pep.merge { transform: translateX(-90px) scale(0.2) rotate(-30deg); }
+
+  body.spicyday .sp-bigface {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 170px;
+    height: 170px;
+    margin: -85px 0 0 -85px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #FFFFFF;
+    box-shadow: 0 10px 26px rgba(62, 44, 35, 0.22), 0 0 34px 10px rgba(217, 66, 59, 0.35);
+    transform: scale(0);
+    transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+  }
+  body.spicyday .sp-bigface.show { transform: scale(1); }
+  body.spicyday .sp-bigface img {
+    display: block;
+    width: 108%;
+    height: 108%;
+    margin: -4%;
+    object-fit: cover;
+    object-position: 58% 55%;
+  }
+  body.spicyday .sp-bigface.show img { animation: sp-jit 0.3s linear 0.6s infinite; }
+  @keyframes sp-jit {
+    0%, 100% { transform: translate(0, 0); }
+    25%      { transform: translate(-2px, 1px); }
+    50%      { transform: translate(2px, 0); }
+    75%      { transform: translate(-1px, -1px); }
+  }
+  body.spicyday .sp-bigface .sp-heat { opacity: 0.3; }
+
+  body.spicyday .sp-cap {
+    width: min(320px, 84vw);
+    min-height: 2.4rem;
+    text-align: center;
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.85rem;
+    line-height: 1.35;
+    color: var(--mocha);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  body.spicyday .sp-cap.show { opacity: 1; transform: translateY(0); }
+
+  body.spicyday .sp-skip {
+    position: absolute;
+    bottom: 1.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.62rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--taupe);
+  }
+
+  /* ---------- her face, inside the love note ---------- */
+  body.spicyday .sp {
+    position: relative;
+    z-index: 10;
+    margin-top: 1.2rem;
+    padding-top: 46px;                  /* room for the chili to fall */
+    --heat: 0;
+    --sat: 1;
+    --amp: 0px;
+  }
+  body.spicyday .sp[data-lv="1"] { --heat: 0.1;  --sat: 1.08; }
+  body.spicyday .sp[data-lv="2"] { --heat: 0.2;  --sat: 1.16; }
+  body.spicyday .sp[data-lv="3"] { --heat: 0.3;  --sat: 1.25; --amp: 1.2px; }
+  body.spicyday .sp[data-lv="4"] { --heat: 0.42; --sat: 1.35; --amp: 2px; }
+  body.spicyday .sp[data-lv="5"] { --heat: 0.55; --sat: 1.45; --amp: 3.2px; }
+
+  body.spicyday .sp-wrap {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
+  }
+  body.spicyday .sp.go .sp-wrap { opacity: 1; transform: scale(1); }
+  body.spicyday .sp.go.hot .sp-wrap { animation: sp-shake 0.35s linear infinite; }
+  @keyframes sp-shake {
+    0%, 100% { transform: translate(0, 0); }
+    25%      { transform: translate(calc(var(--amp) * -1), calc(var(--amp) * 0.5)); }
+    50%      { transform: translate(var(--amp), 0); }
+    75%      { transform: translate(calc(var(--amp) * -0.5), calc(var(--amp) * -0.6)); }
+  }
+
+  body.spicyday .sp-frame {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--lily);
+    box-shadow: 0 8px 20px rgba(62, 44, 35, 0.18), 0 0 26px 4px rgba(217, 66, 59, calc(var(--heat) * 0.9));
+    transition: box-shadow 0.6s ease;
+  }
+  body.spicyday .sp-frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 58% 55%;
+    filter: saturate(var(--sat));
+    transition: filter 0.6s ease;
+  }
+  body.spicyday .sp-frame.chomp { animation: sp-chomp 0.35s ease; }
+  @keyframes sp-chomp { 40% { transform: scale(1.05, 0.95); } }
+
+  body.spicyday .sp-heat {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 60%, #E0483C 0%, #C0302A 100%);
+    mix-blend-mode: multiply;
+    opacity: var(--heat);
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+
+  /* steam out of her ears */
+  body.spicyday .sp-steam {
+    position: absolute;
+    top: 34%;
+    width: 14px;
+    height: 14px;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  body.spicyday .sp-steam.l { left: -2px; }
+  body.spicyday .sp-steam.r { right: -2px; }
+  body.spicyday .sp.hot .sp-steam { opacity: 1; }
+  body.spicyday .sp-steam i {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(199, 188, 177, 0.75);
+    filter: blur(2px);
+    opacity: 0;
+  }
+  body.spicyday .sp.hot .sp-steam.l i { animation: sp-puff-l 1.5s ease-out infinite; }
+  body.spicyday .sp.hot .sp-steam.r i { animation: sp-puff-r 1.5s ease-out infinite; }
+  body.spicyday .sp-steam i:nth-child(2) { animation-delay: 0.5s !important; }
+  body.spicyday .sp-steam i:nth-child(3) { animation-delay: 1s !important; }
+  @keyframes sp-puff-l {
+    0%   { opacity: 0;   transform: translate(0, 0) scale(0.4); }
+    25%  { opacity: 0.9; }
+    100% { opacity: 0;   transform: translate(-30px, -26px) scale(1.7); }
+  }
+  @keyframes sp-puff-r {
+    0%   { opacity: 0;   transform: translate(0, 0) scale(0.4); }
+    25%  { opacity: 0.9; }
+    100% { opacity: 0;   transform: translate(30px, -26px) scale(1.7); }
+  }
+
+  /* one bead of sweat */
+  body.spicyday .sp-sweat {
+    position: absolute;
+    right: 22%;
+    top: 16%;
+    width: 10px;
+    height: 10px;
+    z-index: 3;
+    border-radius: 0 50% 50% 50%;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, #E4F1FB 0%, #8FBCE0 100%);
+    box-shadow: 0 1px 2px rgba(62, 44, 35, 0.2);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  body.spicyday .sp.sweaty .sp-sweat { opacity: 1; animation: sp-drip 1.8s ease-in infinite; }
+  @keyframes sp-drip {
+    0%   { transform: translateY(0) rotate(45deg); opacity: 0; }
+    15%  { opacity: 1; }
+    80%  { transform: translateY(14px) rotate(45deg); opacity: 1; }
+    100% { transform: translateY(18px) rotate(45deg); opacity: 0; }
+  }
+
+  /* the halo of fire, max spice only */
+  body.spicyday .sp-flames { position: absolute; inset: 0; z-index: 0; }
+  body.spicyday .sp-flames i {
+    position: absolute;
+    width: 18px;
+    height: 26px;
+    margin: -26px 0 0 -9px;
+    transform-origin: 50% 100%;
+    border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%;
+    background: radial-gradient(ellipse at 50% 75%, #FFE9A3 0%, #F6B45A 35%, #E8643A 65%, #D9423B 100%);
+    opacity: 0;
+    transform: rotate(var(--r)) scale(0);
+    transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+  }
+  body.spicyday .sp.max .sp-flames i {
+    opacity: 1;
+    animation: sp-flick 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes sp-flick {
+    from { transform: rotate(var(--r)) scale(0.9, 0.8); }
+    to   { transform: rotate(var(--r)) scale(1, 1.12); }
+  }
+
+  /* the chili that falls in */
+  body.spicyday .sp-fall {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 40px;
+    z-index: 5;
+    pointer-events: none;
+    animation: sp-fall 0.75s cubic-bezier(0.45, 0, 0.75, 0.45) forwards;
+  }
+  body.spicyday .sp-fall svg { display: block; width: 100%; }
+  @keyframes sp-fall {
+    0%   { opacity: 0; transform: translate(-50%, -70px) rotate(-35deg) scale(1); }
+    15%  { opacity: 1; }
+    75%  { opacity: 1; transform: translate(-50%, 88px) rotate(15deg) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, 96px) rotate(20deg) scale(0); }
+  }
+
+  /* spice meter */
+  body.spicyday .sp-meter {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 1.1rem;
+  }
+  body.spicyday .sp-pip { width: 22px; color: var(--border); transition: color 0.3s ease; }
+  body.spicyday .sp-pip svg { display: block; width: 100%; }
+  body.spicyday .sp-pip.on { color: #D9423B; animation: sp-pip 0.35s ease; }
+  @keyframes sp-pip { 50% { transform: scale(1.3) rotate(-10deg); } }
+
+  body.spicyday .sp-labels { text-align: center; margin-top: 0.6rem; min-height: 2.6rem; }
+  body.spicyday .sp-name {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--espresso);
+  }
+  body.spicyday .sp-line {
+    display: block;
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.15rem;
+    color: var(--rose);
+    margin-top: 0.05rem;
+    min-height: 1.3rem;
+  }
+
+  body.spicyday .sp-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+  }
+  body.spicyday .sp-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.45rem 1.05rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--key);
+    color: var(--mocha);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.06s ease;
+  }
+  body.spicyday .sp-btn:active { transform: scale(0.95); }
+  body.spicyday .sp-btn.hotbtn { background: #D96C5B; border-color: #D96C5B; color: #fff; }
+
+  body.spicyday .sp-hint {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--taupe);
+    margin-top: 0.65rem;
+    animation: sp-pulse 2.4s ease-in-out infinite;
+  }
+  body.spicyday .sp-hint.gone { display: none; }
+  @keyframes sp-pulse { 50% { opacity: 0.45; } }
+
+  body.spicyday .sp-count {
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--mocha);
+    margin-top: 0.7rem;
+    min-height: 1rem;
+  }
+  body.spicyday .sp-count.pop { animation: sp-pop 0.3s ease; }
+  @keyframes sp-pop { 50% { transform: scale(1.13); } }
+
+  body.spicyday .sp-fx {
+    position: fixed;
+    z-index: 70;
+    pointer-events: none;
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.5rem;
+    color: #D9423B;
+    text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
+    animation: sp-float 1s ease-out forwards;
+  }
+  @keyframes sp-float {
+    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+    25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
+  }
+
+  @media (max-height: 780px) {
+    body.spicyday .sp { margin-top: 0.9rem; padding-top: 40px; }
+    body.spicyday .sp-wrap { width: 124px; height: 124px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.spicyday .sp-wrap { opacity: 1 !important; transform: none !important; transition: none; }
+    body.spicyday .sp.go.hot .sp-wrap,
+    body.spicyday .sp-steam i,
+    body.spicyday .sp.sweaty .sp-sweat,
+    body.spicyday .sp.max .sp-flames i,
+    body.spicyday .sp-hint,
+    body.spicyday .sp-fx,
+    body.spicyday .sp-bigface.show img { animation: none !important; }
+  }
+</style>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ── change this one line to move the whole thing to another date ── */
+  const SPICY_DAY = "10-05";
+
+  /* photo, relative to index.html */
+  const DIR = "toast/";
+  const FACE = "amy-5.png";
+
+  let dk;
+  try { dk = dateKey; } catch (e) { return; }
+  if (dk !== SPICY_DAY) return;
+
+  const card = document.getElementById("modal-card");
+  const sig = card && card.querySelector(".signature");
+  const backdropEl = document.getElementById("modal-backdrop");
+  const titleEl = document.getElementById("modal-title");
+  if (!card || !sig || !backdropEl) return;
+
+  document.body.classList.add("spicyday");
+
+  const sub = document.querySelector("header p");
+  if (sub) sub.textContent = "handle with care :)";
+
+  const softMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const PLACEHOLDER =
+    "data:image/svg+xml;utf8," + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+      '<rect width="100" height="100" fill="#F3E8D2"/>' +
+      '<path d="M30 44 L42 40 M70 44 L58 40" stroke="#6B5142" stroke-width="3.5" stroke-linecap="round"/>' +
+      '<path d="M36 64 Q50 72 64 64" stroke="#6B5142" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
+      "</svg>");
+
+  let SRC = DIR + FACE;
+  const probe = new Image();
+  probe.onerror = function () {
+    SRC = PLACEHOLDER;
+    document.querySelectorAll(".sp-frame img, .sp-bigface img").forEach(function (im) { im.src = SRC; });
+  };
+  probe.src = SRC;
+
+  function CHILI(fill) {
+    return '<svg viewBox="0 0 40 40" aria-hidden="true">' +
+      '<path d="M10 12 C6 20 10 32 22 36 C27 37.5 31 36 33 34 C26 33 19 28 16 20 C15 16 14 13 10 12 Z" fill="' + fill + '"/>' +
+      '<path d="M12.5 17 C12.5 23 15.5 28 20 31" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
+      '<path d="M7 12 C9 9 13 10 14 13 C11 14 8 14 7 12 Z" fill="#8AA07F"/>' +
+      '<path d="M10.5 11 C9.5 7.5 11.5 5 15 4" stroke="#7E9C6E" stroke-width="2.2" stroke-linecap="round" fill="none"/>' +
+    "</svg>";
+  }
+
+  const CUP =
+    '<svg viewBox="0 0 60 80" aria-hidden="true">' +
+      '<path d="M22 6 C20 2 24 1 23 -2 M30 6 C28 2 32 1 31 -2 M38 6 C36 2 40 1 39 -2" stroke="#C7BCB1" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
+      '<path d="M10 16 L50 16 L45 76 Q44 78 42 78 L18 78 Q16 78 15 76 Z" fill="#FFFFFF" stroke="#E4DCD1" stroke-width="1.5"/>' +
+      '<path d="M8 15 L52 15 L50 9 L10 9 Z" fill="#FDFBF7" stroke="#E4DCD1" stroke-width="1.5" stroke-linejoin="round"/>' +
+      '<path d="M12.5 34 L47.5 34 L45.6 56 L14.4 56 Z" fill="#E08A3C"/>' +
+      '<path d="M30 50 C27 47.5 24 45.5 24 43 C24 41.3 25.4 40.2 27 40.4 C28.3 40.6 29.4 41.5 30 42.5 C30.6 41.5 31.7 40.6 33 40.4 C34.6 40.2 36 41.3 36 43 C36 45.5 33 47.5 30 50 Z" fill="#FDFBF7"/>' +
+    "</svg>";
+
+  /* ═════════ 1. her face ═════════ */
+
+  let pips = "";
+  for (let i = 0; i < 5; i++) pips += '<span class="sp-pip">' + CHILI("currentColor") + "</span>";
+
+  const plate = document.createElement("div");
+  plate.className = "sp";
+  plate.setAttribute("data-lv", "0");
+  plate.innerHTML =
+    '<div class="sp-wrap">' +
+      '<div class="sp-flames"></div>' +
+      '<div class="sp-steam l"><i></i><i></i><i></i></div>' +
+      '<div class="sp-steam r"><i></i><i></i><i></i></div>' +
+      '<div class="sp-frame"><img src="' + SRC + '" alt="someone who cannot handle spice" draggable="false"><div class="sp-heat"></div></div>' +
+      '<div class="sp-sweat"></div>' +
+    "</div>" +
+    '<div class="sp-meter">' + pips + "</div>" +
+    '<div class="sp-labels"><span class="sp-name"></span><span class="sp-line"></span></div>' +
+    '<div class="sp-actions">' +
+      '<button class="sp-btn hotbtn" type="button">add a chili</button>' +
+      '<button class="sp-btn milk" type="button">drink milk</button>' +
+    "</div>" +
+    '<p class="sp-hint">(feed her a chili)</p>' +
+    '<p class="sp-count" role="status"></p>';
+  card.insertBefore(plate, sig);
+
+  const wrap = plate.querySelector(".sp-wrap");
+  const frame = plate.querySelector(".sp-frame");
+  const pipEls = plate.querySelectorAll(".sp-pip");
+  const nameEl = plate.querySelector(".sp-name");
+  const lineEl = plate.querySelector(".sp-line");
+  const chiliBtn = plate.querySelector(".sp-btn.hotbtn");
+  const milkBtn = plate.querySelector(".sp-btn.milk");
+  const hint = plate.querySelector(".sp-hint");
+  const countEl = plate.querySelector(".sp-count");
+
+  /* ring of flames around the frame, pointing outward */
+  const flameBox = plate.querySelector(".sp-flames");
+  for (let i = 0; i < 12; i++) {
+    const a = i * 30 - 90;
+    const rad = a * Math.PI / 180;
+    const f = document.createElement("i");
+    f.style.left = (50 + 52 * Math.cos(rad)) + "%";
+    f.style.top = (50 + 52 * Math.sin(rad)) + "%";
+    f.style.setProperty("--r", (a + 90) + "deg");
+    f.style.animationDelay = -(Math.random() * 0.5) + "s";
+    flameBox.appendChild(f);
+  }
+
+  const LEVELS = [
+    { name: "mild.",         line: "she's fine. for now." },
+    { name: "a little kick", line: "barely a tingle" },
+    { name: "medium",        line: "ok she felt that one" },
+    { name: "hot",           line: "the nose scrunch has begun" },
+    { name: "very hot",      line: "wu is sweating" },
+    { name: "WU.",           line: "drink some milk. please." }
+  ];
+  const CHOMPS = [null, "chomp", "*crunch*", "oh.", "OH.", "WUUUUU"];
+  const GULPS = ["gulp", "ahh", "*milk mustache*", "better?"];
+
+  const MILESTONES = {
+    1: "chilis eaten: 1",
+    5: "chilis eaten: 5 · respect",
+    10: "chilis eaten: 10. are you ok",
+    25: "chilis eaten: 25. this is a cry for help",
+    50: "chilis eaten: 50. drink. the. milk.",
+    100: "chilis eaten: 100. WUUUUUUU"
+  };
+
+  let eaten = 0;
+  try { eaten = parseInt(localStorage.getItem("amy-chilis") || "0", 10) || 0; } catch (e) {}
+  function renderCount() { countEl.textContent = MILESTONES[eaten] || "chilis eaten: " + eaten; }
+  if (eaten > 0) { renderCount(); hint.classList.add("gone"); }
+
+  function fx(text, el) {
+    if (softMotion) return;
+    const r = el.getBoundingClientRect();
+    const d = document.createElement("div");
+    d.className = "sp-fx";
+    d.textContent = text;
+    d.style.left = (r.left + r.width / 2 + (Math.random() * 26 - 13)) + "px";
+    d.style.top = (r.top + 20) + "px";
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 1050);
+  }
+
+  function sparkle(x, y, colors) {
+    if (softMotion) return;
+    for (let i = 0; i < 14; i++) {
+      const p = document.createElement("div");
+      p.className = "burst";                     /* reuses the petal-burst CSS */
+      const s = 6 + Math.random() * 8;
+      p.style.width = s + "px";
+      p.style.height = s * 0.75 + "px";
+      p.style.left = x + "px";
+      p.style.top = y + "px";
+      p.style.background = colors[i % colors.length];
+      const a = Math.random() * Math.PI * 2;
+      const d = 34 + Math.random() * 70;
+      p.style.setProperty("--tx", Math.cos(a) * d + "px");
+      p.style.setProperty("--ty", (Math.sin(a) * d - 30) + "px");
+      p.style.setProperty("--rot", (Math.random() * 400 - 200) + "deg");
+      document.body.appendChild(p);
+      setTimeout(function () { p.remove(); }, 1300);
+    }
+  }
+  const FIRE = ["#D9423B", "#E8643A", "#F6B45A", "#FFE9A3"];
+  const MILK = ["#FFFFFF", "#FDFBF7", "#F3E8D2", "var(--blushpk)"];
+
+  let stage = null, timers = [];
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+
+  /* ═════════ 2. the spice ═════════ */
+
+  let lv = 0, busy = false, gulps = 0;
+
+  function setLv(n) {
+    lv = n;
+    plate.setAttribute("data-lv", String(n));
+    plate.classList.toggle("sweaty", n >= 2);
+    plate.classList.toggle("hot", n >= 3);
+    plate.classList.toggle("max", n >= 5);
+    pipEls.forEach(function (p, i) { p.classList.toggle("on", i < n); });
+    nameEl.textContent = LEVELS[n].name;
+    lineEl.textContent = LEVELS[n].line;
+  }
+  setLv(0);
+
+  function addChili() {
+    if (busy) return;
+    hint.classList.add("gone");
+    if (lv >= 5) { fx("no more. milk.", chiliBtn); return; }
+    busy = true;
+
+    if (!softMotion) {
+      const c = document.createElement("div");
+      c.className = "sp-fall";
+      c.innerHTML = CHILI("#D9423B");
+      wrap.appendChild(c);
+      setTimeout(function () { c.remove(); }, 800);
+    }
+
+    later(function () {
+      setLv(lv + 1);
+      eaten++;
+      try { localStorage.setItem("amy-chilis", String(eaten)); } catch (e) {}
+      renderCount();
+      countEl.classList.remove("pop");
+      void countEl.offsetWidth;
+      countEl.classList.add("pop");
+
+      frame.classList.remove("chomp");
+      void frame.offsetWidth;
+      frame.classList.add("chomp");
+
+      fx(CHOMPS[lv], frame);
+      const r = frame.getBoundingClientRect();
+      sparkle(r.left + r.width / 2, r.top + r.height * 0.78, FIRE);
+      busy = false;
+    }, softMotion ? 100 : 700);
+  }
+
+  function drinkMilk() {
+    hint.classList.add("gone");
+    if (lv === 0) { fx("she's not even warm yet", milkBtn); return; }
+    fx(GULPS[gulps++ % GULPS.length], frame);
+    const r = frame.getBoundingClientRect();
+    sparkle(r.left + r.width / 2, r.top + r.height / 2, MILK);
+    setLv(0);
+  }
+
+  chiliBtn.addEventListener("click", addChili);
+  milkBtn.addEventListener("click", drinkMilk);
+
+  /* ═════════ 3. the intro: pumpkin spice or just spicy? ═════════ */
+
+  function teardown() {
+    clearTimers();
+    if (stage) { stage.remove(); stage = null; }
+  }
+
+  function reveal() {
+    teardown();
+    plate.classList.add("go");
+    later(function () {
+      if (!backdropEl.classList.contains("show")) return;
+      const cardRect = card.getBoundingClientRect();
+      const plateRect = plate.getBoundingClientRect();
+      if (plateRect.bottom > cardRect.bottom - 10) {
+        card.scrollTo({ top: Math.max(0, plate.offsetTop - 20), behavior: "smooth" });
+      }
+    }, 620);
+  }
+
+  function runIntro() {
+    teardown();
+    if (softMotion) { reveal(); return; }
+
+    stage = document.createElement("div");
+    stage.className = "sp-stage";
+    stage.innerHTML =
+      '<div class="sp-duo">' +
+        '<div class="sp-item cup">' + CUP + "</div>" +
+        '<div class="sp-item pep">' + CHILI("#D9423B") + "</div>" +
+        '<div class="sp-bigface"><img src="' + SRC + '" alt="" draggable="false"><div class="sp-heat"></div></div>' +
+      "</div>" +
+      '<p class="sp-cap"></p>' +
+      '<p class="sp-skip">tap to skip</p>';
+    document.body.appendChild(stage);
+
+    const cup = stage.querySelector(".sp-item.cup");
+    const pep = stage.querySelector(".sp-item.pep");
+    const face = stage.querySelector(".sp-bigface");
+    const cap = stage.querySelector(".sp-cap");
+    function say(text) {
+      cap.classList.remove("show");
+      later(function () { cap.textContent = text; cap.classList.add("show"); }, 220);
+    }
+
+    later(function () { cup.classList.add("in"); say("pumpkin spice?"); }, 300);
+    later(function () { pep.classList.add("in"); say("or just spicy?"); }, 1500);
+    later(function () { cup.classList.add("merge"); pep.classList.add("merge"); }, 2800);
+    later(function () {
+      face.classList.add("show");
+      say("both. obviously.");
+      const r = face.getBoundingClientRect();
+      sparkle(r.left + r.width / 2, r.top + r.height / 2, FIRE);
+    }, 3150);
+    later(function () { if (stage) stage.classList.add("clearing"); }, 4700);
+    later(reveal, 5150);
+
+    stage.addEventListener("click", reveal);
+  }
+
+  /* ═════════ 4. fire it when the note opens ═════════ */
+
+  new MutationObserver(function () {
+    if (backdropEl.classList.contains("show")) {
+      if (titleEl) titleEl.textContent = "Too hot.";
+      busy = false;
+      gulps = 0;
+      wrap.querySelectorAll(".sp-fall").forEach(function (n) { n.remove(); });
+      setLv(0);
+      runIntro();
+    } else {
+      teardown();
+      busy = false;
+      plate.classList.remove("go");                /* so it replays next time she opens the note */
+    }
+  }).observe(backdropEl, { attributes: true, attributeFilter: ["class"] });
+})();
+</script>
