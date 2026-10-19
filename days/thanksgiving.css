@@ -1,0 +1,35 @@
+/* THANKSGIVING · Nov 26 — "FEAST". Scoped to .tg */
+.tg { text-align: center; }
+.tg-jar { display: block; width: 150px; height: 170px; margin: 0 auto; cursor: pointer; overflow: visible; }
+.tg-jar.shake { animation: tg-shake 0.45s ease; }
+@keyframes tg-shake {
+  20% { transform: rotate(-6deg); }
+  45% { transform: rotate(5deg); }
+  70% { transform: rotate(-3deg); }
+}
+.tg-note {
+  width: 230px;
+  margin: 0.4rem auto 0;
+  min-height: 3.2rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 6px;
+  background: #FFF7D6;
+  box-shadow: 0 4px 12px rgba(62, 44, 35, 0.14);
+  transform: rotate(-1.5deg) scale(0.6);
+  opacity: 0;
+  font-family: 'Caveat', cursive;
+  font-size: 1.3rem;
+  line-height: 1.25;
+  color: #5A4336;
+}
+.tg-note.show { animation: tg-unfold 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) forwards; }
+@keyframes tg-unfold {
+  from { opacity: 0; transform: translateY(-40px) rotate(-12deg) scale(0.4); }
+  to   { opacity: 1; transform: rotate(-1.5deg) scale(1); }
+}
+.tg-labels { margin-top: 0.7rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-jar.shake, .tg-note.show { animation: none !important; }
+  .tg-note.show { opacity: 1; transform: none; }
+}

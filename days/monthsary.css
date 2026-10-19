@@ -1,0 +1,26 @@
+/* MONTHSARY · every 1st of the month. Scoped to .ms */
+.ms { text-align: center; }
+.ms-vase { display: block; width: 230px; height: 190px; margin: 0 auto; overflow: visible; cursor: pointer; }
+.ms-stem { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.ms.go .ms-stem { animation: ms-grow 0.6s ease forwards; }
+@keyframes ms-grow { to { stroke-dashoffset: 0; } }
+.ms-bloom { transform-box: fill-box; transform-origin: center; opacity: 0; transform: scale(0.1) rotate(-40deg); }
+.ms.go .ms-bloom { animation: ms-bloom 0.7s cubic-bezier(0.25, 1.5, 0.45, 1) forwards; }
+@keyframes ms-bloom { to { opacity: 1; transform: scale(1) rotate(0deg); } }
+.ms-count-big {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--rose);
+  margin-top: 0.4rem;
+}
+.ms-labels { margin-top: 0.3rem; }
+.ms.sniff .ms-vase { animation: ms-sway 0.8s ease; }
+@keyframes ms-sway { 30% { transform: rotate(-3deg); } 65% { transform: rotate(2deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-stem { stroke-dashoffset: 0; }
+  .ms-bloom { opacity: 1; transform: none; }
+  .ms.go .ms-stem, .ms.go .ms-bloom, .ms.sniff .ms-vase { animation: none !important; }
+}

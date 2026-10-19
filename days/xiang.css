@@ -1,0 +1,262 @@
+/* everything is scoped to body.xiangday so no other day can be touched */
+
+/* ---------- the intro: ink on paper ---------- */
+body.xiangday .xg-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  overflow: hidden;
+  cursor: pointer;
+  background: radial-gradient(ellipse at 50% 40%, #FBF6EC 0%, #F1E7D6 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  transition: opacity 0.5s ease;
+}
+body.xiangday .xg-stage.clearing { opacity: 0; }
+
+body.xiangday .xg-chars {
+  --split: 56%;
+  position: relative;
+  display: flex;
+  font-family: 'Ma Shan Zheng', 'STKaiti', 'KaiTi', 'Kaiti SC', serif;
+  font-size: min(8.5rem, 34vw);
+  line-height: 1;
+  color: #2B1E18;
+}
+body.xiangday .xg-chars.thud { animation: xg-thud 0.25s ease; }
+@keyframes xg-thud { 40% { transform: translateY(4px); } }
+
+body.xiangday .xg-shift {
+  transform: translateX(0.5em);
+  transition: transform 0.9s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+body.xiangday .xg-chars.both .xg-shift { transform: translateX(0); }
+
+body.xiangday .xg-ch {
+  position: relative;
+  display: block;
+  opacity: 0;
+  filter: blur(14px);
+  transform: scale(1.12);
+  transition: opacity 1s ease, filter 1.1s ease, transform 1.1s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+body.xiangday .xg-ch.in { opacity: 1; filter: blur(0); transform: scale(1); }
+
+body.xiangday .xg-top,
+body.xiangday .xg-bot {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+body.xiangday .xg-top {
+  color: #C9A25E;
+  -webkit-clip-path: inset(0 0 calc(100% - var(--split)) 0);
+  clip-path: inset(0 0 calc(100% - var(--split)) 0);
+}
+body.xiangday .xg-bot {
+  color: #C8473D;
+  -webkit-clip-path: inset(var(--split) 0 0 0);
+  clip-path: inset(var(--split) 0 0 0);
+}
+body.xiangday .xg-top.on,
+body.xiangday .xg-bot.on { opacity: 1; }
+
+body.xiangday .xg-seal {
+  position: absolute;
+  right: -0.18em;
+  bottom: -0.06em;
+  font-size: 0.2em;
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 0.15em;
+  background: #C8473D;
+  color: #FBF6EC;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 0.07em rgba(251, 246, 236, 0.35);
+  opacity: 0;
+  transform: scale(2.4) rotate(-14deg);
+}
+body.xiangday .xg-seal.stamp { animation: xg-stamp 0.38s cubic-bezier(0.5, 0, 0.75, 0) forwards; }
+@keyframes xg-stamp { to { opacity: 0.94; transform: scale(1) rotate(-6deg); } }
+
+body.xiangday .xg-parts {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 3rem;
+  font-family: 'Ma Shan Zheng', 'STKaiti', 'KaiTi', 'Kaiti SC', serif;
+  font-size: 2.6rem;
+}
+body.xiangday .xg-parts span {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+body.xiangday .xg-parts span.in { opacity: 1; transform: none; }
+body.xiangday .xg-parts .p1 { color: #C9A25E; }
+body.xiangday .xg-parts .p2 { color: #C8473D; }
+body.xiangday .xg-parts .plus { font-family: 'Inter', sans-serif; font-size: 1.3rem; color: var(--taupe); }
+
+body.xiangday .xg-say {
+  width: min(320px, 84vw);
+  min-height: 2.4rem;
+  text-align: center;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.85rem;
+  line-height: 1.35;
+  color: var(--mocha);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+body.xiangday .xg-say.show { opacity: 1; transform: translateY(0); }
+
+body.xiangday .xg-skip {
+  position: absolute;
+  bottom: 1.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--taupe);
+}
+
+body.xiangday .xg-drop {
+  position: fixed;
+  z-index: 65;
+  pointer-events: none;
+  border-radius: 50%;
+  background: #2B1E18;
+  opacity: 0;
+  animation: xg-drop 0.9s ease-out forwards;
+}
+@keyframes xg-drop {
+  0%   { opacity: 0;    transform: scale(0); }
+  30%  { opacity: 0.55; transform: scale(1.1); }
+  100% { opacity: 0;    transform: scale(0.9); }
+}
+
+/* ---------- the red string, inside the love note ---------- */
+body.xiangday .xg { position: relative; z-index: 10; margin-top: 1.3rem; }
+
+body.xiangday .xg-scene {
+  position: relative;
+  width: 260px;
+  height: 130px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
+}
+body.xiangday .xg.go .xg-scene { opacity: 1; transform: scale(1); }
+
+body.xiangday .xg-string {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  z-index: 2;
+}
+
+body.xiangday .xg-who { position: absolute; top: 14px; width: 76px; text-align: center; z-index: 1; }
+body.xiangday .xg-who.me  { left: 6px; }
+body.xiangday .xg-who.her { right: 6px; }
+body.xiangday .xg-face {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #FFFFFF;
+  background: #F3E8D2;
+  box-shadow: 0 6px 16px rgba(62, 44, 35, 0.16);
+}
+body.xiangday .xg-face img { display: block; width: 100%; height: 100%; object-fit: cover; }
+body.xiangday .xg-face.bump { animation: xg-bump 0.4s ease; }
+@keyframes xg-bump { 40% { transform: scale(1.12); } }
+body.xiangday .xg-tag {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--taupe);
+}
+
+body.xiangday .xg-labels { text-align: center; margin-top: 0.6rem; min-height: 2.6rem; }
+body.xiangday .xg-name { display: block; font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--espresso); }
+body.xiangday .xg-line {
+  display: block;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.15rem;
+  color: var(--rose);
+  margin-top: 0.05rem;
+}
+
+body.xiangday .xg-actions { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.9rem; }
+body.xiangday .xg-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.45rem 1.05rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--key);
+  color: var(--mocha);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.06s ease;
+}
+body.xiangday .xg-btn:active { transform: scale(0.95); }
+body.xiangday .xg-btn.main { background: #C8473D; border-color: #C8473D; color: #FBF6EC; }
+
+body.xiangday .xg-hint {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--taupe);
+  margin-top: 0.65rem;
+  animation: xg-pulse 2.4s ease-in-out infinite;
+}
+body.xiangday .xg-hint.gone { display: none; }
+@keyframes xg-pulse { 50% { opacity: 0.45; } }
+
+body.xiangday .xg-count {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--mocha);
+  margin-top: 0.7rem;
+  min-height: 1rem;
+}
+body.xiangday .xg-count.pop { animation: xg-pop 0.3s ease; }
+@keyframes xg-pop { 50% { transform: scale(1.13); } }
+
+body.xiangday .xg-fx {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.5rem;
+  color: #C8473D;
+  text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
+  animation: xg-float 1s ease-out forwards;
+}
+@keyframes xg-float {
+  0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.xiangday .xg-scene { opacity: 1 !important; transform: none !important; transition: none; }
+  body.xiangday .xg-face.bump,
+  body.xiangday .xg-hint,
+  body.xiangday .xg-fx { animation: none !important; }
+}

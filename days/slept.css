@@ -1,0 +1,367 @@
+/* everything is scoped to body.sleptday so no other day can be touched */
+
+/* ---------- the intro: 3am, full screen ---------- */
+body.sleptday .sl-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  overflow: hidden;
+  cursor: pointer;
+  background: radial-gradient(ellipse at 50% 45%, #3A2E3E 0%, #221A24 60%, #16111A 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.3rem;
+  transition: opacity 0.45s ease;
+}
+body.sleptday .sl-stage.clearing { opacity: 0; }
+
+body.sleptday .sl-bigclock {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 3.2rem;
+  line-height: 1;
+  color: #F3D7DA;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 18px rgba(217, 160, 165, 0.55);
+}
+body.sleptday .sl-bigclock small { font-size: 1rem; margin-left: 0.35rem; opacity: 0.7; }
+
+body.sleptday .sl-glow {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(253, 251, 247, 0.18);
+  box-shadow: 0 0 44px 12px rgba(140, 170, 255, 0.35);
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+}
+body.sleptday .sl-glow.show { opacity: 1; transform: scale(1); }
+body.sleptday .sl-glow img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 55% 55%;
+  filter: brightness(0.92) saturate(0.7);
+}
+body.sleptday .sl-glow::after {        /* blue phone light on her face */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 75%, rgba(150, 180, 255, 0.3), rgba(40, 50, 90, 0.3));
+  mix-blend-mode: screen;
+}
+
+body.sleptday .sl-cap {
+  width: min(320px, 84vw);
+  min-height: 2.4rem;
+  text-align: center;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.85rem;
+  line-height: 1.35;
+  color: #FDFBF7;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+body.sleptday .sl-cap.show { opacity: 1; transform: translateY(0); }
+
+body.sleptday .sl-skip {
+  position: absolute;
+  bottom: 1.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(253, 251, 247, 0.5);
+}
+
+/* ---------- the bedroom, inside the love note ---------- */
+body.sleptday .sl {
+  position: relative;
+  z-index: 10;
+  margin-top: 1.3rem;
+  --bri: 1;
+  --pg: 0.6;
+}
+body.sleptday .sl[data-drowse="1"] { --bri: 0.93; --pg: 0.48; }
+body.sleptday .sl[data-drowse="2"] { --bri: 0.85; --pg: 0.34; }
+body.sleptday .sl[data-drowse="3"] { --bri: 0.77; --pg: 0.22; }
+body.sleptday .sl[data-drowse="4"] { --bri: 0.7;  --pg: 0.1; }
+body.sleptday .sl[data-drowse="5"] { --bri: 0.62; --pg: 0; }
+
+body.sleptday .sl-scene {
+  position: relative;
+  width: min(252px, 68vw);
+  aspect-ratio: 252 / 184;
+  margin: 0 auto;
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #221A2B 0%, #3A2C3E 62%, #4A3844 100%);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 24px rgba(62, 44, 35, 0.2);
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
+}
+body.sleptday .sl.go .sl-scene { opacity: 1; transform: scale(1); }
+
+body.sleptday .sl-stars { position: absolute; inset: 0; }
+body.sleptday .sl-stars i {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #FDFBF7;
+  animation: sl-twinkle 2.6s ease-in-out infinite;
+}
+@keyframes sl-twinkle { 50% { opacity: 0.2; } }
+
+body.sleptday .sl-moon {
+  position: absolute;
+  right: 9%;
+  top: 8%;
+  width: 11%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  box-shadow: inset 7px -3px 0 0 #F6DFA8;
+  filter: drop-shadow(0 0 5px rgba(246, 223, 168, 0.35));
+  transition: filter 0.8s ease;
+}
+body.sleptday .sl.asleep .sl-moon { filter: drop-shadow(0 0 14px rgba(246, 223, 168, 0.9)); }
+
+body.sleptday .sl-clock {
+  position: absolute;
+  right: 7%;
+  top: 29%;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: rgba(243, 215, 218, 0.85);
+  font-variant-numeric: tabular-nums;
+}
+body.sleptday .sl-clock b { font-size: 0.8rem; font-weight: 600; }
+
+/* the thought bubble the sheep jump through */
+body.sleptday .sl-bubble {
+  position: absolute;
+  left: 3%;
+  top: 5%;
+  width: 46%;
+  height: 28%;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(253, 251, 247, 0.1);
+  border: 1px dashed rgba(253, 251, 247, 0.35);
+}
+body.sleptday .sl-fence {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  width: 22%;
+  margin-left: -11%;
+}
+body.sleptday .sl-fence svg { display: block; width: 100%; }
+
+body.sleptday .sl-sheep {
+  position: absolute;
+  bottom: 10%;
+  left: -30%;
+  width: 30%;
+  animation: sl-run 1.4s linear forwards;
+}
+@keyframes sl-run { to { left: 105%; } }
+body.sleptday .sl-hop { animation: sl-hop 1.4s ease-in-out forwards; }
+@keyframes sl-hop {
+  0%, 34%   { transform: translateY(0) rotate(0deg); }
+  50%       { transform: translateY(-62%) rotate(-8deg); }
+  66%, 100% { transform: translateY(0) rotate(0deg); }
+}
+body.sleptday .sl-sheep svg { display: block; width: 100%; }
+
+/* the bed */
+body.sleptday .sl-pillow {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  width: 62%;
+  height: 36%;
+  margin-left: -31%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #FDFBF7 0%, #EDE3D6 100%);
+  opacity: 0.95;
+}
+body.sleptday .sl-face {
+  position: absolute;
+  left: 50%;
+  bottom: 20%;
+  width: 34%;
+  aspect-ratio: 1 / 1;
+  margin-left: -17%;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #FDFBF7;
+  z-index: 2;
+  box-shadow: 0 0 22px 5px rgba(150, 180, 255, var(--pg));
+  transition: box-shadow 0.7s ease;
+}
+body.sleptday .sl-face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 55% 55%;
+  filter: brightness(var(--bri));
+  transition: filter 0.7s ease;
+}
+
+body.sleptday .sl-phone {
+  position: absolute;
+  left: 66%;
+  bottom: 24%;
+  width: 8%;
+  height: 17%;
+  z-index: 3;
+  border-radius: 4px;
+  border: 2px solid #2B2233;
+  background: linear-gradient(160deg, #DCE7FF 0%, #9FB8F0 100%);
+  box-shadow: 0 0 12px 3px rgba(160, 190, 255, var(--pg));
+  transform: rotate(-12deg);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.6s ease, box-shadow 0.7s ease;
+}
+body.sleptday .sl-phone.nope { animation: sl-nope 0.45s ease; }
+@keyframes sl-nope {
+  0%, 100% { transform: rotate(-12deg); }
+  30%      { transform: rotate(-26deg) translateX(-2px); }
+  60%      { transform: rotate(2deg) translateX(2px); }
+}
+body.sleptday .sl.asleep .sl-phone { transform: translate(10px, 70px) rotate(50deg); opacity: 0; }
+
+body.sleptday .sl-blanket {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: -4%;
+  height: 36%;
+  z-index: 4;
+  border-radius: 20px 20px 0 0;
+  border-top: 2px dashed rgba(253, 251, 247, 0.5);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 16px, rgba(255, 255, 255, 0.16) 16px 17px),
+    repeating-linear-gradient(0deg, transparent 0 16px, rgba(255, 255, 255, 0.16) 16px 17px),
+    linear-gradient(180deg, #D9A0A5 0%, #C88A90 100%);
+  box-shadow: 0 -3px 8px rgba(0, 0, 0, 0.25);
+  transform: translateY(14%);
+  transition: transform 0.9s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+body.sleptday .sl.asleep .sl-blanket { transform: translateY(-12%); }
+
+body.sleptday .sl-z {
+  position: absolute;
+  left: 63%;
+  top: 30%;
+  z-index: 5;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: #F3D7DA;
+  pointer-events: none;
+  animation: sl-z 2.4s ease-out forwards;
+}
+@keyframes sl-z {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.6); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(26px, -46px) scale(1.3); }
+}
+
+/* labels + controls, same family as the other days */
+body.sleptday .sl-labels { text-align: center; margin-top: 0.9rem; min-height: 2.6rem; }
+body.sleptday .sl-name {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  color: var(--espresso);
+}
+body.sleptday .sl-line {
+  display: block;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.15rem;
+  color: var(--rose);
+  margin-top: 0.05rem;
+  min-height: 1.3rem;
+}
+body.sleptday .sl-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+body.sleptday .sl-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.45rem 1.05rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--key);
+  color: var(--mocha);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.06s ease;
+}
+body.sleptday .sl-btn:active { transform: scale(0.95); }
+body.sleptday .sl-btn.main { background: #4A3844; border-color: #4A3844; color: #F3D7DA; }
+
+body.sleptday .sl-hint {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--taupe);
+  margin-top: 0.65rem;
+  animation: sl-pulse 2.4s ease-in-out infinite;
+}
+body.sleptday .sl-hint.gone { display: none; }
+@keyframes sl-pulse { 50% { opacity: 0.45; } }
+
+body.sleptday .sl-count {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--mocha);
+  margin-top: 0.7rem;
+  min-height: 1rem;
+}
+body.sleptday .sl-count.pop { animation: sl-pop 0.3s ease; }
+@keyframes sl-pop { 50% { transform: scale(1.13); } }
+
+body.sleptday .sl-fx {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.5rem;
+  color: var(--rose);
+  text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
+  animation: sl-float 1s ease-out forwards;
+}
+@keyframes sl-float {
+  0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
+}
+
+@media (max-height: 780px) {
+  body.sleptday .sl { margin-top: 0.9rem; }
+  body.sleptday .sl-scene { width: min(214px, 60vw); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.sleptday .sl-scene { opacity: 1 !important; transform: none !important; transition: none; }
+  body.sleptday .sl-stars i,
+  body.sleptday .sl-hint,
+  body.sleptday .sl-fx,
+  body.sleptday .sl-phone.nope { animation: none !important; }
+}

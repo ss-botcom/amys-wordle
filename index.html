@@ -6,14 +6,13 @@
 <title>Amy's Daily Wordle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=Great+Vibes&family=Caveat:wght@500;600&display=swap" rel="stylesheet" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Amy's Wordle" />
 <meta name="theme-color" content="#FDFBF7" />
-<script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root {
     --latte:    #FDFBF7;  /* warm latte cream background     */
@@ -27,7 +26,22 @@
     --blushpk:  #F3D7DA;  /* pale petal pink                 */
     --border:   #E4DCD1;  /* light coffee-cream border       */
     --key:      #F1EAE0;  /* keyboard key resting color      */
+    /* deeper versions for tiles + keys, so white letters stay readable (~3:1) */
+    --sage-d:   #7E9A72;
+    --butter-d: #B78A29;
+    --taupe-d:  #A28F7D;
+    --tile-border: #DDD2C4;
+    --header-bg: rgba(253, 251, 247, 0.92);
   }
+
+  /* ---------- Reset (the same baseline the old Tailwind CDN script gave us) ---------- */
+  *, ::before, ::after { box-sizing: border-box; border: 0 solid var(--border); }
+  html { line-height: 1.5; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; line-height: inherit; }
+  h1, h2, h3, p { margin: 0; font-size: inherit; font-weight: inherit; }
+  button { font: inherit; color: inherit; margin: 0; padding: 0; background: transparent; cursor: pointer; }
+  img, svg, video, canvas { display: block; vertical-align: middle; }
+  img, video { max-width: 100%; height: auto; }
 
   html, body {
     background: var(--latte);
@@ -36,6 +50,76 @@
     -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
   }
+  body { min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ---------- Layout ---------- */
+  .site-header {
+    width: 100%;
+    position: relative;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+    background: var(--header-bg);
+    transition: background 0.6s ease;
+  }
+  .header-inner {
+    max-width: 32rem;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.875rem;
+    padding: 1rem;
+  }
+  .header-text { text-align: center; }
+  .site-title {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    color: var(--espresso);
+  }
+  @media (min-width: 640px) { .site-title { font-size: 1.875rem; line-height: 2.25rem; } }
+  .subtitle {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    margin-top: 0.125rem;
+    color: var(--rose);
+    text-wrap: balance;          /* no lonely "YOU" on its own line */
+  }
+  #today-line { font-size: 0.7rem; margin-top: 0.25rem; font-weight: 500; color: var(--mocha); }
+
+  main.game {
+    flex: 1;
+    width: 100%;
+    max-width: 32rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0.75rem;
+    position: relative;
+    z-index: 10;
+  }
+  #board {
+    display: grid;
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+    gap: 0.375rem;
+    width: 100%;
+    max-width: 21rem;
+  }
+  .row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.375rem; }
+  #keyboard {
+    width: 100%;
+    max-width: 32rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding-bottom: 0.5rem;
+  }
+  .key-row { display: flex; gap: 0.375rem; width: 100%; justify-content: center; }
 
   .font-display { font-family: 'Playfair Display', serif; }
   .font-script  { font-family: 'Great Vibes', cursive; }
@@ -115,7 +199,7 @@
     font-size: clamp(1.4rem, 6vw, 2rem);
     font-weight: 700;
     text-transform: uppercase;
-    border: 2px solid var(--border);
+    border: 2px solid var(--tile-border);
     border-radius: 0.5rem;
     background: var(--lily);
     color: var(--espresso);
@@ -133,15 +217,18 @@
     100% { transform: scale(1); }
   }
 
-  .tile.flip { animation: flip 0.55s ease forwards; }
+  /* a real card flip: tips away, goes edge-on (color swaps there), lands face up */
+  .row { perspective: 520px; }
+  .tile.flip { animation: flip 0.6s cubic-bezier(0.45, 0.05, 0.4, 1) forwards; }
   @keyframes flip {
-    0%   { transform: rotateX(0deg); }
-    50%  { transform: rotateX(90deg); }
-    100% { transform: rotateX(0deg); }
+    0%     { transform: rotateX(0deg); box-shadow: 0 1px 2px rgba(62, 44, 35, 0.04); }
+    49.9%  { transform: rotateX(-90deg) translateY(-3px); box-shadow: 0 10px 14px rgba(62, 44, 35, 0.16); }
+    50%    { transform: rotateX(90deg) translateY(-3px); }
+    100%   { transform: rotateX(0deg); box-shadow: 0 1px 2px rgba(62, 44, 35, 0.04); }
   }
-  .tile.correct { background: var(--sage);   border-color: var(--sage);   color: #FFFFFF; }
-  .tile.present { background: var(--butter); border-color: var(--butter); color: #FFFFFF; }
-  .tile.absent  { background: var(--taupe);  border-color: var(--taupe);  color: #FFFFFF; }
+  .tile.correct { background: var(--sage-d);   border-color: var(--sage-d);   color: #FFFFFF; }
+  .tile.present { background: var(--butter-d); border-color: var(--butter-d); color: #FFFFFF; }
+  .tile.absent  { background: var(--taupe-d);  border-color: var(--taupe-d);  color: #FFFFFF; }
 
   .row.shake { animation: shake 0.45s ease; }
   @keyframes shake {
@@ -157,6 +244,28 @@
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(-10px); }
   }
+  /* 1–2 guesses: bigger, springier hop with a spin */
+  .tile.dance-big { animation: dance-big 0.8s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  @keyframes dance-big {
+    0%   { transform: translateY(0) rotate(0); }
+    35%  { transform: translateY(-26px) rotate(-8deg) scale(1.08); }
+    60%  { transform: translateY(0) rotate(4deg) scale(0.96, 1.04); }
+    80%  { transform: translateY(-6px) rotate(0); }
+    100% { transform: translateY(0); }
+  }
+  /* 6 guesses: phew — a slow relieved sink and recover */
+  .tile.phew { animation: phew 1.1s ease-in-out; }
+  @keyframes phew {
+    0%, 100% { transform: translateY(0) scale(1); }
+    40%      { transform: translateY(5px) scale(1.03, 0.94); }
+    70%      { transform: translateY(-4px) scale(0.99, 1.02); }
+  }
+  /* out of guesses: everything droops a little */
+  .tile.droop { animation: droop 0.9s cubic-bezier(0.5, 0, 0.6, 1.4) forwards; }
+  @keyframes droop {
+    to { transform: translateY(3px) rotate(var(--droop, 2deg)); filter: saturate(0.6); }
+  }
+  .row:nth-child(odd) .tile.droop { --droop: -2deg; }
 
   /* ---------- Keyboard ---------- */
   .key {
@@ -168,6 +277,7 @@
     color: var(--espresso);
     border-radius: 0.45rem;
     height: 3.4rem;
+    box-shadow: 0 2px 0 rgba(62, 44, 35, 0.13);
     flex: 1;
     display: flex;
     align-items: center;
@@ -177,11 +287,18 @@
     transition: background 0.15s ease, color 0.15s ease, transform 0.05s ease;
     user-select: none;
   }
-  .key:active { transform: scale(0.94); }
+  .key:active { transform: translateY(2px) scale(0.96); box-shadow: 0 0 0 rgba(62, 44, 35, 0.13); }
   .key.wide { flex: 1.6; font-size: 0.72rem; letter-spacing: 0.03em; }
-  .key.correct { background: var(--sage);   color: #fff; }
-  .key.present { background: var(--butter); color: #fff; }
-  .key.absent  { background: var(--taupe);  color: #fff; }
+  .key.correct { background: var(--sage-d);   color: #fff; }
+  .key.present { background: var(--butter-d); color: #fff; }
+  .key.absent  { background: var(--taupe-d);  color: #fff; }
+  /* keys that just changed color pop, left to right */
+  .key.key-pop { animation: key-pop 0.42s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+  @keyframes key-pop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.16) translateY(-3px); }
+    100% { transform: scale(1); }
+  }
 
   /* ---------- Toast ---------- */
   #toast {
@@ -242,15 +359,17 @@
     height: 5px;
     background: linear-gradient(90deg, var(--sage), var(--butter), var(--rose));
   }
-  /* faint lily watermark behind the note */
+  /* faint blush glow in the corner behind the note.
+     Kept inside the card (no negative offsets) so it can't make the card scroll,
+     and it fades to nothing before its own edges so there's no visible square. */
   #modal-card::after {
     content: "";
     position: absolute;
-    right: -2.5rem;
-    bottom: -2.5rem;
+    right: 0;
+    bottom: 0;
     width: 11rem;
     height: 11rem;
-    background: radial-gradient(ellipse at 30% 30%, var(--blushpk), transparent 70%);
+    background: radial-gradient(circle 11rem at 100% 100%, var(--blushpk), transparent);
     opacity: 0.5;
     pointer-events: none;
   }
@@ -268,6 +387,45 @@
     height: 1px;
     background: var(--border);
   }
+
+  .modal-eyebrow {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    margin-bottom: 0.5rem;
+    color: var(--mocha);
+  }
+  #modal-title {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--espresso);
+  }
+  #modal-word { font-style: italic; font-size: 1.25rem; line-height: 1.75rem; color: var(--rose); }
+  #modal-message {
+    font-size: 0.95rem;
+    line-height: 1.625;
+    position: relative;
+    z-index: 10;
+    color: var(--mocha);
+  }
+  .next-word { margin-top: 1rem; font-size: 0.75rem; line-height: 1rem; color: var(--taupe); }
+  #countdown { font-weight: 600; color: var(--mocha); }
+  #modal-close {
+    margin-top: 1rem;
+    padding: 0.625rem 1.5rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    background: var(--espresso);
+    color: var(--latte);
+    position: relative;
+    z-index: 10;
+    transition: opacity 0.15s ease;
+  }
+  #modal-close:hover { opacity: 0.9; }
 
   .signature {
     font-family: 'Great Vibes', cursive;
@@ -317,16 +475,390 @@
     to   { transform: scale(1)   translateY(0);    opacity: 1; }
   }
 
+
+  /* ========================= THE NOTE: paper, envelope, extras ========================= */
+  #modal-card {
+    z-index: 2;
+    background-color: #FFFDF9;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .42  0 0 0 0 .3  0 0 0 0 .22  0 0 0 .06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* your message, in handwriting, typed out as the note opens */
+  #modal-message {
+    font-family: 'Caveat', cursive;
+    font-size: 1.45rem;
+    line-height: 1.32;
+    font-weight: 500;
+    color: #5A4336;
+  }
+  #modal-message .untyped { visibility: hidden; }
+
+  /* she lost: a little pouty polaroid */
+  .polaroid {
+    width: 124px;
+    margin: 0.2rem auto 1rem;
+    padding: 7px 7px 0;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(62, 44, 35, 0.16);
+    transform: rotate(-3deg);
+    position: relative;
+    z-index: 10;
+  }
+  .polaroid[hidden] { display: none; }
+  .polaroid img { width: 110px; height: 118px; object-fit: cover; }
+  .polaroid figcaption { font-family: 'Caveat', cursive; font-size: 1.1rem; color: var(--mocha); padding: 0.15rem 0 0.3rem; }
+  #modal-backdrop.show .polaroid { animation: polaroid-drop 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) 1.1s backwards; }
+  @keyframes polaroid-drop {
+    from { opacity: 0; transform: translateY(-24px) rotate(-14deg); }
+    to   { opacity: 1; transform: rotate(-3deg); }
+  }
+
+  /* countdown with a tiny cup that refills as midnight gets closer */
+  .next-word { display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+  .cup-timer { width: 22px; height: 22px; flex: none; }
+
+  .note-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    position: relative;
+    z-index: 10;
+  }
+  #modal-close { margin-top: 0; }
+  #share-btn {
+    padding: 0.6rem 1.1rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: var(--key);
+    color: var(--mocha);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  #share-btn:active, #modal-close:active { transform: scale(0.96); }
+
+  /* the envelope (only while .opening) */
+  #envelope {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 240px;
+    height: 156px;
+    margin: -78px 0 0 -120px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+    perspective: 600px;
+  }
+  #envelope > div { position: absolute; }
+  .env-back   { inset: 0; background: #E9D7C5; border-radius: 6px; box-shadow: 0 18px 40px rgba(62, 44, 35, 0.25); }
+  .env-letter { left: 8%; right: 8%; top: 8%; height: 82%; background: #FFFDF9; border-radius: 4px; box-shadow: 0 2px 6px rgba(62, 44, 35, 0.12); }
+  .env-front  { inset: 0; background: #F4E5D6; border-radius: 6px; clip-path: polygon(0 0, 50% 54%, 100% 0, 100% 100%, 0 100%); }
+  .env-flap   { left: 0; right: 0; top: 0; height: 60%; background: #EED9C6; clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: 50% 0; z-index: 3; }
+  .env-seal {
+    left: 50%; top: 60%;
+    width: 30px; height: 30px; margin: -15px 0 0 -15px;
+    border-radius: 50%;
+    background: #C88A90;
+    color: #fff;
+    font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 5px rgba(120, 50, 60, 0.35);
+    z-index: 4;
+  }
+  #modal-backdrop.opening #envelope { animation: env-life 1.5s cubic-bezier(0.3, 0.9, 0.4, 1) both; }
+  #modal-backdrop.opening .env-flap { animation: env-flap 1.5s ease both; }
+  #modal-backdrop.opening .env-seal { animation: env-seal 1.5s ease both; }
+  #modal-backdrop.opening .env-letter { animation: env-letter 1.5s ease both; }
+  #modal-backdrop.opening #modal-card { animation: card-rise 1.5s cubic-bezier(0.25, 0.9, 0.35, 1.05) both; }
+  @keyframes env-life {
+    0%   { opacity: 1; transform: translateY(70vh) rotate(-8deg); }
+    24%  { opacity: 1; transform: translateY(0) rotate(0deg); }
+    62%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(140px) scale(0.92); }
+  }
+  @keyframes env-flap {
+    0%, 26% { transform: rotateX(0deg); z-index: 3; }
+    40%     { transform: rotateX(180deg); z-index: 0; }
+    100%    { transform: rotateX(180deg); z-index: 0; }
+  }
+  @keyframes env-seal {
+    0%, 26% { opacity: 1; transform: scale(1); }
+    34%, 100% { opacity: 0; transform: scale(1.6); }
+  }
+  @keyframes env-letter {
+    0%, 38% { transform: translateY(0); }
+    58%     { transform: translateY(-64px); }
+    100%    { transform: translateY(-64px); }
+  }
+  @keyframes card-rise {
+    0%, 48% { opacity: 0; transform: translateY(30px) scale(0.5); }
+    78%     { opacity: 1; transform: translateY(-6px) scale(1.01); }
+    100%    { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* after closing the note, a way back to it */
+  #reopen-note {
+    display: none;
+    padding: 0.45rem 1.05rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    color: var(--mocha);
+    background: var(--lily);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  #reopen-note.show { display: inline-block; animation: rise 0.5s ease both; }
+
+  /* streak, next to the date */
+  .streak {
+    display: inline-block;
+    margin-left: 0.45rem;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    background: rgba(217, 160, 165, 0.18);
+    color: #B5737A;
+    font-weight: 600;
+  }
+
+  /* ========================= LITTLE MOMENTS ========================= */
+  /* last guess: she peeks in from the left edge, hands on her head */
+  #peeker {
+    position: fixed;
+    left: 0;
+    top: 38%;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    transform: translateX(-130%) rotate(-14deg);
+    transition: transform 0.55s cubic-bezier(0.3, 1.5, 0.5, 1);
+    pointer-events: none;
+  }
+  #peeker.show { transform: translateX(10px) rotate(-5deg); }
+  #peeker img {
+    width: 86px;
+    height: 86px;
+    object-fit: cover;
+    border-radius: 18px;
+    border: 3px solid #fff;
+    box-shadow: 0 8px 20px rgba(62, 44, 35, 0.25);
+  }
+  .peek-bubble {
+    font-family: 'Caveat', cursive;
+    font-size: 1.15rem;
+    background: #fff;
+    color: #5A4336;
+    padding: 0.1rem 0.6rem;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(62, 44, 35, 0.15);
+    white-space: nowrap;
+  }
+
+  /* FIRST TRY?! */
+  .stamp {
+    position: fixed;
+    z-index: 46;
+    pointer-events: none;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 2.3rem;
+    letter-spacing: 0.04em;
+    color: #C25E68;
+    border: 4px solid #C25E68;
+    border-radius: 12px;
+    padding: 0.1rem 0.8rem;
+    background: rgba(255, 253, 249, 0.88);
+    white-space: nowrap;
+    animation: stamp 2.4s ease both;
+  }
+  @keyframes stamp {
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(3); }
+    12%  { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(0.92); }
+    18%  { transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+    82%  { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(1.05); }
+  }
+
+  .fx-float {
+    position: fixed;
+    z-index: 70;
+    pointer-events: none;
+    font-family: 'Caveat', cursive;
+    font-weight: 600;
+    font-size: 1.6rem;
+    color: #C25E68;
+    text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
+    white-space: nowrap;
+    animation: fx-float 1.4s ease-out forwards;
+  }
+  @keyframes fx-float {
+    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+    20%  { transform: translate(-50%, -90%) scale(1.12); opacity: 1; }
+    100% { transform: translate(-50%, -260%) scale(1); opacity: 0; }
+  }
+  .burst.glyph { background: none; border-radius: 0; line-height: 1; width: auto; height: auto; }
+
+  /* ========================= AMBIENT: seasons + night sky ========================= */
+  .ambient, .night-sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .drift { position: absolute; top: -4rem; animation-timing-function: linear; animation-iteration-count: infinite; }
+  .drift svg { width: 100%; height: 100%; display: block; }
+  .drift.leaf { animation-name: leaf-fall; }
+  @keyframes leaf-fall {
+    0%   { transform: translate(0, -6vh) rotate(0deg); }
+    25%  { transform: translate(2.6rem, 24vh) rotate(110deg) scaleX(0.7); }
+    50%  { transform: translate(-1.8rem, 52vh) rotate(200deg) scaleX(1); }
+    75%  { transform: translate(2.2rem, 80vh) rotate(290deg) scaleX(0.6); }
+    100% { transform: translate(-1rem, 112vh) rotate(400deg) scaleX(1); }
+  }
+  .drift.flake {
+    border-radius: 50%;
+    background: radial-gradient(circle, #FFFFFF 35%, #DCCFC0 100%);
+    animation-name: snow-fall;
+  }
+  @keyframes snow-fall {
+    0%   { transform: translate(0, -4vh); }
+    50%  { transform: translate(1.3rem, 52vh); }
+    100% { transform: translate(-0.6rem, 108vh); }
+  }
+  .drift.candy { animation-name: leaf-fall; }
+  .drift.bat { top: auto; left: 0; animation-name: bat-fly; }
+  @keyframes bat-fly {
+    0%   { transform: translate(-12vw, 0); }
+    25%  { transform: translate(25vw, -4vh); }
+    50%  { transform: translate(55vw, 3vh); }
+    75%  { transform: translate(85vw, -3vh); }
+    100% { transform: translate(115vw, 0); }
+  }
+  .bat .wing { transform-box: view-box; transform-origin: 32px 14px; animation: flap 0.22s ease-in-out infinite alternate; }
+  @keyframes flap { to { transform: scaleY(0.25); } }
+
+  .night-sky { opacity: 0; transition: opacity 1.2s ease; }
+  .night-sky.on { opacity: 1; }
+  .night-sky i {
+    position: absolute;
+    border-radius: 50%;
+    background: #FFF4DE;
+    box-shadow: 0 0 5px #FFF4DE;
+    animation: twinkle ease-in-out infinite;
+  }
+  @keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+
+  /* ---------- time of day ---------- */
+  body { transition: background-color 0.8s ease; }
+  body.tod-morning {
+    background:
+      radial-gradient(130% 55% at 12% -5%, rgba(255, 228, 182, 0.9) 0%, rgba(255, 228, 182, 0) 60%),
+      linear-gradient(180deg, #FFF7EA 0%, var(--latte) 55%);
+  }
+  body.tod-morning .steam path { animation-duration: 2s; }
+  body.tod-evening {
+    background:
+      radial-gradient(140% 60% at 88% -8%, rgba(244, 196, 186, 0.85) 0%, rgba(244, 196, 186, 0) 58%),
+      linear-gradient(180deg, #FBEDE6 0%, var(--latte) 60%);
+  }
+  body.tod-evening .lily-icon { filter: drop-shadow(0 0 6px rgba(217, 160, 165, 0.7)); }
+
+  /* night: espresso dark. Only the page itself goes dark (.themed); the
+     love note, toasts and special-day intros keep their own light colors. */
+  :root:has(body.tod-night) { background: #1E1713; }
+  body.tod-night {
+    background: radial-gradient(120% 55% at 50% -10%, #3A2A22 0%, rgba(58, 42, 34, 0) 62%), #1E1713;
+    color: #F2E7DC;
+  }
+  body.tod-night .themed {
+    --latte: #1E1713;
+    --espresso: #F2E7DC;
+    --mocha: #CDB6A3;
+    --border: #3B2E26;
+    --key: #33281F;
+    --lily: #271E19;
+    --tile-border: #4A3A2F;
+    --header-bg: rgba(30, 23, 19, 0.82);
+  }
+  body.tod-night .key { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4); }
+  body.tod-night .tile { box-shadow: none; }
+  body.tod-night .ambient { opacity: 0.55; }
+  body.tod-night .lily-icon { filter: drop-shadow(0 0 6px rgba(217, 160, 165, 0.55)); }
+  body.tod-night .streak { color: #E3AAB0; }
+
+  /* ========================= SHARED BITS FOR SPECIAL-DAY FILES ========================= */
+  .sd { position: relative; z-index: 10; margin-top: 1.1rem; }
+  .sd-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 58;
+    overflow: hidden;
+    cursor: pointer;
+    background: rgba(253, 251, 247, 0.97);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.3rem;
+    transition: opacity 0.45s ease;
+  }
+  .sd-stage.clearing { opacity: 0; }
+  .sd-say {
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.75rem;
+    line-height: 1.35;
+    color: #6B5142;
+    text-align: center;
+    max-width: 300px;
+    min-height: 2.4rem;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .sd-say.show { opacity: 1; transform: translateY(0); }
+  .sd-skip {
+    position: absolute;
+    bottom: 1.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.62rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: #B8AA9C;
+  }
+  .sd-name { display: block; font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--espresso); }
+  .sd-line { display: block; font-family: 'Great Vibes', cursive; font-size: 1.15rem; color: var(--rose); min-height: 1.3rem; }
+  .sd-actions { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.9rem; }
+  .sd-btn {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.45rem 1.05rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--key);
+    color: var(--mocha);
+    transition: transform 0.06s ease, opacity 0.2s ease;
+  }
+  .sd-btn:active { transform: scale(0.95); }
+  .sd-btn.main { background: var(--rose); border-color: var(--rose); color: #fff; }
+  .sd-btn[disabled] { opacity: 0.55; cursor: default; }
+  .sd-hint { font-size: 0.72rem; color: var(--taupe); margin-top: 0.6rem; animation: sd-pulse 2.4s ease-in-out infinite; }
+  .sd-hint.gone { display: none; }
+  @keyframes sd-pulse { 50% { opacity: 0.45; } }
+  .sd-count { font-size: 0.72rem; font-weight: 600; color: var(--mocha); margin-top: 0.6rem; min-height: 1rem; }
+  .sd-count.pop { animation: sd-pop 0.3s ease; }
+  @keyframes sd-pop { 50% { transform: scale(1.13); } }
+  .sd-photo { width: 150px; height: 150px; margin: 0 auto; border-radius: 50%; overflow: hidden; border: 4px solid #fff; box-shadow: 0 6px 18px rgba(62, 44, 35, 0.18); }
+  .sd-photo img { width: 100%; height: 100%; object-fit: cover; }
+
   @media (prefers-reduced-motion: reduce) {
-    .tile.flip, .tile.filled, .tile.dance, .row.shake,
-    .rise, .steam path, .lily-icon, .petal, .burst,
-    .bq .stem, .bq .bqi { animation: none !important; }
+    .tile.flip, .tile.filled, .tile.dance, .tile.dance-big, .tile.phew, .tile.droop, .row.shake,
+    .rise, .steam path, .lily-icon, .petal, .burst, .key.key-pop, .night-sky i, .sd-hint,
+    .bq .stem, .bq .bqi, #modal-backdrop .polaroid { animation: none !important; }
     .rise { opacity: 1; }
     * { transition-duration: 0.01ms !important; }
   }
 </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
 
   <!-- Shared gradients for the anniversary bouquet lilies -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -345,8 +877,8 @@
   </svg>
 
   <!-- ============ HEADER ============ -->
-  <header class="w-full border-b relative z-10 rise rise-1" style="border-color: var(--border); background: rgba(253,251,247,0.92);">
-    <div class="max-w-lg mx-auto flex items-center justify-center gap-3.5 py-4 px-4">
+  <header class="site-header themed rise rise-1">
+    <div class="header-inner">
       <!-- Coffee cup with rising steam -->
       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--mocha)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <g class="steam">
@@ -358,10 +890,10 @@
         <path d="M4 10h13v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-5z"/>
       </svg>
 
-      <div class="text-center">
-        <h1 class="font-display text-2xl sm:text-3xl font-semibold tracking-wide" style="color: var(--espresso);">Amy's Daily Wordle</h1>
-        <p class="text-[0.7rem] uppercase tracking-[0.25em] mt-0.5" style="color: var(--rose);">a word a day, from me to you</p>
-        <p id="today-line" class="text-[0.7rem] mt-1 font-medium" style="color: var(--mocha);"></p>
+      <div class="header-text">
+        <h1 class="site-title font-display">Amy's Daily Wordle</h1>
+        <p class="subtitle">a word a day, from me to you</p>
+        <p id="today-line"></p>
       </div>
 
       <!-- Swaying lily -->
@@ -379,23 +911,43 @@
   <div id="toast" role="status"></div>
 
   <!-- ============ GAME ============ -->
-  <main class="flex-1 w-full max-w-lg mx-auto flex flex-col items-center justify-between px-3 py-4 gap-4 relative z-10">
-    <div id="board" class="grid grid-rows-6 gap-1.5 w-full max-w-[21rem] rise rise-2" aria-label="game board"></div>
-    <div id="keyboard" class="w-full max-w-[32rem] flex flex-col gap-1.5 pb-2 rise rise-3" aria-label="on-screen keyboard"></div>
+  <main class="game themed">
+    <div id="board" class="rise rise-2" aria-label="game board"></div>
+    <button id="reopen-note" type="button">read today's note ✉</button>
+    <div id="keyboard" class="rise rise-3" aria-label="on-screen keyboard"></div>
   </main>
+
+  <!-- last guess: she peeks in, hands on head -->
+  <div id="peeker" aria-hidden="true">
+    <span class="peek-bubble">last one, wu…</span>
+    <img src="faces/uhoh.jpg" alt="" draggable="false">
+  </div>
 
   <!-- ============ MODAL ============ -->
   <div id="modal-backdrop">
+    <!-- the note arrives in this envelope, then rises out of it -->
+    <div id="envelope" aria-hidden="true">
+      <div class="env-back"></div>
+      <div class="env-letter"></div>
+      <div class="env-front"></div>
+      <div class="env-flap"></div>
+      <div class="env-seal">♥</div>
+    </div>
     <div id="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <p class="text-[0.65rem] uppercase tracking-[0.3em] mb-2" style="color: var(--mocha);">Amy's Daily Wordle</p>
-      <h2 id="modal-title" class="font-display text-3xl font-semibold mb-1" style="color: var(--espresso);"></h2>
-      <p id="modal-word" class="font-display italic text-xl" style="color: var(--rose);"></p>
+      <p class="modal-eyebrow">Amy's Daily Wordle</p>
+      <h2 id="modal-title" class="font-display"></h2>
+      <p id="modal-word" class="font-display"></p>
 
       <div class="divider-heart" aria-hidden="true">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--rose)"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.6 2.4 5 5.8 5c2 0 3.4 1.1 4.2 2.4h4c.8-1.3 2.2-2.4 4.2-2.4 3.4 0 5.4 3.6 3.8 6.7C19.5 16.2 12 21 12 21z" transform="scale(0.9) translate(1.3,1.3)"/></svg>
       </div>
 
-      <p id="modal-message" class="text-[0.95rem] leading-relaxed relative z-10" style="color: var(--mocha);"></p>
+      <figure id="loss-face" class="polaroid" hidden>
+        <img src="faces/pout.jpg" alt="" draggable="false">
+        <figcaption>next time, wu</figcaption>
+      </figure>
+
+      <p id="modal-message"></p>
 
       <!-- Anniversary bouquet: hand-tied, assembles itself when the note opens.
            Only rendered on August 1 (body.anniversary). -->
@@ -503,12 +1055,23 @@
 
       <p class="signature">with all my love</p>
 
-      <p class="mt-4 text-xs" style="color: var(--taupe);">Next word in <span id="countdown" class="font-semibold" style="color: var(--mocha);"></span></p>
+      <p class="next-word">
+        <svg class="cup-timer" viewBox="0 0 24 24" aria-hidden="true">
+          <defs><clipPath id="cupClip"><path d="M4.8 10.2h12.4v4.8a3.8 3.8 0 0 1-3.8 3.8H8.6a3.8 3.8 0 0 1-3.8-3.8z"/></clipPath></defs>
+          <rect id="cup-fill" x="4" y="19" width="14" height="0" fill="#B98350" clip-path="url(#cupClip)"/>
+          <g fill="none" stroke="var(--mocha)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <g class="steam"><path d="M8.5 7.5c.6-.9-.6-1.7 0-2.8"/><path d="M12.5 7.5c.6-.9-.6-1.7 0-2.8"/></g>
+            <path d="M17 10h1a3 3 0 0 1 0 6h-1"/>
+            <path d="M4 10h13v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-5z"/>
+          </g>
+        </svg>
+        <span>Next word in <span id="countdown"></span></span>
+      </p>
 
-      <button id="modal-close" class="mt-4 px-6 py-2.5 rounded-full text-sm font-semibold transition hover:opacity-90 relative z-10"
-              style="background: var(--espresso); color: var(--latte);">
-        See the board
-      </button>
+      <div class="note-actions">
+        <button id="share-btn" type="button">send me your board</button>
+        <button id="modal-close" type="button">See the board</button>
+      </div>
     </div>
   </div>
 
@@ -521,6 +1084,9 @@
      so a fully filled calendar runs forever).
    - `word` must be exactly 5 letters. Guesses aren't dictionary-checked,
      so invented words are fine too. Stray spaces get trimmed automatically.
+   - Accents are fine (Râler is played as RALER). Other scripts like Chinese
+     can't be typed, so put a typeable word in `word` and the fancy version
+     in an optional `display`, e.g. { word: "QINAI", display: "QINAI · 亲爱", ... }
    - `message` is the note revealed in the pop-up when the round ends.
    - Any date not listed below automatically falls back to FALLBACK_WORDS,
      so the game never breaks.
@@ -554,7 +1120,7 @@ const WORDS = {
   "08-09": { word: "ROSES", message: "Roses are red, violets are blue, sunflowers are yellow, I bet you were expecting something romantic but no, here's some gardening facts. " },
   "08-10": { word: "BELLE", message: "Surprise :) There's French too, Ma Belle " },
   "08-11": { word: "BERRY", message: "Why do you like strawberries?" },
-  "08-12": { word: "我非常爱你", message: "Chinese plot twist. You've been getting too many right. " },
+  "08-12": { word: "QINAI", display: "QINAI · 亲爱", message: "Chinese plot twist. You've been getting too many right. " },
   "08-13": { word: "WUUUU", message: "WUUUUUUUUUUUUUUUUU bet you didn't get this one either :)" },
   "08-14": { word: "TEETH", message: "Did you brush love?" },
   "08-15": { word: "LUCKY", message: "My Lucky Charm :)" },
@@ -565,9 +1131,9 @@ const WORDS = {
   "08-20": { word: "SNORE", message: "ZZZZZZzzzzzzzzzzzzzzzzzz" },
   "08-21": { word: "PHONE", message: "Pick up, I'm calling in 5. " },
   "08-22": { word: "MISSU", message: "Maybe it's not a real word but its a real feeling :)" },
-  "08-23": { word: "MOCHA", message: "Can't believe that's all I use to drink before I met you..." },
+  "08-23": { word: "MOCHA", message: "Can't believe that's all I used to drink before I met you..." },
   "08-24": { word: "FALLS", message: "I falls for you" },
-  "08-25": { word: "TOAST", message: "Are you toast becuase I loaf you" },
+  "08-25": { word: "TOAST", message: "Are you toast because I loaf you" },
   "08-26": { word: "DROOL", message: "You drool a little sometimes when you sleep" },
   "08-27": { word: "MOIST", message: "No reason..." },
   "08-28": { word: "SUSHI", message: "Can't believe I got a sidehug at Hama Sushi. " },
@@ -633,7 +1199,7 @@ const WORDS = {
   "10-23": { word: "WOLVE", message: "AWUUUUUUUUUUUU" },
   "10-24": { word: "CHEWS", message: "I chews you :)" },
   "10-25": { word: "WANAN", message: "Goodnight baby" },
-  "10-26": { word: "OHARE", message: "Chicago?" },
+  "10-26": { word: "ACORN", message: "Squirrels are out there hoarding acorns for winter. I'm doing the same thing with pictures of you :)" },
   "10-27": { word: "PLUCK", message: "Lemme Pluck" },
   "10-28": { word: "TIMES", message: "Your first guess? " },
   "10-29": { word: "AUDIO", message: "Your second guess?" },
@@ -740,19 +1306,23 @@ const FALLBACK_WORDS = [
 const ROWS = 6, COLS = 5;
 
 const todayDate = new Date();
-const mm = String(todayDate.getMonth() + 1).padStart(2, "0");
-const dd = String(todayDate.getDate()).padStart(2, "0");
+const pad2 = (n) => String(n).padStart(2, "0");
+const mm = pad2(todayDate.getMonth() + 1);
+const dd = pad2(todayDate.getDate());
 
 /* ---------- Hidden preview mode (for you, not for Amy) ----------
    Append ?peek=MM-DD to the URL to play any date, e.g.:
      index.html?peek=07-24   → birthday mode
      index.html?peek=09-26   → froth day
-     index.html?peek=09-30   → bedtime day
-     index.html?peek=10-05   → spicy day
-     index.html?peek=10-18   → xiang day
      index.html?peek=10-19   → floss day
+     index.html?peek=10-23   → wolf moon
+     index.html?peek=10-31   → halloween
+     index.html?peek=11-01   → 9 months (works on any 1st of the month)
+   The list of special days is DAY_FILES below; their code lives in days/.
    Add &fresh=1 to wipe that day's saved test progress and replay:
      index.html?peek=09-26&fresh=1
+   Add &hour=HH to preview a time of day (morning 5–10, evening 17–20,
+   night 21–4), e.g. index.html?peek=10-25&hour=23
    Preview progress is stored under separate "test-" keys, so testing
    never locks or affects a real day. */
 const params = new URLSearchParams(location.search);
@@ -760,39 +1330,52 @@ const peek = params.get("peek");
 const isPeek = !!(peek && /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(peek));
 
 const dateKey = isPeek ? peek : `${mm}-${dd}`;
+const [playMonth, playDay] = dateKey.split("-").map(Number);
 const storageKey = (isPeek ? "test-" : "") + `amy-wordle-${todayDate.getFullYear()}-${dateKey}`;
 if (isPeek && params.get("fresh")) {
   try { localStorage.removeItem(storageKey); } catch (e) {}
 }
 
+/* Accents get stripped so the keyboard can type them (Râler → RALER).
+   Anything still not A–Z after that can't be typed at all, so it's rejected. */
+function typeable(w) {
+  return String(w).normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toUpperCase();
+}
+
 function getToday() {
   const entry = WORDS[dateKey];
-  if (entry && entry.word && entry.word.trim().length === 5) {
-    return { word: entry.word.trim().toUpperCase(), message: entry.message };
+  if (entry && entry.word) {
+    const word = typeable(entry.word);
+    if (/^[A-Z]{5}$/.test(word)) {
+      // `display` is what the note shows; defaults to the word as written, accents and all
+      return { word, display: (entry.display || entry.word.trim()).toUpperCase(), message: entry.message };
+    }
+    console.warn(`WORDS["${dateKey}"]: "${entry.word}" isn't 5 typeable letters, using a fallback word`);
   }
-  const start = new Date(todayDate.getFullYear(), 0, 0);
-  const dayOfYear = Math.floor((todayDate - start) / 86400000);
-  return FALLBACK_WORDS[dayOfYear % FALLBACK_WORDS.length];
+  // fallback is picked from the date being played (the peek date in preview mode)
+  const dayOfYear = Math.floor((new Date(todayDate.getFullYear(), playMonth - 1, playDay) - new Date(todayDate.getFullYear(), 0, 0)) / 86400000);
+  const fb = FALLBACK_WORDS[dayOfYear % FALLBACK_WORDS.length];
+  return { word: fb.word, display: fb.word, message: fb.message };
 }
 
 const today = getToday();
-const ANSWER = today.word.toUpperCase();
+const ANSWER = today.word;
 
 let currentRow = 0;
 let currentGuess = "";
 let gameOver = false;
 let boardTiles = [];
 const keyStates = {};
+const guessResults = [];   // per submitted row, for the shareable board
 
-/* Date line in the header */
-document.getElementById("today-line").textContent = isPeek
-  ? "preview · " + dateKey
-  : todayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const subtitleEl = document.querySelector("header .subtitle");
+const todayLineEl = document.getElementById("today-line");
 
 /* ---------- Birthday mode (every July 24) ---------- */
 const BIRTHDAY = "07-24";
 if (dateKey === BIRTHDAY) {
-  document.querySelector("header p").textContent = "happy birthday, my love 🎂";
+  subtitleEl.textContent = "happy birthday, my love 🎂";
   setTimeout(() => petalBurst(), 900);        // petal shower as the page opens
   setTimeout(() => petalBurst(), 2100);       // and one more, because birthday
 }
@@ -801,34 +1384,383 @@ if (dateKey === BIRTHDAY) {
 /* Fireworks behind the love note + a bouquet inside it. */
 const ANNIVERSARY = "08-01";
 if (dateKey === ANNIVERSARY) {
-  document.querySelector("header p").textContent = "happy anniversary, my love 💙";
+  subtitleEl.textContent = "happy anniversary, my love 💙";
   document.body.classList.add("anniversary");
 }
 
-/* ========================= AMBIENT PETALS ========================= */
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-if (!reducedMotion) {
-  const PETAL_COUNT = 12;
-  for (let i = 0; i < PETAL_COUNT; i++) {
-    const p = document.createElement("div");
-    p.className = "petal";
-    const size = 9 + Math.random() * 11;
-    p.style.width = size + "px";
-    p.style.height = size * 0.75 + "px";
-    p.style.left = Math.random() * 100 + "vw";
-    p.style.opacity = (0.3 + Math.random() * 0.35).toFixed(2);
-    const dur = 13 + Math.random() * 12;
-    p.style.animationDuration = dur + "s";
-    p.style.animationDelay = -(Math.random() * dur) + "s"; // pre-populate the sky
-    document.body.appendChild(p);
+/* ========================= TIME OF DAY + SEASON ========================= */
+/* morning 5–10 · day 11–16 · evening 17–20 · night 21–4 (her phone's clock) */
+const hourParam = parseInt(params.get("hour"), 10);
+const hour = isPeek && hourParam >= 0 && hourParam < 24 ? hourParam : todayDate.getHours();
+const TOD_COLORS = { morning: "#FFF6E6", day: "#FDFBF7", evening: "#FBEFEA", night: "#1E1713" };
+
+function timeOfDay(h) {
+  if (h >= 5 && h < 11) return "morning";
+  if (h >= 11 && h < 17) return "day";
+  if (h >= 17 && h < 21) return "evening";
+  return "night";
+}
+
+function setTimeOfDay(tod) {
+  document.body.classList.remove("tod-morning", "tod-day", "tod-evening", "tod-night");
+  document.body.classList.add("tod-" + tod);
+  document.body.dataset.tod = tod;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = TOD_COLORS[tod];
+  if (typeof Ambient !== "undefined") Ambient.stars(tod === "night");
+}
+
+/* season follows the date being played, so ?peek shows the right one */
+function seasonFor(m, d) {
+  const md = m * 100 + d;
+  if (md >= 1201 || md < 301) return "winter";
+  if (md >= 922) return "autumn";
+  if (md >= 601) return "summer";
+  return "spring";
+}
+const season = seasonFor(playMonth, playDay);
+document.body.classList.add("season-" + season);
+
+/* ========================= AMBIENT LAYER ========================= */
+/* Whatever drifts behind the board: petals in spring/summer, leaves in
+   autumn (with the odd early snowflake from Nov 20), snow in winter,
+   plus twinkling stars at night. Special days can swap it with
+   Ambient.set("bats") etc. */
+const Ambient = (() => {
+  const layer = document.createElement("div");
+  layer.className = "ambient";
+  layer.setAttribute("aria-hidden", "true");
+  document.body.prepend(layer);
+
+  const sky = document.createElement("div");
+  sky.className = "night-sky";
+  sky.setAttribute("aria-hidden", "true");
+  document.body.prepend(sky);
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const LEAF_COLORS = ["#C26A3D", "#D99A4E", "#B5523B", "#E3C481", "#A8BBA0", "#9C5B3A"];
+  const LEAF = '<svg viewBox="0 0 24 24"><path d="M12 2c3 3 7 4 9 3-1 4-2 7-5 9 1 2 1 4 0 6-2-1-3-2-4-4-1 2-2 3-4 4-1-2-1-4 0-6-3-2-4-5-5-9 2 1 6 0 9-3z" fill="currentColor"/><path d="M12 6v16" stroke="rgba(0,0,0,.18)" stroke-width="1"/></svg>';
+  const CANDY_COLORS = ["#D9A0A5", "#E3C481", "#A8BBA0", "#C8A2D4", "#E8955A"];
+  const CANDY = '<svg viewBox="0 0 40 20"><path d="M2 4l8 6-8 6zM38 4l-8 6 8 6z" fill="currentColor" opacity=".75"/><ellipse cx="20" cy="10" rx="10" ry="7.5" fill="currentColor"/><path d="M14 6c3 3 9 5 12 8" stroke="#fff" stroke-width="1.6" opacity=".6" fill="none"/></svg>';
+  const BAT = '<svg viewBox="0 0 64 28"><g fill="#3E2C23"><path class="wing l" d="M32 14C26 6 14 3 2 6c6 2 8 6 8 10 4-3 8-3 10 0 2-3 6-3 8 0z"/><path class="wing r" d="M32 14c6-8 18-11 30-8-6 2-8 6-8 10-4-3-8-3-10 0-2-3-6-3-8 0z"/><ellipse cx="32" cy="15" rx="4" ry="5.5"/><path d="M29 10l1-4 2 3 2-3 1 4z"/></g></svg>';
+
+  const MAKERS = {
+    petals(p) {
+      p.className = "drift petal";
+      const s = rand(9, 20);
+      p.style.width = s + "px"; p.style.height = s * 0.75 + "px";
+      p.style.opacity = rand(0.3, 0.65).toFixed(2);
+      return rand(13, 25);
+    },
+    leaves(p) {
+      p.className = "drift leaf";
+      const s = rand(13, 24);
+      p.style.width = p.style.height = s + "px";
+      p.style.color = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
+      p.style.opacity = rand(0.45, 0.8).toFixed(2);
+      p.innerHTML = LEAF;
+      return rand(11, 20);
+    },
+    snow(p) {
+      p.className = "drift flake";
+      const s = rand(3, 7);
+      p.style.width = p.style.height = s + "px";
+      p.style.opacity = rand(0.5, 0.95).toFixed(2);
+      return rand(12, 22);
+    },
+    candy(p) {
+      p.className = "drift candy";
+      const s = rand(22, 32);
+      p.style.width = s + "px"; p.style.height = s / 2 + "px";
+      p.style.color = CANDY_COLORS[Math.floor(Math.random() * CANDY_COLORS.length)];
+      p.innerHTML = CANDY;
+      return rand(9, 15);
+    },
+    bats(p) {
+      p.className = "drift bat";
+      const s = rand(26, 44);
+      p.style.width = s + "px"; p.style.height = s * 0.44 + "px";
+      p.style.top = rand(6, 70) + "vh";
+      p.style.opacity = rand(0.55, 0.9).toFixed(2);
+      p.innerHTML = BAT;
+      return rand(9, 16);
+    },
+  };
+
+  function set(...kinds) {   // e.g. set("leaves", 12) or set("leaves", 12, "snow", 4)
+    layer.innerHTML = "";
+    if (reducedMotion) return;
+    for (let k = 0; k < kinds.length; k += 2) {
+      const make = MAKERS[kinds[k]], count = kinds[k + 1] || 12;
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement("div");
+        const dur = make(p);
+        if (!p.style.top) p.style.left = rand(0, 100) + "vw";
+        p.style.animationDuration = dur + "s";
+        p.style.animationDelay = -rand(0, dur) + "s";   // pre-populate the sky
+        layer.appendChild(p);
+      }
+    }
+  }
+
+  let starsMade = false;
+  function stars(on) {
+    sky.classList.toggle("on", on);
+    if (!on || starsMade) return;
+    starsMade = true;
+    for (let i = 0; i < 46; i++) {
+      const s = document.createElement("i");
+      const big = Math.random() < 0.15;
+      s.style.left = rand(0, 100) + "%";
+      s.style.top = rand(0, 62) + "%";
+      s.style.width = s.style.height = (big ? 2.6 : rand(1, 2)) + "px";
+      s.style.animationDuration = rand(2.5, 6) + "s";
+      s.style.animationDelay = -rand(0, 6) + "s";
+      sky.appendChild(s);
+    }
+  }
+
+  function seasonal() {
+    const md = playMonth * 100 + playDay;
+    if (season === "autumn") return md >= 1120 ? ["leaves", 10, "snow", 6] : ["leaves", 13];
+    if (season === "winter") return ["snow", 26];
+    return ["petals", 12];
+  }
+
+  return { set, stars, seasonal: () => set(...seasonal()) };
+})();
+
+Ambient.seasonal();
+setTimeOfDay(timeOfDay(hour));
+
+/* ========================= SPECIAL DAYS ========================= */
+/* Big special days live in days/<name>.js + days/<name>.css and only load
+   on their date. To add one: make the two files, add the date here. */
+const DAY_FILES = {
+  "09-26": "froth",
+  "09-30": "slept",
+  "10-05": "spicy",
+  "10-18": "xiang",
+  "10-19": "floss",
+  "10-21": "teehe",
+  "10-23": "wolve",
+  "10-25": "wanan",
+  "10-28": "calledit",
+  "10-29": "calledit",
+  "10-30": "candy",
+  "10-31": "halloween",
+  "11-26": "thanksgiving",
+};
+
+/* every 1st of the month is a monthiversary (Feb 1, 2026 is where it starts) */
+const TOGETHER_SINCE = { year: 2026, month: 2 };
+const monthsTogether = (todayDate.getFullYear() - TOGETHER_SINCE.year) * 12 + (playMonth - TOGETHER_SINCE.month);
+
+function dayFileFor(key) {
+  if (DAY_FILES[key]) return DAY_FILES[key];
+  if (playDay === 1 && key !== ANNIVERSARY && monthsTogether > 0) return "monthsary";
+  return null;
+}
+
+/* Small touches that don't need their own file */
+const LITTLE_DAYS = {
+  "10-20": { subtitle: "yipee :)", floats: ["yipee!", "yipee!!", "yay!", "yipee"] },
+  "10-22": { subtitle: "bundle up, wu :)", ambient: ["leaves", 9, "snow", 10] },
+  "10-24": { subtitle: "chomp chomp :)", floats: ["chomp", "nom", "chews", "nom nom"] },
+  "10-27": { subtitle: "lemme pluck :)", floats: ["pluck", "pluck!", "plucked"] },
+};
+const little = LITTLE_DAYS[dateKey];
+if (little) {
+  if (little.subtitle) subtitleEl.textContent = little.subtitle;
+  if (little.ambient) Ambient.set(...little.ambient);
+}
+
+/* Helpers every special-day file can use (all optional). */
+const Special = {
+  key: dateKey,
+  name: dayFileFor(dateKey),
+  reducedMotion,
+  monthsTogether,
+  card: document.getElementById("modal-card"),
+  backdrop: document.getElementById("modal-backdrop"),
+  title: null,                       // set this to replace the note's title
+  hooks: { open: [], close: [], win: [], loss: [], guess: [] },
+  timers: [],
+
+  /* on("win", attempt => …) · on("loss") · on("guess", (row, guess, result) => …)
+     on("open") when the note opens · on("close") when it closes */
+  on(evt, fn) { this.hooks[evt].push(fn); },
+  emit(evt, ...args) {
+    for (const fn of this.hooks[evt]) {
+      try { fn(...args); } catch (e) { console.error(e); }
+    }
+  },
+  subtitle(text) { subtitleEl.textContent = text; },
+
+  /* a block in the love note, just above "with all my love" */
+  addToNote(className, html) {
+    const el = document.createElement("div");
+    el.className = "sd " + className;
+    el.innerHTML = html;
+    this.card.insertBefore(el, this.card.querySelector(".signature"));
+    return el;
+  },
+
+  /* load a photo, with a soft placeholder if the file is missing */
+  photo(img, src, word = "wu") {
+    img.onerror = function () {
+      this.onerror = null;
+      this.src = "data:image/svg+xml;utf8," + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#F3E8D2"/>' +
+        '<text x="50" y="60" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="26" fill="#6B5142">' + word + "</text></svg>");
+    };
+    img.src = src;
+    return img;
+  },
+
+  later(fn, ms) { const t = setTimeout(fn, ms); this.timers.push(t); return t; },
+  clearLater() { this.timers.forEach(clearTimeout); this.timers = []; },
+
+  center(el) {
+    const r = el.getBoundingClientRect();
+    return [r.left + r.width / 2, r.top + r.height / 2];
+  },
+
+  /* little words that pop up and float away */
+  floatText(text, x, y, opts = {}) {
+    if (reducedMotion) return;
+    const f = document.createElement("span");
+    f.className = "fx-float" + (opts.className ? " " + opts.className : "");
+    f.textContent = text;
+    f.style.left = x + "px";
+    f.style.top = y + "px";
+    if (opts.color) f.style.color = opts.color;
+    if (opts.size) f.style.fontSize = opts.size;
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 1500);
+  },
+
+  /* particles flying out from (x, y): colored petals by default, or any
+     text/emoji/SVG via `html` (a string, an array to cycle, or a function) */
+  burst({ x, y, count = 24, colors, html, size = [8, 18], spread = [70, 220], lift = 60, spin = 540, duration = 1.2 } = {}) {
+    if (reducedMotion) return;
+    if (x === undefined) [x, y] = this.center(boardEl);
+    const palette = colors || BURST_COLORS;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement("div");
+      p.className = "burst" + (html ? " glyph" : "");
+      const s = size[0] + Math.random() * (size[1] - size[0]);
+      if (html) {
+        p.innerHTML = typeof html === "function" ? html(i) : Array.isArray(html) ? html[i % html.length] : html;
+        p.style.fontSize = s + "px";
+        p.style.color = palette[i % palette.length];
+      } else {
+        p.style.width = s + "px";
+        p.style.height = s * 0.75 + "px";
+        p.style.background = palette[i % palette.length];
+      }
+      p.style.left = x + "px";
+      p.style.top = y + "px";
+      p.style.animationDuration = duration + "s";
+      const a = Math.random() * Math.PI * 2;
+      const dist = spread[0] + Math.random() * (spread[1] - spread[0]);
+      p.style.setProperty("--tx", Math.cos(a) * dist + "px");
+      p.style.setProperty("--ty", (Math.sin(a) * dist - lift) + "px");
+      p.style.setProperty("--rot", (Math.random() * spin - spin / 2) + "deg");
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), duration * 1000 + 150);
+    }
+  },
+
+  /* a full-screen intro that plays before the note. Tap to skip.
+     Returns { el, say(text), done() }; call done() when it's finished. */
+  stage(html, { className = "", onDone } = {}) {
+    const el = document.createElement("div");
+    el.className = "sd-stage " + className;
+    el.innerHTML = html + '<p class="sd-say"></p><p class="sd-skip">tap to skip</p>';
+    document.body.appendChild(el);
+    const cap = el.querySelector(".sd-say");
+    let finished = false;
+    const api = {
+      el,
+      say(text) {
+        cap.classList.remove("show");
+        Special.later(() => { cap.textContent = text; cap.classList.add("show"); }, 220);
+      },
+      done() {
+        if (finished) return;
+        finished = true;
+        el.classList.add("clearing");
+        setTimeout(() => el.remove(), 450);
+        if (onDone) onDone();
+      },
+    };
+    el.addEventListener("click", () => api.done());
+    return api;
+  },
+
+  forceNight() { setTimeOfDay("night"); },
+  ambient: Ambient,
+};
+
+/* bump this whenever you edit a file in days/, so phones don't keep an old copy
+   (preview mode always loads fresh) */
+const DAYS_VERSION = "2026-10-18";
+function loadDay(name) {
+  const v = isPeek ? Date.now() : DAYS_VERSION;
+  const css = new Promise((resolve) => {
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = `days/${name}.css?v=${v}`;
+    l.onload = l.onerror = resolve;
+    document.head.appendChild(l);
+  });
+  const js = new Promise((resolve) => {
+    const s = document.createElement("script");
+    s.src = `days/${name}.js?v=${v}`;
+    s.onload = resolve;
+    s.onerror = () => { console.warn(`couldn't load days/${name}.js`); resolve(); };
+    document.body.appendChild(s);
+  });
+  return Promise.all([css, js]);
+}
+const dayReady = Special.name ? loadDay(Special.name) : Promise.resolve();
+
+/* ========================= STREAK ========================= */
+/* days in a row she's finished the puzzle (win or lose — showing up counts) */
+function playedOn(d) {
+  try {
+    const s = JSON.parse(localStorage.getItem(`amy-wordle-${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`));
+    return !!s && (s.status === "won" || s.status === "lost");
+  } catch (e) { return false; }
+}
+function streak() {
+  const d = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
+  if (!playedOn(d)) d.setDate(d.getDate() - 1);   // today not finished yet: count up to yesterday
+  let n = 0;
+  while (n < 3660 && playedOn(d)) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function renderTodayLine() {
+  if (isPeek) { todayLineEl.textContent = "preview · " + dateKey + (hourParam >= 0 ? " · " + hourParam + ":00" : ""); return; }
+  const date = todayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const n = streak();
+  todayLineEl.innerHTML = "";
+  todayLineEl.append(date);
+  if (n >= 2) {
+    const chip = document.createElement("span");
+    chip.className = "streak";
+    chip.textContent = n + " days in a row";
+    todayLineEl.append(chip);
   }
 }
+renderTodayLine();
 
 /* ========================= BOARD ========================= */
 const boardEl = document.getElementById("board");
 for (let r = 0; r < ROWS; r++) {
   const row = document.createElement("div");
-  row.className = "row grid grid-cols-5 gap-1.5";
+  row.className = "row";
   const tiles = [];
   for (let c = 0; c < COLS; c++) {
     const t = document.createElement("div");
@@ -851,7 +1783,7 @@ const keyEls = {};
 
 KEY_ROWS.forEach((keys) => {
   const rowEl = document.createElement("div");
-  rowEl.className = "flex gap-1.5 w-full justify-center";
+  rowEl.className = "key-row";
   keys.forEach((k) => {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -914,10 +1846,16 @@ function evaluate(guess, answer) {
 }
 
 const RANK = { absent: 0, present: 1, correct: 2 };
-function updateKeyStates(guess, result) {
+/* `animate` = after a live guess: keys that just changed color pop in a
+   little ripple, left to right in the order they were guessed */
+function updateKeyStates(guess, result, animate) {
+  const changed = [];
   for (let i = 0; i < COLS; i++) {
     const L = guess[i], s = result[i];
-    if (!keyStates[L] || RANK[s] > RANK[keyStates[L]]) keyStates[L] = s;
+    if (!keyStates[L] || RANK[s] > RANK[keyStates[L]]) {
+      keyStates[L] = s;
+      if (!changed.includes(L)) changed.push(L);
+    }
   }
   Object.entries(keyStates).forEach(([L, s]) => {
     if (keyEls[L]) {
@@ -925,9 +1863,22 @@ function updateKeyStates(guess, result) {
       keyEls[L].classList.add(s);
     }
   });
+  if (animate && !reducedMotion) {
+    changed.forEach((L, i) => {
+      const k = keyEls[L];
+      if (!k) return;
+      k.style.animationDelay = i * 70 + "ms";
+      k.classList.remove("key-pop");
+      void k.offsetWidth;
+      k.classList.add("key-pop");
+    });
+  }
 }
 
 /* ========================= SUBMIT ========================= */
+const FLIP_STEP = 300;     // ms between tiles
+const FLIP_HALF = 300;     // the tile's color changes when it's edge-on
+
 function submitGuess() {
   if (currentGuess.length < COLS) {
     showToast("Not enough letters, love ☕");
@@ -944,29 +1895,103 @@ function submitGuess() {
   row.forEach((tile, i) => {
     setTimeout(() => {
       tile.classList.add("flip");
-      setTimeout(() => tile.classList.add(result[i]), 270);
-    }, i * 300);
+      setTimeout(() => tile.classList.add(result[i]), FLIP_HALF);
+    }, i * FLIP_STEP);
   });
 
-  const totalDelay = COLS * 300 + 300;
+  const totalDelay = COLS * FLIP_STEP + 300;
   setTimeout(() => {
-    updateKeyStates(guess, result);
+    updateKeyStates(guess, result, true);
+    guessResults.push(result);
     const won = guess === ANSWER;
-    const rowIndexAtSubmit = currentRow;
+    const attempt = currentRow + 1;
+    Special.emit("guess", currentRow, guess, result);
     currentRow++;
     currentGuess = "";
     saveState(won ? "won" : currentRow >= ROWS ? "lost" : "playing");
 
     if (won) {
-      row.forEach((tile, i) => setTimeout(() => tile.classList.add("dance"), i * 90));
-      petalBurst();
-      setTimeout(() => endGame(true, rowIndexAtSubmit + 1), 1000);
+      const wait = celebrate(row, attempt);
+      Special.emit("win", attempt);
+      setTimeout(() => endGame(true, attempt), wait);
     } else if (currentRow >= ROWS) {
-      setTimeout(() => endGame(false), 400);
+      const wait = commiserate();
+      Special.emit("loss");
+      setTimeout(() => endGame(false), wait);
     } else {
       gameOver = false;
+      if (currentRow === ROWS - 1) lastGuessPeek();
     }
   }, totalDelay);
+}
+
+/* ========================= WIN / LOSS MOMENTS ========================= */
+/* Bigger party for fewer guesses. Returns how long to wait before the note. */
+function celebrate(row, attempt) {
+  if (little && little.floats && !reducedMotion) {
+    row.forEach((tile, i) => setTimeout(() => {
+      const [x, y] = Special.center(tile);
+      Special.floatText(little.floats[i % little.floats.length], x, y - 20);
+    }, 200 + i * 140));
+  }
+
+  if (attempt === 1) {
+    row.forEach((tile, i) => setTimeout(() => tile.classList.add("dance-big"), i * 80));
+    stamp("FIRST TRY?!");
+    petalBurst();
+    Special.later(() => Special.burst({ count: 30, html: "♥", colors: ["var(--rose)", "#E8B7BC", "var(--butter)"], size: [14, 26], spread: [90, 260] }), 450);
+    Special.later(petalBurst, 900);
+    return 2200;
+  }
+  if (attempt === 2) {
+    row.forEach((tile, i) => setTimeout(() => tile.classList.add("dance-big"), i * 80));
+    petalBurst();
+    Special.later(petalBurst, 450);
+    return 1500;
+  }
+  if (attempt === ROWS) {
+    // phew: a slow, relieved little bounce
+    row.forEach((tile, i) => setTimeout(() => tile.classList.add("phew"), i * 110));
+    Special.later(() => {
+      const [x, y] = Special.center(row[2]);
+      Special.floatText("phew", x, y - 30, { size: "2rem" });
+      Special.burst({ count: 12 });
+    }, 500);
+    return 1600;
+  }
+  row.forEach((tile, i) => setTimeout(() => tile.classList.add("dance"), i * 90));
+  petalBurst();
+  return 1000;
+}
+
+/* a big rubber stamp that thumps onto the board */
+function stamp(text) {
+  if (reducedMotion) return;
+  const s = document.createElement("div");
+  s.className = "stamp";
+  s.textContent = text;
+  const r = boardEl.getBoundingClientRect();
+  s.style.left = r.left + r.width / 2 + "px";
+  s.style.top = r.top + r.height * 0.42 + "px";
+  document.body.appendChild(s);
+  setTimeout(() => s.remove(), 2400);
+}
+
+/* she ran out of guesses: the board droops a little, then the note */
+function commiserate() {
+  if (reducedMotion) return 400;
+  boardTiles.forEach((tiles, r) => setTimeout(() => tiles.forEach((t) => t.classList.add("droop")), r * 90));
+  return 1300;
+}
+
+/* last guess: she peeks in, hands on head */
+let peekShown = false;
+function lastGuessPeek() {
+  if (peekShown || reducedMotion) return;
+  peekShown = true;
+  const el = document.getElementById("peeker");
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 3000);
 }
 
 /* ========================= VICTORY PETAL BURST ========================= */
@@ -1113,31 +2138,77 @@ function fireworksShow() {
 
 /* ========================= END / MODAL ========================= */
 const WIN_TITLES = ["Genius!", "Brilliant!", "Wonderful!", "Beautiful!", "You did it!", "Just in time!"];
+const backdrop = document.getElementById("modal-backdrop");
+const afterGameBtn = document.getElementById("reopen-note");
+let lastEnding = null;
 
-function endGame(won, attempt) {
+async function endGame(won, attempt) {
   gameOver = true;
+  await dayReady;              // make sure today's special day is ready to catch the note opening
   const title = dateKey === ANNIVERSARY
     ? "Happy Anniversary!"
     : won
       ? WIN_TITLES[Math.min(attempt - 1, WIN_TITLES.length - 1)]
       : "The word was…";
-  openModal(title);
+  lastEnding = { title, won };
+  openModal(title, won);
+  renderTodayLine();           // streak just went up
 }
 
-const backdrop = document.getElementById("modal-backdrop");
-function openModal(title) {
-  document.getElementById("modal-title").textContent = title;
-  document.getElementById("modal-word").textContent = "“" + ANSWER + "”";
-  document.getElementById("modal-message").textContent = today.message;
+function openModal(title, won) {
+  document.getElementById("modal-title").textContent = Special.title || title;
+  document.getElementById("modal-word").textContent = "“" + today.display + "”";
+  document.getElementById("loss-face").hidden = won;
+  afterGameBtn.classList.remove("show");
+
+  // the note comes out of an envelope, then writes itself
+  backdrop.classList.toggle("opening", !reducedMotion);
   backdrop.classList.add("show");
+  setTimeout(() => backdrop.classList.remove("opening"), 1500);
+  typeMessage(today.message, reducedMotion ? 0 : 1150);
+
   if (dateKey === ANNIVERSARY) fireworksShow();
   startCountdown();
+  Special.emit("open");
 }
-document.getElementById("modal-close").addEventListener("click", () => backdrop.classList.remove("show"));
-backdrop.addEventListener("click", (e) => { if (e.target === backdrop) backdrop.classList.remove("show"); });
 
+function closeModal() {
+  backdrop.classList.remove("show", "opening");
+  if (gameOver && lastEnding) afterGameBtn.classList.add("show");
+  Special.emit("close");
+}
+document.getElementById("modal-close").addEventListener("click", closeModal);
+backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
+afterGameBtn.addEventListener("click", () => { if (lastEnding) openModal(lastEnding.title, lastEnding.won); });
+
+/* handwritten note, typed out. The untyped rest sits there invisibly so
+   nothing jumps around while it writes. */
+let typeTimer;
+function typeMessage(text, delay) {
+  const el = document.getElementById("modal-message");
+  clearTimeout(typeTimer);
+  el.setAttribute("aria-label", text);
+  const chars = Array.from(text);
+  if (reducedMotion) { el.textContent = text; return; }
+  el.innerHTML = '<span class="typed" aria-hidden="true"></span><span class="untyped" aria-hidden="true"></span>';
+  const typed = el.firstChild, rest = el.lastChild;
+  rest.textContent = text;
+  const step = Math.max(12, Math.min(38, 2200 / chars.length));
+  let i = 0;
+  function next() {
+    i++;
+    typed.textContent = chars.slice(0, i).join("");
+    rest.textContent = chars.slice(i).join("");
+    if (i < chars.length) typeTimer = setTimeout(next, step);
+  }
+  typeTimer = setTimeout(next, delay);
+}
+
+/* "next word in" — and a little cup that refills as midnight gets closer */
+let countdownTimer;
 function startCountdown() {
   const el = document.getElementById("countdown");
+  const fill = document.getElementById("cup-fill");
   function tick() {
     const now = new Date();
     const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -1146,10 +2217,48 @@ function startCountdown() {
     const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
     const sec = String(s % 60).padStart(2, "0");
     el.textContent = `${h}:${m}:${sec}`;
+    const full = 1 - s / 86400;
+    fill.setAttribute("y", (19 - 9 * full).toFixed(2));
+    fill.setAttribute("height", (9 * full).toFixed(2));
   }
   tick();
-  setInterval(tick, 1000);
+  clearInterval(countdownTimer);
+  countdownTimer = setInterval(tick, 1000);
 }
+
+/* ========================= SHARE ========================= */
+/* her board as emoji squares, sent to you from her phone's share sheet */
+function shareText() {
+  const marks = { correct: "🟩", present: "🟨", absent: "⬜" };
+  const last = guessResults[guessResults.length - 1];
+  const won = !!last && last.every((x) => x === "correct");
+  const date = new Date(todayDate.getFullYear(), playMonth - 1, playDay)
+    .toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return `Amy's Wordle · ${date} · ${won ? guessResults.length : "X"}/6\n` +
+    guessResults.map((r) => r.map((x) => marks[x]).join("")).join("\n");
+}
+document.getElementById("share-btn").addEventListener("click", async () => {
+  const text = shareText();
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; }
+    catch (e) { if (e.name === "AbortError") return; }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("Copied — paste it to me :)");
+  } catch (e) {
+    showToast("Couldn't copy, screenshot it instead :)");
+  }
+});
+
+/* New day while the page is still open (or the phone wakes up the next
+   morning)? Reload so the new word shows up instead of yesterday's board. */
+const loadedDay = todayDate.toDateString();
+function checkNewDay() {
+  if (!isPeek && new Date().toDateString() !== loadedDay) location.reload();
+}
+setInterval(checkNewDay, 30000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkNewDay(); });
 
 /* ========================= TOAST ========================= */
 let toastTimer;
@@ -1184,6 +2293,7 @@ function restoreState() {
       tile.classList.add(result[i]);
     });
     updateKeyStates(guess, result);
+    guessResults.push(result);
   });
   currentRow = saved.guesses.length;
 
@@ -1197,3446 +2307,6 @@ function restoreState() {
 }
 
 restoreState();
-</script>
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-   FROTH DAY · September 26 · "FROTH"
-
-   Optional: a folder called  froth/  sitting next to index.html, holding:
-     froth/amy-1.png     (a face crop — becomes a "latte portrait")
-   If it's missing, that one design just quietly gets skipped.
-
-   Runs only on the date set in FROTH_DAY. Any other day: does nothing.
-   Test it early with:  index.html?peek=09-26&fresh=1
-   ═══════════════════════════════════════════════════════════════════ -->
-<style>
-  /* everything is scoped to body.frothday so no other day can be touched */
-
-  /* ---------- the cup (shared by the intro and the note) ---------- */
-  body.frothday .fr-cupwrap {
-    position: relative;
-    width: 200px;
-    aspect-ratio: 1 / 1;
-    margin: 0 auto;
-  }
-  body.frothday .fr-cup { display: block; width: 100%; height: 100%; overflow: visible; }
-
-  body.frothday .fr-liquid {
-    transform-box: view-box;
-    transform-origin: 100px 100px;
-    transition: transform 0.6s cubic-bezier(0.3, 0.8, 0.3, 1), opacity 0.45s ease;
-  }
-  body.frothday .fr-stain { opacity: 0; transition: opacity 0.5s ease 0.2s; }
-
-  /* latte art blooming out from where the milk hits */
-  body.frothday .fr-design {
-    transform-box: view-box;
-    transform-origin: 100px 100px;
-    animation: fr-bloom 0.95s cubic-bezier(0.2, 0.85, 0.3, 1.15) both;
-  }
-  @keyframes fr-bloom {
-    0%   { opacity: 0; transform: scale(0.08) rotate(-28deg); }
-    35%  { opacity: 1; }
-    70%  { transform: scale(1.05) rotate(3deg); }
-    100% { opacity: 1; transform: scale(1) rotate(0deg); }
-  }
-  body.frothday .fr-design.out { animation: fr-swirl 0.45s ease-in forwards; }
-  @keyframes fr-swirl { to { opacity: 0; transform: scale(0.35) rotate(160deg); } }
-  body.frothday .fr-design.wobble { animation: fr-wobble 0.9s ease-in-out; }
-  @keyframes fr-wobble {
-    0%, 100% { transform: rotate(0deg) scale(1); }
-    25%      { transform: rotate(-7deg) scale(1.03, 0.97); }
-    55%      { transform: rotate(5deg) scale(0.98, 1.02); }
-    80%      { transform: rotate(-2deg); }
-  }
-  body.frothday .fr-face { filter: sepia(1) saturate(0.55) brightness(1.3) contrast(0.85); }
-
-  /* milk pitcher + the pour */
-  body.frothday .fr-pitcher {
-    position: absolute;
-    left: 49%;
-    top: -33%;
-    width: 30%;
-    height: 25%;
-    opacity: 0;
-    transform-origin: 3% 16%;          /* tips from the spout */
-    transform: rotate(0deg);
-    transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.3, 0.8, 0.3, 1);
-    z-index: 3;
-    pointer-events: none;
-  }
-  body.frothday .pouring .fr-pitcher { opacity: 1; transform: rotate(-32deg); }
-
-  body.frothday .fr-stream {
-    position: absolute;
-    left: 50%;
-    top: -29%;
-    width: 2.6%;
-    height: 79%;
-    margin-left: -1.3%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #EADBC6 0%, #FFFFFF 50%, #EADBC6 100%);
-    z-index: 2;
-    pointer-events: none;
-    -webkit-clip-path: inset(0 0 100% 0);
-    clip-path: inset(0 0 100% 0);
-  }
-  body.frothday .pouring .fr-stream { animation: fr-stream 1.25s ease 0.3s forwards; }
-  @keyframes fr-stream {
-    0%   { -webkit-clip-path: inset(0 0 100% 0); clip-path: inset(0 0 100% 0); }
-    28%  { -webkit-clip-path: inset(0 0 0 0);    clip-path: inset(0 0 0 0); }
-    76%  { -webkit-clip-path: inset(0 0 0 0);    clip-path: inset(0 0 0 0); }
-    100% { -webkit-clip-path: inset(100% 0 0 0); clip-path: inset(100% 0 0 0); }
-  }
-
-  /* ---------- the intro, full screen ---------- */
-  body.frothday .fr-stage {
-    position: fixed;
-    inset: 0;
-    z-index: 58;
-    overflow: hidden;
-    cursor: pointer;
-    background: rgba(253, 251, 247, 0.97);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.4rem;
-    transition: opacity 0.45s ease;
-  }
-  body.frothday .fr-stage.clearing { opacity: 0; }
-  body.frothday .fr-stage .fr-cupwrap { width: min(280px, 72vw); margin-top: 90px; }
-  body.frothday .fr-stage .fr-liquid {
-    transform: scale(0.1);
-    opacity: 0;
-    transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.4s ease;
-  }
-  body.frothday .fr-stage .shot .fr-liquid { transform: scale(1); opacity: 1; }
-
-  body.frothday .fr-cap {
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.75rem;
-    line-height: 1.35;
-    color: var(--mocha);
-    text-align: center;
-    max-width: 300px;
-    min-height: 2.4rem;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  body.frothday .fr-cap.show { opacity: 1; transform: translateY(0); }
-
-  body.frothday .fr-skip {
-    position: absolute;
-    bottom: 1.6rem;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.62rem;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: var(--taupe);
-  }
-
-  /* ---------- the cup, inside the love note ---------- */
-  body.frothday .fr {
-    position: relative;
-    z-index: 10;
-    margin-top: 1.2rem;
-    padding-top: 72px;                 /* room for the pitcher */
-  }
-  body.frothday .fr .fr-cupwrap {
-    opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
-  }
-  body.frothday .fr.go .fr-cupwrap { opacity: 1; transform: scale(1); }
-  body.frothday .fr.sipping .fr-cupwrap { animation: fr-slurp 0.4s ease; }
-  @keyframes fr-slurp { 40% { transform: scale(1.04, 0.96); } }
-
-  /* sips: the coffee level drops (it's a tapered cup, seen from above) */
-  body.frothday .fr[data-sip="1"] .fr-liquid { transform: scale(0.88); }
-  body.frothday .fr[data-sip="2"] .fr-liquid { transform: scale(0.74); }
-  body.frothday .fr[data-sip="3"] .fr-liquid { transform: scale(0.55); opacity: 0; }
-  body.frothday .fr[data-sip="3"] .fr-stain  { opacity: 0.45; }
-
-  body.frothday .fr-labels { text-align: center; margin-top: 0.9rem; min-height: 2.6rem; }
-  body.frothday .fr-name {
-    display: block;
-    font-family: 'Playfair Display', serif;
-    font-size: 1rem;
-    color: var(--espresso);
-  }
-  body.frothday .fr-line {
-    display: block;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.15rem;
-    color: var(--rose);
-    margin-top: 0.05rem;
-    min-height: 1.3rem;
-  }
-
-  body.frothday .fr-actions {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 0.9rem;
-  }
-  body.frothday .fr-btn {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 0.45rem 1.05rem;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--key);
-    color: var(--mocha);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.06s ease;
-  }
-  body.frothday .fr-btn:active { transform: scale(0.95); }
-  body.frothday .fr-btn.pour { background: var(--rose); border-color: var(--rose); color: #fff; }
-  body.frothday .fr-btn[disabled] { opacity: 0.55; cursor: default; }
-
-  body.frothday .fr-hint {
-    text-align: center;
-    font-size: 0.72rem;
-    color: var(--taupe);
-    margin-top: 0.65rem;
-    animation: fr-pulse 2.4s ease-in-out infinite;
-  }
-  body.frothday .fr-hint.gone { display: none; }
-  @keyframes fr-pulse { 50% { opacity: 0.45; } }
-
-  body.frothday .fr-count {
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--mocha);
-    margin-top: 0.7rem;
-    min-height: 1rem;
-  }
-  body.frothday .fr-count.pop { animation: fr-pop 0.3s ease; }
-  @keyframes fr-pop { 50% { transform: scale(1.13); } }
-
-  /* little words that float off the cup */
-  body.frothday .fr-fx {
-    position: fixed;
-    z-index: 70;
-    pointer-events: none;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.5rem;
-    color: var(--rose);
-    text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
-    animation: fr-float 1s ease-out forwards;
-  }
-  @keyframes fr-float {
-    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
-    25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
-    100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
-  }
-
-  @media (max-height: 780px) {
-    body.frothday .fr { margin-top: 0.8rem; padding-top: 60px; }
-    body.frothday .fr .fr-cupwrap { width: 172px; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    body.frothday .fr-design,
-    body.frothday .fr-design.out,
-    body.frothday .fr-design.wobble,
-    body.frothday .pouring .fr-stream,
-    body.frothday .fr-hint,
-    body.frothday .fr-fx,
-    body.frothday .fr.sipping .fr-cupwrap { animation: none !important; }
-    body.frothday .fr .fr-cupwrap { opacity: 1 !important; transform: none !important; transition: none; }
-    body.frothday .fr-pitcher { display: none; }
-  }
-</style>
-
-<script>
-(function () {
-  "use strict";
-
-  /* ── change this one line to move the whole thing to another date ── */
-  const FROTH_DAY = "09-26";
-
-  /* optional photo for the "latte portrait", relative to index.html */
-  const DIR = "froth/";
-  const FACE = "amy-1.png";
-
-  let dk;
-  try { dk = dateKey; } catch (e) { return; }
-  if (dk !== FROTH_DAY) return;
-
-  const card = document.getElementById("modal-card");
-  const sig = card && card.querySelector(".signature");
-  const backdropEl = document.getElementById("modal-backdrop");
-  const titleEl = document.getElementById("modal-title");
-  if (!card || !sig || !backdropEl) return;
-
-  document.body.classList.add("frothday");
-
-  const sub = document.querySelector("header p");
-  if (sub) sub.textContent = "one latte, extra foam :)";
-
-  const softMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const NS = "http://www.w3.org/2000/svg";
-
-  /* ═════════ 1. the cup, seen from above ═════════
-     p = an id prefix, so the intro cup and the note cup don't share ids */
-
-  function cupSVG(p) {
-    return '<svg class="fr-cup" viewBox="0 0 200 200" aria-hidden="true"><defs>' +
-        '<radialGradient id="' + p + 'Crema" cx="50%" cy="50%" r="50%">' +
-          '<stop offset="0%" stop-color="#4A2E1B"/><stop offset="55%" stop-color="#6B4226"/>' +
-          '<stop offset="86%" stop-color="#94602F"/><stop offset="100%" stop-color="#B98350"/>' +
-        "</radialGradient>" +
-        '<radialGradient id="' + p + 'Foam" gradientUnits="userSpaceOnUse" cx="100" cy="96" r="62">' +
-          '<stop offset="0%" stop-color="#FFFBF4"/><stop offset="65%" stop-color="#F7EAD7"/>' +
-          '<stop offset="100%" stop-color="#E8D0AE"/>' +
-        "</radialGradient>" +
-        '<radialGradient id="' + p + 'FoamB" cx="50%" cy="45%" r="60%">' +
-          '<stop offset="0%" stop-color="#FFFBF4"/><stop offset="70%" stop-color="#F6E6D0"/>' +
-          '<stop offset="100%" stop-color="#E8D0AE"/>' +
-        "</radialGradient>" +
-        '<radialGradient id="' + p + 'Fade">' +
-          '<stop offset="0%" stop-color="#fff"/><stop offset="62%" stop-color="#fff"/>' +
-          '<stop offset="100%" stop-color="#000"/>' +
-        "</radialGradient>" +
-        '<mask id="' + p + 'Mask" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200">' +
-          '<circle cx="100" cy="100" r="54" fill="url(#' + p + 'Fade)"/>' +
-        "</mask>" +
-        '<clipPath id="' + p + 'Clip"><circle cx="100" cy="100" r="60"/></clipPath>' +
-      "</defs>" +
-      /* saucer */
-      '<circle cx="100" cy="100" r="96" fill="#FFFFFF" stroke="#E4DCD1" stroke-width="1.5"/>' +
-      '<circle cx="100" cy="100" r="80" fill="none" stroke="#EFE7DA" stroke-width="1.2"/>' +
-      /* handle */
-      '<rect x="158" y="89" width="38" height="22" rx="11" fill="#FFFFFF" stroke="#E4DCD1" stroke-width="1.5"/>' +
-      /* cup */
-      '<circle cx="100" cy="100" r="70" fill="#FFFFFF" stroke="#E4DCD1" stroke-width="1.5"/>' +
-      '<circle cx="100" cy="100" r="64" fill="#F4EDE3"/>' +
-      '<circle class="fr-stain" cx="100" cy="100" r="46" fill="none" stroke="#B98350" stroke-width="2.2"/>' +
-      /* the coffee + whatever's drawn on it */
-      '<g class="fr-liquid">' +
-        '<circle cx="100" cy="100" r="60" fill="url(#' + p + 'Crema)"/>' +
-        '<g class="fr-art" clip-path="url(#' + p + 'Clip)"></g>' +
-      "</g>" +
-      /* little shine on the rim */
-      '<path d="M48.7 56.9 A67 67 0 0 1 77.1 37.0" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.6"/>' +
-    "</svg>";
-  }
-
-  const PITCHER =
-    '<svg class="fr-pitcher" viewBox="0 0 60 50" aria-hidden="true">' +
-      '<path d="M46 18 C58 18 58 36 44 38" fill="none" stroke="#BFC6CB" stroke-width="4" stroke-linecap="round"/>' +
-      '<path d="M2 8 L12 11 L46 11 L42 45 Q41 49 37 49 L19 49 Q15 49 14 45 L11 17 Z" fill="#DDE1E4" stroke="#BFC6CB" stroke-width="1.4" stroke-linejoin="round"/>' +
-      '<path d="M16 20 L18 42" stroke="#FFFFFF" stroke-width="2" opacity="0.8" stroke-linecap="round"/>' +
-    "</svg>";
-
-  function cupHTML(p) {
-    return '<div class="fr-cupwrap">' + cupSVG(p) + '<div class="fr-stream"></div>' + PITCHER + "</div>";
-  }
-
-  /* ═════════ 2. the latte art ═════════ */
-
-  const CREMA_LINE = "#6B4226";
-  const HEART_D = "M100 134 C86 122 68 110 68 92 C68 79 77 71 88 71 C95 71 99 75 100 80 C101 75 105 71 112 71 C123 71 132 79 132 92 C132 110 114 122 100 134 Z";
-  const PETAL_D = "M50 50 C43.5 41 40.5 27 44 15 C45.8 8.8 50 4.5 50 4.5 C50 4.5 54.2 8.8 56 15 C59.5 27 56.5 41 50 50 Z";
-
-  function foam(p, d) {
-    return '<path d="' + d + '" fill="url(#' + p + 'Foam)" stroke="#A87548" stroke-opacity="0.4" stroke-width="1.6"/>';
-  }
-  function crescent(p, y, w, h) {
-    return foam(p, "M" + (100 - w) + " " + y + " Q100 " + (y + 2 * h) + " " + (100 + w) + " " + y +
-      " Q100 " + (y + 0.7 * h) + " " + (100 - w) + " " + y + " Z");
-  }
-  function pull(y1, y2) {
-    return '<path d="M100 ' + y1 + " L100 " + y2 + '" stroke="' + CREMA_LINE + '" stroke-width="2.2" stroke-linecap="round"/>';
-  }
-  function tail(p, y1, y2) {
-    return '<path d="M100 ' + y1 + " Q101 " + ((y1 + y2) / 2) + " 99 " + y2 +
-      '" stroke="url(#' + p + 'Foam)" stroke-width="2.6" stroke-linecap="round" fill="none"/>';
-  }
-
-  let faceSrc = null;
-
-  const ART = {
-    heart: function (p) {
-      return foam(p, HEART_D) + tail(p, 133, 150);
-    },
-    tulip: function (p) {
-      return crescent(p, 112, 31, 20) + crescent(p, 92, 25, 17) + crescent(p, 75, 19, 14) +
-        '<ellipse cx="100" cy="64" rx="10" ry="8.5" fill="url(#' + p + 'Foam)"/>' +
-        pull(58, 128) + tail(p, 131, 150);
-    },
-    rosetta: function (p) {
-      let s = "";
-      for (let i = 0; i < 9; i++) s += crescent(p, 124 - i * 8.5, 34 - i * 2.9, 11 - i * 0.4);
-      return s + '<ellipse cx="100" cy="47" rx="6.5" ry="5.5" fill="url(#' + p + 'Foam)"/>' +
-        pull(45, 132) + tail(p, 133, 152);
-    },
-    lily: function (p) {
-      let s = '<g transform="translate(100 100) scale(1.12) translate(-50 -50)">';
-      [60, 180, 300].forEach(function (a) {
-        s += '<g transform="rotate(' + a + ' 50 50) translate(50 50) scale(0.86) translate(-50 -50)">' +
-          '<path d="' + PETAL_D + '" fill="url(#' + p + 'FoamB)" opacity="0.72"/></g>';
-      });
-      [0, 120, 240].forEach(function (a) {
-        s += '<g transform="rotate(' + a + ' 50 50)">' +
-          '<path d="' + PETAL_D + '" fill="url(#' + p + 'FoamB)" stroke="#A87548" stroke-opacity="0.35" stroke-width="1.2"/>' +
-          '<path d="M50 45 C49.5 34 49.5 22 50 9" stroke="#C9A27E" stroke-width="0.9" opacity="0.6" fill="none"/></g>';
-      });
-      return s + '<circle cx="50" cy="50" r="3.4" fill="' + CREMA_LINE + '"/></g>';
-    },
-    wu: function (p) {
-      return '<text x="100" y="118" text-anchor="middle" font-family="\'Great Vibes\', cursive" font-size="54" ' +
-        'fill="url(#' + p + 'Foam)" stroke="#A87548" stroke-opacity="0.35" stroke-width="1">Wu</text>' +
-        '<g transform="translate(131 72) scale(0.24) translate(-100 -100)">' +
-          '<path d="' + HEART_D + '" fill="url(#' + p + 'FoamB)"/></g>';
-    },
-    blob: function (p) {
-      return foam(p, "M76 96 C66 78 90 62 110 68 C130 74 140 94 126 108 C116 118 122 132 104 136 C86 140 68 126 78 114 C84 106 82 102 76 96 Z") +
-        '<ellipse cx="134" cy="126" rx="6" ry="4" fill="url(#' + p + 'Foam)"/>' +
-        '<circle cx="70" cy="74" r="3.4" fill="url(#' + p + 'Foam)"/>' +
-        '<circle cx="138" cy="80" r="2" fill="url(#' + p + 'Foam)"/>';
-    },
-    face: function (p) {
-      return '<image class="fr-face" x="46" y="46" width="108" height="108" preserveAspectRatio="xMidYMid slice" ' +
-        'mask="url(#' + p + 'Mask)" href="' + faceSrc + '"/>' +
-        '<circle cx="100" cy="100" r="55" fill="none" stroke="url(#' + p + 'Foam)" stroke-width="4" opacity="0.8"/>';
-    }
-  };
-
-  /* the order she gets them in, one per pour */
-  const DESIGNS = [
-    { key: "heart",   name: "heart",        line: "the classic :)" },
-    { key: "tulip",   name: "tulip",        line: "flowers for you" },
-    { key: "rosetta", name: "rosetta",      line: "fancy. i had to google the name" },
-    { key: "lily",    name: "lily",         line: "your favorite :)" },
-    { key: "wu",      name: "custom order", line: "extra wu" },
-    { key: "blob",    name: "mine",         line: "it's a swan. obviously." }
-  ];
-
-  /* the portrait only joins the rotation if the photo actually exists */
-  const probe = new Image();
-  probe.onload = function () {
-    faceSrc = DIR + FACE;
-    DESIGNS.push({ key: "face", name: "latte portrait", line: "prettiest thing i've ever put in a cup" });
-  };
-  probe.src = DIR + FACE;
-
-  function drawDesign(artEl, p, key) {
-    const g = document.createElementNS(NS, "g");
-    g.setAttribute("class", "fr-design");
-    g.innerHTML = ART[key](p);
-    const im = g.querySelector("image");
-    if (im) im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", im.getAttribute("href"));
-    artEl.appendChild(g);
-    return g;
-  }
-
-  function clearArt(artEl, animate) {
-    artEl.querySelectorAll(".fr-design").forEach(function (g) {
-      if (animate && !softMotion) {
-        g.classList.add("out");
-        setTimeout(function () { g.remove(); }, 460);
-      } else {
-        g.remove();
-      }
-    });
-  }
-
-  /* ═════════ 3. the note ═════════ */
-
-  const plate = document.createElement("div");
-  plate.className = "fr";
-  plate.setAttribute("data-sip", "0");
-  plate.innerHTML =
-    cupHTML("frN") +
-    '<div class="fr-labels"><span class="fr-name"></span><span class="fr-line"></span></div>' +
-    '<div class="fr-actions">' +
-      '<button class="fr-btn pour" type="button">pour</button>' +
-      '<button class="fr-btn sip" type="button">sip</button>' +
-    "</div>" +
-    '<p class="fr-hint">(pour another)</p>' +
-    '<p class="fr-count" role="status"></p>';
-  card.insertBefore(plate, sig);
-
-  const wrap = plate.querySelector(".fr-cupwrap");
-  const art = plate.querySelector(".fr-art");
-  const nameEl = plate.querySelector(".fr-name");
-  const lineEl = plate.querySelector(".fr-line");
-  const pourBtn = plate.querySelector(".fr-btn.pour");
-  const sipBtn = plate.querySelector(".fr-btn.sip");
-  const hint = plate.querySelector(".fr-hint");
-  const countEl = plate.querySelector(".fr-count");
-
-  const MILESTONES = {
-    1: "lattes poured: 1",
-    3: "lattes poured: 3 — ok barista",
-    5: "lattes poured: 5 · wu you're so caffeinated rn",
-    10: "lattes poured: 10. we're opening a café. you're hired.",
-    25: "lattes poured: 25. can't believe i only used to drink mochas",
-    50: "lattes poured: 50. still waiting on my real one :)",
-    100: "lattes poured: 100. ok now go make me an actual one"
-  };
-  const POURS = ["voilà :)", "ta-da", "one latte for wu", "extra foam", "*chef's kiss*"];
-  const SIPS = ["sip.", "*sip*", "*foam mustache*"];
-
-  let lattes = 0;
-  try { lattes = parseInt(localStorage.getItem("amy-lattes") || "0", 10) || 0; } catch (e) {}
-  function renderCount() { countEl.textContent = MILESTONES[lattes] || "lattes poured: " + lattes; }
-  if (lattes > 0) renderCount();
-  if (lattes > 1) hint.classList.add("gone");
-
-  function fx(text, el) {
-    if (softMotion) return;
-    const r = el.getBoundingClientRect();
-    const d = document.createElement("div");
-    d.className = "fr-fx";
-    d.textContent = text;
-    d.style.left = (r.left + r.width / 2 + (Math.random() * 26 - 13)) + "px";
-    d.style.top = (r.top + 26) + "px";
-    document.body.appendChild(d);
-    setTimeout(function () { d.remove(); }, 1050);
-  }
-
-  function sparkle(x, y) {
-    if (softMotion) return;
-    const colors = ["var(--rose)", "var(--blushpk)", "#FFFBF4", "var(--butter)", "#C98F3D"];
-    for (let i = 0; i < 12; i++) {
-      const p = document.createElement("div");
-      p.className = "burst";                     /* reuses the petal-burst CSS */
-      const s = 6 + Math.random() * 8;
-      p.style.width = s + "px";
-      p.style.height = s * 0.75 + "px";
-      p.style.left = x + "px";
-      p.style.top = y + "px";
-      p.style.background = colors[i % colors.length];
-      const a = Math.random() * Math.PI * 2;
-      const d = 34 + Math.random() * 60;
-      p.style.setProperty("--tx", Math.cos(a) * d + "px");
-      p.style.setProperty("--ty", (Math.sin(a) * d - 30) + "px");
-      p.style.setProperty("--rot", (Math.random() * 400 - 200) + "deg");
-      document.body.appendChild(p);
-      setTimeout(function () { p.remove(); }, 1300);
-    }
-  }
-
-  let stage = null, timers = [];
-  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
-  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-
-  let idx = -1, busy = false, level = 0;
-  function setSip(n) { level = n; plate.setAttribute("data-sip", String(n)); }
-
-  function pour(first) {
-    if (busy) return;
-    busy = true;
-    pourBtn.disabled = true;
-    if (!first) hint.classList.add("gone");
-
-    idx = (idx + 1) % DESIGNS.length;
-    const d = DESIGNS[idx];
-
-    clearArt(art, true);
-    setSip(0);                                   /* refills as it pours */
-    wrap.classList.remove("pouring");
-    void wrap.offsetWidth;
-    if (!softMotion) wrap.classList.add("pouring");
-
-    later(function () { drawDesign(art, "frN", d.key); }, softMotion ? 0 : 620);
-
-    later(function () {
-      wrap.classList.remove("pouring");
-      nameEl.textContent = d.name;
-      lineEl.textContent = d.line;
-
-      lattes++;
-      try { localStorage.setItem("amy-lattes", String(lattes)); } catch (e) {}
-      renderCount();
-      countEl.classList.remove("pop");
-      void countEl.offsetWidth;
-      countEl.classList.add("pop");
-
-      fx(POURS[lattes % POURS.length], wrap);
-      const r = wrap.getBoundingClientRect();
-      sparkle(r.left + r.width / 2, r.top + r.height / 2);
-      if (first && typeof petalBurst === "function") petalBurst();
-
-      pourBtn.textContent = "pour another";
-      pourBtn.disabled = false;
-      busy = false;
-    }, softMotion ? 150 : 1650);
-  }
-
-  function sip() {
-    if (busy) return;
-    if (!art.querySelector(".fr-design")) { fx("pour one first", sipBtn); return; }
-    if (level >= 3) { fx("it's empty wu", sipBtn); return; }
-    setSip(level + 1);
-    plate.classList.remove("sipping");
-    void plate.offsetWidth;
-    plate.classList.add("sipping");
-    fx(SIPS[level - 1], wrap);
-    if (level === 3) {
-      nameEl.textContent = "empty.";
-      lineEl.textContent = "that was fast. refill?";
-    }
-  }
-
-  pourBtn.addEventListener("click", function () { pour(false); });
-  sipBtn.addEventListener("click", sip);
-
-  /* ═════════ 4. the intro: me, trying ═════════ */
-
-  function teardown() {
-    clearTimers();
-    if (stage) { stage.remove(); stage = null; }
-  }
-
-  function reveal() {
-    teardown();
-    plate.classList.add("go");
-    later(function () {
-      if (!backdropEl.classList.contains("show")) return;
-      const cardRect = card.getBoundingClientRect();
-      const plateRect = plate.getBoundingClientRect();
-      if (plateRect.bottom > cardRect.bottom - 10) {
-        card.scrollTo({ top: Math.max(0, plate.offsetTop - 10), behavior: "smooth" });
-      }
-    }, 620);
-    later(function () { pour(true); }, softMotion ? 100 : 560);
-  }
-
-  function runIntro() {
-    teardown();
-    if (softMotion) { reveal(); return; }
-
-    stage = document.createElement("div");
-    stage.className = "fr-stage";
-    stage.innerHTML = cupHTML("frS") + '<p class="fr-cap"></p><p class="fr-skip">tap to skip</p>';
-    document.body.appendChild(stage);
-
-    const bigWrap = stage.querySelector(".fr-cupwrap");
-    const bigArt = stage.querySelector(".fr-art");
-    const cap = stage.querySelector(".fr-cap");
-    function say(text) {
-      cap.classList.remove("show");
-      later(function () { cap.textContent = text; cap.classList.add("show"); }, 220);
-    }
-
-    let blob = null;
-    later(function () { say("one shot of espresso."); }, 300);
-    later(function () { bigWrap.classList.add("shot"); }, 550);
-    later(function () { say("a little milk. a lot of wrist."); bigWrap.classList.add("pouring"); }, 1800);
-    later(function () { blob = drawDesign(bigArt, "frS", "blob"); }, 2450);
-    later(function () { bigWrap.classList.remove("pouring"); }, 3400);
-    later(function () { say("…it was supposed to be a heart."); if (blob) blob.classList.add("wobble"); }, 3550);
-    later(function () { say("yours are better. teach me?"); }, 4900);
-    later(function () { if (stage) stage.classList.add("clearing"); }, 6100);
-    later(reveal, 6550);
-
-    stage.addEventListener("click", reveal);
-  }
-
-  /* ═════════ 5. fire it when the note opens ═════════ */
-
-  new MutationObserver(function () {
-    if (backdropEl.classList.contains("show")) {
-      if (titleEl) titleEl.textContent = "Extra foam.";
-      busy = false;
-      idx = -1;                                  /* always starts with the heart */
-      setSip(0);
-      clearArt(art, false);
-      wrap.classList.remove("pouring");
-      nameEl.textContent = "";
-      lineEl.textContent = "";
-      pourBtn.disabled = false;
-      pourBtn.textContent = "pour";
-      runIntro();
-    } else {
-      teardown();
-      busy = false;
-      pourBtn.disabled = false;
-      wrap.classList.remove("pouring");
-      plate.classList.remove("go");              /* so it replays next time she opens the note */
-    }
-  }).observe(backdropEl, { attributes: true, attributeFilter: ["class"] });
-})();
-</script>
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-   SLEPT DAY · September 30 · "SLEPT"
-
-   Needs:  toast/amy-4.png   (the glasses / finger-on-lip photo)
-
-   Runs only on the date set in SLEPT_DAY. Any other day: does nothing.
-   Test it early with:  index.html?peek=09-30&fresh=1
-   ═══════════════════════════════════════════════════════════════════ -->
-<style>
-  /* everything is scoped to body.sleptday so no other day can be touched */
-
-  /* ---------- the intro: 3am, full screen ---------- */
-  body.sleptday .sl-stage {
-    position: fixed;
-    inset: 0;
-    z-index: 58;
-    overflow: hidden;
-    cursor: pointer;
-    background: radial-gradient(ellipse at 50% 45%, #3A2E3E 0%, #221A24 60%, #16111A 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.3rem;
-    transition: opacity 0.45s ease;
-  }
-  body.sleptday .sl-stage.clearing { opacity: 0; }
-
-  body.sleptday .sl-bigclock {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 3.2rem;
-    line-height: 1;
-    color: #F3D7DA;
-    font-variant-numeric: tabular-nums;
-    text-shadow: 0 0 18px rgba(217, 160, 165, 0.55);
-  }
-  body.sleptday .sl-bigclock small { font-size: 1rem; margin-left: 0.35rem; opacity: 0.7; }
-
-  body.sleptday .sl-glow {
-    position: relative;
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 3px solid rgba(253, 251, 247, 0.18);
-    box-shadow: 0 0 44px 12px rgba(140, 170, 255, 0.35);
-    opacity: 0;
-    transform: scale(0.85);
-    transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1.2);
-  }
-  body.sleptday .sl-glow.show { opacity: 1; transform: scale(1); }
-  body.sleptday .sl-glow img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 55% 55%;
-    filter: brightness(0.92) saturate(0.7);
-  }
-  body.sleptday .sl-glow::after {        /* blue phone light on her face */
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 50% 75%, rgba(150, 180, 255, 0.3), rgba(40, 50, 90, 0.3));
-    mix-blend-mode: screen;
-  }
-
-  body.sleptday .sl-cap {
-    width: min(320px, 84vw);
-    min-height: 2.4rem;
-    text-align: center;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.85rem;
-    line-height: 1.35;
-    color: #FDFBF7;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  body.sleptday .sl-cap.show { opacity: 1; transform: translateY(0); }
-
-  body.sleptday .sl-skip {
-    position: absolute;
-    bottom: 1.6rem;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.62rem;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: rgba(253, 251, 247, 0.5);
-  }
-
-  /* ---------- the bedroom, inside the love note ---------- */
-  body.sleptday .sl {
-    position: relative;
-    z-index: 10;
-    margin-top: 1.3rem;
-    --bri: 1;
-    --pg: 0.6;
-  }
-  body.sleptday .sl[data-drowse="1"] { --bri: 0.93; --pg: 0.48; }
-  body.sleptday .sl[data-drowse="2"] { --bri: 0.85; --pg: 0.34; }
-  body.sleptday .sl[data-drowse="3"] { --bri: 0.77; --pg: 0.22; }
-  body.sleptday .sl[data-drowse="4"] { --bri: 0.7;  --pg: 0.1; }
-  body.sleptday .sl[data-drowse="5"] { --bri: 0.62; --pg: 0; }
-
-  body.sleptday .sl-scene {
-    position: relative;
-    width: min(252px, 68vw);
-    aspect-ratio: 252 / 184;
-    margin: 0 auto;
-    border-radius: 14px;
-    overflow: hidden;
-    background: linear-gradient(180deg, #221A2B 0%, #3A2C3E 62%, #4A3844 100%);
-    border: 1px solid var(--border);
-    box-shadow: 0 10px 24px rgba(62, 44, 35, 0.2);
-    opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
-  }
-  body.sleptday .sl.go .sl-scene { opacity: 1; transform: scale(1); }
-
-  body.sleptday .sl-stars { position: absolute; inset: 0; }
-  body.sleptday .sl-stars i {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    border-radius: 50%;
-    background: #FDFBF7;
-    animation: sl-twinkle 2.6s ease-in-out infinite;
-  }
-  @keyframes sl-twinkle { 50% { opacity: 0.2; } }
-
-  body.sleptday .sl-moon {
-    position: absolute;
-    right: 9%;
-    top: 8%;
-    width: 11%;
-    aspect-ratio: 1 / 1;
-    border-radius: 50%;
-    box-shadow: inset 7px -3px 0 0 #F6DFA8;
-    filter: drop-shadow(0 0 5px rgba(246, 223, 168, 0.35));
-    transition: filter 0.8s ease;
-  }
-  body.sleptday .sl.asleep .sl-moon { filter: drop-shadow(0 0 14px rgba(246, 223, 168, 0.9)); }
-
-  body.sleptday .sl-clock {
-    position: absolute;
-    right: 7%;
-    top: 29%;
-    font-size: 0.6rem;
-    letter-spacing: 0.06em;
-    color: rgba(243, 215, 218, 0.85);
-    font-variant-numeric: tabular-nums;
-  }
-  body.sleptday .sl-clock b { font-size: 0.8rem; font-weight: 600; }
-
-  /* the thought bubble the sheep jump through */
-  body.sleptday .sl-bubble {
-    position: absolute;
-    left: 3%;
-    top: 5%;
-    width: 46%;
-    height: 28%;
-    border-radius: 999px;
-    overflow: hidden;
-    background: rgba(253, 251, 247, 0.1);
-    border: 1px dashed rgba(253, 251, 247, 0.35);
-  }
-  body.sleptday .sl-fence {
-    position: absolute;
-    left: 50%;
-    bottom: 8%;
-    width: 22%;
-    margin-left: -11%;
-  }
-  body.sleptday .sl-fence svg { display: block; width: 100%; }
-
-  body.sleptday .sl-sheep {
-    position: absolute;
-    bottom: 10%;
-    left: -30%;
-    width: 30%;
-    animation: sl-run 1.4s linear forwards;
-  }
-  @keyframes sl-run { to { left: 105%; } }
-  body.sleptday .sl-hop { animation: sl-hop 1.4s ease-in-out forwards; }
-  @keyframes sl-hop {
-    0%, 34%   { transform: translateY(0) rotate(0deg); }
-    50%       { transform: translateY(-62%) rotate(-8deg); }
-    66%, 100% { transform: translateY(0) rotate(0deg); }
-  }
-  body.sleptday .sl-sheep svg { display: block; width: 100%; }
-
-  /* the bed */
-  body.sleptday .sl-pillow {
-    position: absolute;
-    left: 50%;
-    bottom: 16%;
-    width: 62%;
-    height: 36%;
-    margin-left: -31%;
-    border-radius: 50%;
-    background: linear-gradient(180deg, #FDFBF7 0%, #EDE3D6 100%);
-    opacity: 0.95;
-  }
-  body.sleptday .sl-face {
-    position: absolute;
-    left: 50%;
-    bottom: 20%;
-    width: 34%;
-    aspect-ratio: 1 / 1;
-    margin-left: -17%;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2px solid #FDFBF7;
-    z-index: 2;
-    box-shadow: 0 0 22px 5px rgba(150, 180, 255, var(--pg));
-    transition: box-shadow 0.7s ease;
-  }
-  body.sleptday .sl-face img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 55% 55%;
-    filter: brightness(var(--bri));
-    transition: filter 0.7s ease;
-  }
-
-  body.sleptday .sl-phone {
-    position: absolute;
-    left: 66%;
-    bottom: 24%;
-    width: 8%;
-    height: 17%;
-    z-index: 3;
-    border-radius: 4px;
-    border: 2px solid #2B2233;
-    background: linear-gradient(160deg, #DCE7FF 0%, #9FB8F0 100%);
-    box-shadow: 0 0 12px 3px rgba(160, 190, 255, var(--pg));
-    transform: rotate(-12deg);
-    transition: transform 0.8s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.6s ease, box-shadow 0.7s ease;
-  }
-  body.sleptday .sl-phone.nope { animation: sl-nope 0.45s ease; }
-  @keyframes sl-nope {
-    0%, 100% { transform: rotate(-12deg); }
-    30%      { transform: rotate(-26deg) translateX(-2px); }
-    60%      { transform: rotate(2deg) translateX(2px); }
-  }
-  body.sleptday .sl.asleep .sl-phone { transform: translate(10px, 70px) rotate(50deg); opacity: 0; }
-
-  body.sleptday .sl-blanket {
-    position: absolute;
-    left: 4%;
-    right: 4%;
-    bottom: -4%;
-    height: 36%;
-    z-index: 4;
-    border-radius: 20px 20px 0 0;
-    border-top: 2px dashed rgba(253, 251, 247, 0.5);
-    background:
-      repeating-linear-gradient(90deg, transparent 0 16px, rgba(255, 255, 255, 0.16) 16px 17px),
-      repeating-linear-gradient(0deg, transparent 0 16px, rgba(255, 255, 255, 0.16) 16px 17px),
-      linear-gradient(180deg, #D9A0A5 0%, #C88A90 100%);
-    box-shadow: 0 -3px 8px rgba(0, 0, 0, 0.25);
-    transform: translateY(14%);
-    transition: transform 0.9s cubic-bezier(0.3, 0.8, 0.3, 1);
-  }
-  body.sleptday .sl.asleep .sl-blanket { transform: translateY(-12%); }
-
-  body.sleptday .sl-z {
-    position: absolute;
-    left: 63%;
-    top: 30%;
-    z-index: 5;
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
-    color: #F3D7DA;
-    pointer-events: none;
-    animation: sl-z 2.4s ease-out forwards;
-  }
-  @keyframes sl-z {
-    0%   { opacity: 0; transform: translate(0, 0) scale(0.6); }
-    20%  { opacity: 1; }
-    100% { opacity: 0; transform: translate(26px, -46px) scale(1.3); }
-  }
-
-  /* labels + controls, same family as the other days */
-  body.sleptday .sl-labels { text-align: center; margin-top: 0.9rem; min-height: 2.6rem; }
-  body.sleptday .sl-name {
-    display: block;
-    font-family: 'Playfair Display', serif;
-    font-size: 1rem;
-    color: var(--espresso);
-  }
-  body.sleptday .sl-line {
-    display: block;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.15rem;
-    color: var(--rose);
-    margin-top: 0.05rem;
-    min-height: 1.3rem;
-  }
-  body.sleptday .sl-actions {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 0.9rem;
-  }
-  body.sleptday .sl-btn {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 0.45rem 1.05rem;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--key);
-    color: var(--mocha);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform 0.06s ease;
-  }
-  body.sleptday .sl-btn:active { transform: scale(0.95); }
-  body.sleptday .sl-btn.main { background: #4A3844; border-color: #4A3844; color: #F3D7DA; }
-
-  body.sleptday .sl-hint {
-    text-align: center;
-    font-size: 0.72rem;
-    color: var(--taupe);
-    margin-top: 0.65rem;
-    animation: sl-pulse 2.4s ease-in-out infinite;
-  }
-  body.sleptday .sl-hint.gone { display: none; }
-  @keyframes sl-pulse { 50% { opacity: 0.45; } }
-
-  body.sleptday .sl-count {
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--mocha);
-    margin-top: 0.7rem;
-    min-height: 1rem;
-  }
-  body.sleptday .sl-count.pop { animation: sl-pop 0.3s ease; }
-  @keyframes sl-pop { 50% { transform: scale(1.13); } }
-
-  body.sleptday .sl-fx {
-    position: fixed;
-    z-index: 70;
-    pointer-events: none;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.5rem;
-    color: var(--rose);
-    text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
-    animation: sl-float 1s ease-out forwards;
-  }
-  @keyframes sl-float {
-    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
-    25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
-    100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
-  }
-
-  @media (max-height: 780px) {
-    body.sleptday .sl { margin-top: 0.9rem; }
-    body.sleptday .sl-scene { width: min(214px, 60vw); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    body.sleptday .sl-scene { opacity: 1 !important; transform: none !important; transition: none; }
-    body.sleptday .sl-stars i,
-    body.sleptday .sl-hint,
-    body.sleptday .sl-fx,
-    body.sleptday .sl-phone.nope { animation: none !important; }
-  }
-</style>
-
-<script>
-(function () {
-  "use strict";
-
-  /* ── change this one line to move the whole thing to another date ── */
-  const SLEPT_DAY = "09-30";
-
-  /* photo, relative to index.html */
-  const DIR = "toast/";
-  const FACE = "amy-4.png";
-
-  let dk;
-  try { dk = dateKey; } catch (e) { return; }
-  if (dk !== SLEPT_DAY) return;
-
-  const card = document.getElementById("modal-card");
-  const sig = card && card.querySelector(".signature");
-  const backdropEl = document.getElementById("modal-backdrop");
-  const titleEl = document.getElementById("modal-title");
-  if (!card || !sig || !backdropEl) return;
-
-  document.body.classList.add("sleptday");
-
-  const sub = document.querySelector("header p");
-  if (sub) sub.textContent = "it's past your bedtime :)";
-
-  const softMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  /* if the photo is missing, this stands in so nothing breaks */
-  const PLACEHOLDER =
-    "data:image/svg+xml;utf8," + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
-      '<rect width="100" height="100" fill="#F3E8D2"/>' +
-      '<path d="M32 44 Q38 48 44 44" stroke="#6B5142" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
-      '<path d="M56 44 Q62 48 68 44" stroke="#6B5142" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
-      '<path d="M40 64 Q50 70 60 64" stroke="#6B5142" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
-      "</svg>");
-
-  let SRC = DIR + FACE;
-  const probe = new Image();
-  probe.onerror = function () {
-    SRC = PLACEHOLDER;
-    document.querySelectorAll(".sl-face img, .sl-glow img").forEach(function (im) { im.src = SRC; });
-  };
-  probe.src = SRC;
-
-  const SHEEP =
-    '<svg viewBox="0 0 40 28" aria-hidden="true">' +
-      '<g fill="#3E2C23">' +
-        '<rect x="12" y="19" width="2.4" height="8" rx="1"/><rect x="17" y="20" width="2.4" height="7" rx="1"/>' +
-        '<rect x="25" y="20" width="2.4" height="7" rx="1"/><rect x="30" y="19" width="2.4" height="8" rx="1"/>' +
-      "</g>" +
-      '<g fill="#FFFFFF" stroke="#E4DCD1" stroke-width="0.8">' +
-        '<circle cx="13" cy="14" r="7"/><circle cx="20" cy="10.5" r="7.5"/><circle cx="27" cy="13" r="7"/>' +
-        '<circle cx="19.5" cy="17" r="7"/><circle cx="26" cy="18" r="5.5"/>' +
-      "</g>" +
-      '<ellipse cx="34" cy="12" rx="5" ry="4.3" fill="#3E2C23"/>' +
-      '<ellipse cx="31.5" cy="8.6" rx="2.2" ry="1.2" fill="#3E2C23" transform="rotate(-25 31.5 8.6)"/>' +
-      '<circle cx="35.6" cy="11" r="0.9" fill="#FDFBF7"/>' +
-    "</svg>";
-
-  const FENCE =
-    '<svg viewBox="0 0 40 22" aria-hidden="true"><g fill="#C7BCB1">' +
-      '<rect x="4" y="2" width="4" height="20" rx="1"/><rect x="18" y="2" width="4" height="20" rx="1"/>' +
-      '<rect x="32" y="2" width="4" height="20" rx="1"/>' +
-      '<rect x="0" y="6" width="40" height="3" rx="1"/><rect x="0" y="14" width="40" height="3" rx="1"/>' +
-    "</g></svg>";
-
-  /* ═════════ 1. the bedroom ═════════ */
-
-  const plate = document.createElement("div");
-  plate.className = "sl";
-  plate.setAttribute("data-drowse", "0");
-  plate.innerHTML =
-    '<div class="sl-scene">' +
-      '<div class="sl-stars"></div>' +
-      '<div class="sl-moon"></div>' +
-      '<div class="sl-clock"><b>3:07</b> am</div>' +
-      '<div class="sl-bubble"><div class="sl-fence">' + FENCE + "</div></div>" +
-      '<div class="sl-pillow"></div>' +
-      '<div class="sl-face"><img src="' + SRC + '" alt="someone who should be asleep" draggable="false"></div>' +
-      '<div class="sl-phone"></div>' +
-      '<div class="sl-blanket"></div>' +
-    "</div>" +
-    '<div class="sl-labels"><span class="sl-name"></span><span class="sl-line"></span></div>' +
-    '<div class="sl-actions">' +
-      '<button class="sl-btn main" type="button">count a sheep</button>' +
-      '<button class="sl-btn phone" type="button">take her phone</button>' +
-    "</div>" +
-    '<p class="sl-hint">(she won\'t go to sleep on her own)</p>' +
-    '<p class="sl-count" role="status"></p>';
-  card.insertBefore(plate, sig);
-
-  const scene = plate.querySelector(".sl-scene");
-  const bubble = plate.querySelector(".sl-bubble");
-  const clockEl = plate.querySelector(".sl-clock b");
-  const phoneEl = plate.querySelector(".sl-phone");
-  const nameEl = plate.querySelector(".sl-name");
-  const lineEl = plate.querySelector(".sl-line");
-  const sheepBtn = plate.querySelector(".sl-btn.main");
-  const phoneBtn = plate.querySelector(".sl-btn.phone");
-  const hint = plate.querySelector(".sl-hint");
-  const countEl = plate.querySelector(".sl-count");
-
-  const starBox = plate.querySelector(".sl-stars");
-  for (let i = 0; i < 12; i++) {
-    const s = document.createElement("i");
-    s.style.left = (Math.random() * 96 + 2) + "%";
-    s.style.top = (Math.random() * 46 + 2) + "%";
-    s.style.animationDelay = -(Math.random() * 2.6) + "s";
-    if (Math.random() < 0.3) { s.style.width = "3px"; s.style.height = "3px"; }
-    starBox.appendChild(s);
-  }
-
-  const STATES = [
-    { name: "wide awake.",      line: "it's 3am wu" },
-    { name: "still scrolling.", line: "one sheep. she didn't notice" },
-    { name: "yawning.",         line: "it's working" },
-    { name: "eyes closing.",    line: "ok NOW take the phone" },
-    { name: "almost…",          line: "shhh" },
-    { name: "asleep.",          line: "finally. goodnight wu :)" }
-  ];
-
-  const EXCUSES = ["5 more minutes", "one more video", "i'm not even tired", "no :)", "wait i'm texting you"];
-
-  const MILESTONES = {
-    1: "sheep counted: 1",
-    5: "sheep counted: 5 · she's still up isn't she",
-    10: "sheep counted: 10. i've run out of sheep names",
-    25: "sheep counted: 25. the sheep are tired now too",
-    50: "sheep counted: 50. wu. bed.",
-    100: "sheep counted: 100. ok you're doing this on purpose"
-  };
-
-  let sheep = 0;
-  try { sheep = parseInt(localStorage.getItem("amy-sheep") || "0", 10) || 0; } catch (e) {}
-  function renderCount() { countEl.textContent = MILESTONES[sheep] || "sheep counted: " + sheep; }
-  if (sheep > 0) { renderCount(); hint.classList.add("gone"); }
-
-  function fx(text, el) {
-    if (softMotion) return;
-    const r = el.getBoundingClientRect();
-    const d = document.createElement("div");
-    d.className = "sl-fx";
-    d.textContent = text;
-    d.style.left = (r.left + r.width / 2 + (Math.random() * 26 - 13)) + "px";
-    d.style.top = (r.top + 20) + "px";
-    document.body.appendChild(d);
-    setTimeout(function () { d.remove(); }, 1050);
-  }
-
-  let stage = null, timers = [];
-  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
-  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-
-  /* ═════════ 2. getting her to sleep ═════════ */
-
-  let drowse = 0, asleep = false, minutes = 187, session = 0, sheepBusy = false, excuse = 0, zTimer = null;
-
-  function fmt(min) {
-    const h = Math.floor(min / 60) % 12 || 12;
-    return h + ":" + String(min % 60).padStart(2, "0");
-  }
-  function setClock() { clockEl.textContent = fmt(minutes); }
-
-  function paint() {
-    plate.setAttribute("data-drowse", String(drowse));
-    nameEl.textContent = STATES[drowse].name;
-    lineEl.textContent = STATES[drowse].line;
-  }
-
-  function spawnZ() {
-    const z = document.createElement("span");
-    z.className = "sl-z";
-    z.textContent = Math.random() < 0.5 ? "z" : "Z";
-    z.style.fontSize = (0.8 + Math.random() * 0.5) + "rem";
-    scene.appendChild(z);
-    setTimeout(function () { z.remove(); }, 2500);
-  }
-  function zLoop() {
-    if (!asleep) return;
-    if (!softMotion) spawnZ();
-    zTimer = setTimeout(zLoop, 1100);
-  }
-  function stopZ() { clearTimeout(zTimer); zTimer = null; }
-
-  function fallAsleep() {
-    if (asleep) return;
-    asleep = true;
-    drowse = 5;
-    paint();
-    plate.classList.add("asleep");
-    later(function () { fx("goodnight :)", scene); }, 500);
-    zLoop();
-  }
-
-  function countSheep() {
-    if (sheepBusy) return;
-    sheepBusy = true;
-    hint.classList.add("gone");
-
-    if (!softMotion) {
-      const s = document.createElement("div");
-      s.className = "sl-sheep";
-      s.innerHTML = '<div class="sl-hop">' + SHEEP + "</div>";
-      bubble.appendChild(s);
-      setTimeout(function () { s.remove(); }, 1500);
-    }
-
-    later(function () {
-      session++;
-      sheep++;
-      try { localStorage.setItem("amy-sheep", String(sheep)); } catch (e) {}
-      renderCount();
-      countEl.classList.remove("pop");
-      void countEl.offsetWidth;
-      countEl.classList.add("pop");
-
-      minutes += 4;                                /* sheep take time */
-      setClock();
-      fx(String(session), bubble);
-
-      if (!asleep) {
-        if (drowse + 1 >= 5) fallAsleep();
-        else { drowse++; paint(); }
-      }
-      sheepBusy = false;
-    }, softMotion ? 150 : 900);
-  }
-
-  function takePhone() {
-    hint.classList.add("gone");
-    if (asleep) { fx("already got it :)", phoneBtn); return; }
-    if (drowse < 3) {                              /* she's not tired enough to let go */
-      fx(EXCUSES[excuse++ % EXCUSES.length], phoneEl);
-      phoneEl.classList.remove("nope");
-      void phoneEl.offsetWidth;
-      phoneEl.classList.add("nope");
-      return;
-    }
-    fx("got it.", phoneEl);
-    fallAsleep();
-  }
-
-  sheepBtn.addEventListener("click", countSheep);
-  phoneBtn.addEventListener("click", takePhone);
-
-  function reset() {
-    stopZ();
-    asleep = false; drowse = 0; minutes = 187; session = 0; sheepBusy = false; excuse = 0;
-    plate.classList.remove("asleep");
-    scene.querySelectorAll(".sl-z, .sl-sheep").forEach(function (n) { n.remove(); });
-    setClock();
-    paint();
-  }
-  reset();
-
-  /* ═════════ 3. the intro: 3am ═════════ */
-
-  function teardown() {
-    clearTimers();
-    if (stage) { stage.remove(); stage = null; }
-  }
-
-  function reveal() {
-    teardown();
-    plate.classList.add("go");
-    later(function () {
-      if (!backdropEl.classList.contains("show")) return;
-      const cardRect = card.getBoundingClientRect();
-      const plateRect = plate.getBoundingClientRect();
-      if (plateRect.bottom > cardRect.bottom - 10) {
-        card.scrollTo({ top: Math.max(0, plate.offsetTop - 30), behavior: "smooth" });
-      }
-    }, 620);
-  }
-
-  function runIntro() {
-    teardown();
-    if (softMotion) { reveal(); return; }
-
-    stage = document.createElement("div");
-    stage.className = "sl-stage";
-    stage.innerHTML =
-      '<div class="sl-bigclock"><span>2:58</span><small>am</small></div>' +
-      '<div class="sl-glow"><img src="' + SRC + '" alt="" draggable="false"></div>' +
-      '<p class="sl-cap"></p>' +
-      '<p class="sl-skip">tap to skip</p>';
-    document.body.appendChild(stage);
-
-    const clk = stage.querySelector(".sl-bigclock span");
-    const glow = stage.querySelector(".sl-glow");
-    const cap = stage.querySelector(".sl-cap");
-    function say(text) {
-      cap.classList.remove("show");
-      later(function () { cap.textContent = text; cap.classList.add("show"); }, 220);
-    }
-
-    for (let i = 1; i <= 9; i++) {
-      (function (n) { later(function () { clk.textContent = fmt(178 + n); }, 300 + n * 110); })(i);
-    }
-    later(function () { say("it's 3am."); }, 1400);
-    later(function () { glow.classList.add("show"); say("and someone's still on her phone."); }, 2600);
-    later(function () { say("go to sleep wu."); }, 4300);
-    later(function () { if (stage) stage.classList.add("clearing"); }, 5500);
-    later(reveal, 5950);
-
-    stage.addEventListener("click", reveal);
-  }
-
-  /* ═════════ 4. fire it when the note opens ═════════ */
-
-  new MutationObserver(function () {
-    if (backdropEl.classList.contains("show")) {
-      if (titleEl) titleEl.textContent = "Bedtime.";
-      reset();
-      runIntro();
-    } else {
-      teardown();
-      stopZ();
-      sheepBusy = false;
-      plate.classList.remove("go");                /* so it replays next time she opens the note */
-    }
-  }).observe(backdropEl, { attributes: true, attributeFilter: ["class"] });
-})();
-</script>
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-   SPICY DAY · October 5 · "SPICY"
-
-   Needs:  toast/amy-5.png   (the scrunched-nose photo)
-
-   Runs only on the date set in SPICY_DAY. Any other day: does nothing.
-   Test it early with:  index.html?peek=10-05&fresh=1
-   ═══════════════════════════════════════════════════════════════════ -->
-<style>
-  /* everything is scoped to body.spicyday so no other day can be touched */
-
-  /* ---------- the intro: pumpkin spice vs spicy ---------- */
-  body.spicyday .sp-stage {
-    position: fixed;
-    inset: 0;
-    z-index: 58;
-    overflow: hidden;
-    cursor: pointer;
-    background: rgba(253, 251, 247, 0.97);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.4rem;
-    transition: opacity 0.45s ease;
-  }
-  body.spicyday .sp-stage.clearing { opacity: 0; }
-
-  body.spicyday .sp-duo { position: relative; width: min(320px, 86vw); height: 210px; }
-
-  body.spicyday .sp-item {
-    position: absolute;
-    top: 50%;
-    width: 92px;
-    margin-top: -60px;
-    opacity: 1;
-    transform: scale(0);
-    transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.4), opacity 0.4s ease;
-  }
-  body.spicyday .sp-item svg { display: block; width: 100%; }
-  body.spicyday .sp-item.cup { left: 10%; }
-  body.spicyday .sp-item.pep { right: 10%; margin-top: -46px; }
-  body.spicyday .sp-item.cup.in { transform: scale(1) rotate(-6deg); }
-  body.spicyday .sp-item.pep.in { transform: scale(1) rotate(8deg); }
-  body.spicyday .sp-item.merge {
-    opacity: 0;
-    transition: transform 0.45s cubic-bezier(0.6, 0, 0.8, 0.4), opacity 0.45s ease;
-  }
-  body.spicyday .sp-item.cup.merge { transform: translateX(90px) scale(0.2) rotate(30deg); }
-  body.spicyday .sp-item.pep.merge { transform: translateX(-90px) scale(0.2) rotate(-30deg); }
-
-  body.spicyday .sp-bigface {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 170px;
-    height: 170px;
-    margin: -85px 0 0 -85px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 4px solid #FFFFFF;
-    box-shadow: 0 10px 26px rgba(62, 44, 35, 0.22), 0 0 34px 10px rgba(217, 66, 59, 0.35);
-    transform: scale(0);
-    transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.4);
-  }
-  body.spicyday .sp-bigface.show { transform: scale(1); }
-  body.spicyday .sp-bigface img {
-    display: block;
-    width: 108%;
-    height: 108%;
-    margin: -4%;
-    object-fit: cover;
-    object-position: 58% 55%;
-  }
-  body.spicyday .sp-bigface.show img { animation: sp-jit 0.3s linear 0.6s infinite; }
-  @keyframes sp-jit {
-    0%, 100% { transform: translate(0, 0); }
-    25%      { transform: translate(-2px, 1px); }
-    50%      { transform: translate(2px, 0); }
-    75%      { transform: translate(-1px, -1px); }
-  }
-  body.spicyday .sp-bigface .sp-heat { opacity: 0.3; }
-
-  body.spicyday .sp-cap {
-    width: min(320px, 84vw);
-    min-height: 2.4rem;
-    text-align: center;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.85rem;
-    line-height: 1.35;
-    color: var(--mocha);
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  body.spicyday .sp-cap.show { opacity: 1; transform: translateY(0); }
-
-  body.spicyday .sp-skip {
-    position: absolute;
-    bottom: 1.6rem;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.62rem;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: var(--taupe);
-  }
-
-  /* ---------- her face, inside the love note ---------- */
-  body.spicyday .sp {
-    position: relative;
-    z-index: 10;
-    margin-top: 1.2rem;
-    padding-top: 46px;                  /* room for the chili to fall */
-    --heat: 0;
-    --sat: 1;
-    --amp: 0px;
-  }
-  body.spicyday .sp[data-lv="1"] { --heat: 0.1;  --sat: 1.08; }
-  body.spicyday .sp[data-lv="2"] { --heat: 0.2;  --sat: 1.16; }
-  body.spicyday .sp[data-lv="3"] { --heat: 0.3;  --sat: 1.25; --amp: 1.2px; }
-  body.spicyday .sp[data-lv="4"] { --heat: 0.42; --sat: 1.35; --amp: 2px; }
-  body.spicyday .sp[data-lv="5"] { --heat: 0.55; --sat: 1.45; --amp: 3.2px; }
-
-  body.spicyday .sp-wrap {
-    position: relative;
-    width: 150px;
-    height: 150px;
-    margin: 0 auto;
-    opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
-  }
-  body.spicyday .sp.go .sp-wrap { opacity: 1; transform: scale(1); }
-  body.spicyday .sp.go.hot .sp-wrap { animation: sp-shake 0.35s linear infinite; }
-  @keyframes sp-shake {
-    0%, 100% { transform: translate(0, 0); }
-    25%      { transform: translate(calc(var(--amp) * -1), calc(var(--amp) * 0.5)); }
-    50%      { transform: translate(var(--amp), 0); }
-    75%      { transform: translate(calc(var(--amp) * -0.5), calc(var(--amp) * -0.6)); }
-  }
-
-  body.spicyday .sp-frame {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 4px solid var(--lily);
-    box-shadow: 0 8px 20px rgba(62, 44, 35, 0.18), 0 0 26px 4px rgba(217, 66, 59, calc(var(--heat) * 0.9));
-    transition: box-shadow 0.6s ease;
-  }
-  body.spicyday .sp-frame img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 58% 55%;
-    filter: saturate(var(--sat));
-    transition: filter 0.6s ease;
-  }
-  body.spicyday .sp-frame.chomp { animation: sp-chomp 0.35s ease; }
-  @keyframes sp-chomp { 40% { transform: scale(1.05, 0.95); } }
-
-  body.spicyday .sp-heat {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 50% 60%, #E0483C 0%, #C0302A 100%);
-    mix-blend-mode: multiply;
-    opacity: var(--heat);
-    transition: opacity 0.6s ease;
-    pointer-events: none;
-  }
-
-  /* steam out of her ears */
-  body.spicyday .sp-steam {
-    position: absolute;
-    top: 34%;
-    width: 14px;
-    height: 14px;
-    z-index: 1;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-  body.spicyday .sp-steam.l { left: -2px; }
-  body.spicyday .sp-steam.r { right: -2px; }
-  body.spicyday .sp.hot .sp-steam { opacity: 1; }
-  body.spicyday .sp-steam i {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: rgba(199, 188, 177, 0.75);
-    filter: blur(2px);
-    opacity: 0;
-  }
-  body.spicyday .sp.hot .sp-steam.l i { animation: sp-puff-l 1.5s ease-out infinite; }
-  body.spicyday .sp.hot .sp-steam.r i { animation: sp-puff-r 1.5s ease-out infinite; }
-  body.spicyday .sp-steam i:nth-child(2) { animation-delay: 0.5s !important; }
-  body.spicyday .sp-steam i:nth-child(3) { animation-delay: 1s !important; }
-  @keyframes sp-puff-l {
-    0%   { opacity: 0;   transform: translate(0, 0) scale(0.4); }
-    25%  { opacity: 0.9; }
-    100% { opacity: 0;   transform: translate(-30px, -26px) scale(1.7); }
-  }
-  @keyframes sp-puff-r {
-    0%   { opacity: 0;   transform: translate(0, 0) scale(0.4); }
-    25%  { opacity: 0.9; }
-    100% { opacity: 0;   transform: translate(30px, -26px) scale(1.7); }
-  }
-
-  /* one bead of sweat */
-  body.spicyday .sp-sweat {
-    position: absolute;
-    right: 22%;
-    top: 16%;
-    width: 10px;
-    height: 10px;
-    z-index: 3;
-    border-radius: 0 50% 50% 50%;
-    transform: rotate(45deg);
-    background: linear-gradient(135deg, #E4F1FB 0%, #8FBCE0 100%);
-    box-shadow: 0 1px 2px rgba(62, 44, 35, 0.2);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-  body.spicyday .sp.sweaty .sp-sweat { opacity: 1; animation: sp-drip 1.8s ease-in infinite; }
-  @keyframes sp-drip {
-    0%   { transform: translateY(0) rotate(45deg); opacity: 0; }
-    15%  { opacity: 1; }
-    80%  { transform: translateY(14px) rotate(45deg); opacity: 1; }
-    100% { transform: translateY(18px) rotate(45deg); opacity: 0; }
-  }
-
-  /* the halo of fire, max spice only */
-  body.spicyday .sp-flames { position: absolute; inset: 0; z-index: 0; }
-  body.spicyday .sp-flames i {
-    position: absolute;
-    width: 18px;
-    height: 26px;
-    margin: -26px 0 0 -9px;
-    transform-origin: 50% 100%;
-    border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%;
-    background: radial-gradient(ellipse at 50% 75%, #FFE9A3 0%, #F6B45A 35%, #E8643A 65%, #D9423B 100%);
-    opacity: 0;
-    transform: rotate(var(--r)) scale(0);
-    transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
-  }
-  body.spicyday .sp.max .sp-flames i {
-    opacity: 1;
-    animation: sp-flick 0.5s ease-in-out infinite alternate;
-  }
-  @keyframes sp-flick {
-    from { transform: rotate(var(--r)) scale(0.9, 0.8); }
-    to   { transform: rotate(var(--r)) scale(1, 1.12); }
-  }
-
-  /* the chili that falls in */
-  body.spicyday .sp-fall {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    width: 40px;
-    z-index: 5;
-    pointer-events: none;
-    animation: sp-fall 0.75s cubic-bezier(0.45, 0, 0.75, 0.45) forwards;
-  }
-  body.spicyday .sp-fall svg { display: block; width: 100%; }
-  @keyframes sp-fall {
-    0%   { opacity: 0; transform: translate(-50%, -70px) rotate(-35deg) scale(1); }
-    15%  { opacity: 1; }
-    75%  { opacity: 1; transform: translate(-50%, 88px) rotate(15deg) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, 96px) rotate(20deg) scale(0); }
-  }
-
-  /* spice meter */
-  body.spicyday .sp-meter {
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    margin-top: 1.1rem;
-  }
-  body.spicyday .sp-pip { width: 22px; color: var(--border); transition: color 0.3s ease; }
-  body.spicyday .sp-pip svg { display: block; width: 100%; }
-  body.spicyday .sp-pip.on { color: #D9423B; animation: sp-pip 0.35s ease; }
-  @keyframes sp-pip { 50% { transform: scale(1.3) rotate(-10deg); } }
-
-  body.spicyday .sp-labels { text-align: center; margin-top: 0.6rem; min-height: 2.6rem; }
-  body.spicyday .sp-name {
-    display: block;
-    font-family: 'Playfair Display', serif;
-    font-size: 1rem;
-    color: var(--espresso);
-  }
-  body.spicyday .sp-line {
-    display: block;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.15rem;
-    color: var(--rose);
-    margin-top: 0.05rem;
-    min-height: 1.3rem;
-  }
-
-  body.spicyday .sp-actions {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 0.9rem;
-  }
-  body.spicyday .sp-btn {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 0.45rem 1.05rem;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--key);
-    color: var(--mocha);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform 0.06s ease;
-  }
-  body.spicyday .sp-btn:active { transform: scale(0.95); }
-  body.spicyday .sp-btn.hotbtn { background: #D96C5B; border-color: #D96C5B; color: #fff; }
-
-  body.spicyday .sp-hint {
-    text-align: center;
-    font-size: 0.72rem;
-    color: var(--taupe);
-    margin-top: 0.65rem;
-    animation: sp-pulse 2.4s ease-in-out infinite;
-  }
-  body.spicyday .sp-hint.gone { display: none; }
-  @keyframes sp-pulse { 50% { opacity: 0.45; } }
-
-  body.spicyday .sp-count {
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--mocha);
-    margin-top: 0.7rem;
-    min-height: 1rem;
-  }
-  body.spicyday .sp-count.pop { animation: sp-pop 0.3s ease; }
-  @keyframes sp-pop { 50% { transform: scale(1.13); } }
-
-  body.spicyday .sp-fx {
-    position: fixed;
-    z-index: 70;
-    pointer-events: none;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.5rem;
-    color: #D9423B;
-    text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
-    animation: sp-float 1s ease-out forwards;
-  }
-  @keyframes sp-float {
-    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
-    25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
-    100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
-  }
-
-  @media (max-height: 780px) {
-    body.spicyday .sp { margin-top: 0.9rem; padding-top: 40px; }
-    body.spicyday .sp-wrap { width: 124px; height: 124px; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    body.spicyday .sp-wrap { opacity: 1 !important; transform: none !important; transition: none; }
-    body.spicyday .sp.go.hot .sp-wrap,
-    body.spicyday .sp-steam i,
-    body.spicyday .sp.sweaty .sp-sweat,
-    body.spicyday .sp.max .sp-flames i,
-    body.spicyday .sp-hint,
-    body.spicyday .sp-fx,
-    body.spicyday .sp-bigface.show img { animation: none !important; }
-  }
-</style>
-
-<script>
-(function () {
-  "use strict";
-
-  /* ── change this one line to move the whole thing to another date ── */
-  const SPICY_DAY = "10-05";
-
-  /* photo, relative to index.html */
-  const DIR = "toast/";
-  const FACE = "amy-5.png";
-
-  let dk;
-  try { dk = dateKey; } catch (e) { return; }
-  if (dk !== SPICY_DAY) return;
-
-  const card = document.getElementById("modal-card");
-  const sig = card && card.querySelector(".signature");
-  const backdropEl = document.getElementById("modal-backdrop");
-  const titleEl = document.getElementById("modal-title");
-  if (!card || !sig || !backdropEl) return;
-
-  document.body.classList.add("spicyday");
-
-  const sub = document.querySelector("header p");
-  if (sub) sub.textContent = "handle with care :)";
-
-  const softMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const PLACEHOLDER =
-    "data:image/svg+xml;utf8," + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
-      '<rect width="100" height="100" fill="#F3E8D2"/>' +
-      '<path d="M30 44 L42 40 M70 44 L58 40" stroke="#6B5142" stroke-width="3.5" stroke-linecap="round"/>' +
-      '<path d="M36 64 Q50 72 64 64" stroke="#6B5142" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
-      "</svg>");
-
-  let SRC = DIR + FACE;
-  const probe = new Image();
-  probe.onerror = function () {
-    SRC = PLACEHOLDER;
-    document.querySelectorAll(".sp-frame img, .sp-bigface img").forEach(function (im) { im.src = SRC; });
-  };
-  probe.src = SRC;
-
-  function CHILI(fill) {
-    return '<svg viewBox="0 0 40 40" aria-hidden="true">' +
-      '<path d="M10 12 C6 20 10 32 22 36 C27 37.5 31 36 33 34 C26 33 19 28 16 20 C15 16 14 13 10 12 Z" fill="' + fill + '"/>' +
-      '<path d="M12.5 17 C12.5 23 15.5 28 20 31" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
-      '<path d="M7 12 C9 9 13 10 14 13 C11 14 8 14 7 12 Z" fill="#8AA07F"/>' +
-      '<path d="M10.5 11 C9.5 7.5 11.5 5 15 4" stroke="#7E9C6E" stroke-width="2.2" stroke-linecap="round" fill="none"/>' +
-    "</svg>";
-  }
-
-  const CUP =
-    '<svg viewBox="0 0 60 80" aria-hidden="true">' +
-      '<path d="M22 6 C20 2 24 1 23 -2 M30 6 C28 2 32 1 31 -2 M38 6 C36 2 40 1 39 -2" stroke="#C7BCB1" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
-      '<path d="M10 16 L50 16 L45 76 Q44 78 42 78 L18 78 Q16 78 15 76 Z" fill="#FFFFFF" stroke="#E4DCD1" stroke-width="1.5"/>' +
-      '<path d="M8 15 L52 15 L50 9 L10 9 Z" fill="#FDFBF7" stroke="#E4DCD1" stroke-width="1.5" stroke-linejoin="round"/>' +
-      '<path d="M12.5 34 L47.5 34 L45.6 56 L14.4 56 Z" fill="#E08A3C"/>' +
-      '<path d="M30 50 C27 47.5 24 45.5 24 43 C24 41.3 25.4 40.2 27 40.4 C28.3 40.6 29.4 41.5 30 42.5 C30.6 41.5 31.7 40.6 33 40.4 C34.6 40.2 36 41.3 36 43 C36 45.5 33 47.5 30 50 Z" fill="#FDFBF7"/>' +
-    "</svg>";
-
-  /* ═════════ 1. her face ═════════ */
-
-  let pips = "";
-  for (let i = 0; i < 5; i++) pips += '<span class="sp-pip">' + CHILI("currentColor") + "</span>";
-
-  const plate = document.createElement("div");
-  plate.className = "sp";
-  plate.setAttribute("data-lv", "0");
-  plate.innerHTML =
-    '<div class="sp-wrap">' +
-      '<div class="sp-flames"></div>' +
-      '<div class="sp-steam l"><i></i><i></i><i></i></div>' +
-      '<div class="sp-steam r"><i></i><i></i><i></i></div>' +
-      '<div class="sp-frame"><img src="' + SRC + '" alt="someone who cannot handle spice" draggable="false"><div class="sp-heat"></div></div>' +
-      '<div class="sp-sweat"></div>' +
-    "</div>" +
-    '<div class="sp-meter">' + pips + "</div>" +
-    '<div class="sp-labels"><span class="sp-name"></span><span class="sp-line"></span></div>' +
-    '<div class="sp-actions">' +
-      '<button class="sp-btn hotbtn" type="button">add a chili</button>' +
-      '<button class="sp-btn milk" type="button">drink milk</button>' +
-    "</div>" +
-    '<p class="sp-hint">(feed her a chili)</p>' +
-    '<p class="sp-count" role="status"></p>';
-  card.insertBefore(plate, sig);
-
-  const wrap = plate.querySelector(".sp-wrap");
-  const frame = plate.querySelector(".sp-frame");
-  const pipEls = plate.querySelectorAll(".sp-pip");
-  const nameEl = plate.querySelector(".sp-name");
-  const lineEl = plate.querySelector(".sp-line");
-  const chiliBtn = plate.querySelector(".sp-btn.hotbtn");
-  const milkBtn = plate.querySelector(".sp-btn.milk");
-  const hint = plate.querySelector(".sp-hint");
-  const countEl = plate.querySelector(".sp-count");
-
-  /* ring of flames around the frame, pointing outward */
-  const flameBox = plate.querySelector(".sp-flames");
-  for (let i = 0; i < 12; i++) {
-    const a = i * 30 - 90;
-    const rad = a * Math.PI / 180;
-    const f = document.createElement("i");
-    f.style.left = (50 + 52 * Math.cos(rad)) + "%";
-    f.style.top = (50 + 52 * Math.sin(rad)) + "%";
-    f.style.setProperty("--r", (a + 90) + "deg");
-    f.style.animationDelay = -(Math.random() * 0.5) + "s";
-    flameBox.appendChild(f);
-  }
-
-  const LEVELS = [
-    { name: "mild.",         line: "she's fine. for now." },
-    { name: "a little kick", line: "barely a tingle" },
-    { name: "medium",        line: "ok she felt that one" },
-    { name: "hot",           line: "the nose scrunch has begun" },
-    { name: "very hot",      line: "wu is sweating" },
-    { name: "WU.",           line: "drink some milk. please." }
-  ];
-  const CHOMPS = [null, "chomp", "*crunch*", "oh.", "OH.", "WUUUUU"];
-  const GULPS = ["gulp", "ahh", "*milk mustache*", "better?"];
-
-  const MILESTONES = {
-    1: "chilis eaten: 1",
-    5: "chilis eaten: 5 · respect",
-    10: "chilis eaten: 10. are you ok",
-    25: "chilis eaten: 25. this is a cry for help",
-    50: "chilis eaten: 50. drink. the. milk.",
-    100: "chilis eaten: 100. WUUUUUUU"
-  };
-
-  let eaten = 0;
-  try { eaten = parseInt(localStorage.getItem("amy-chilis") || "0", 10) || 0; } catch (e) {}
-  function renderCount() { countEl.textContent = MILESTONES[eaten] || "chilis eaten: " + eaten; }
-  if (eaten > 0) { renderCount(); hint.classList.add("gone"); }
-
-  function fx(text, el) {
-    if (softMotion) return;
-    const r = el.getBoundingClientRect();
-    const d = document.createElement("div");
-    d.className = "sp-fx";
-    d.textContent = text;
-    d.style.left = (r.left + r.width / 2 + (Math.random() * 26 - 13)) + "px";
-    d.style.top = (r.top + 20) + "px";
-    document.body.appendChild(d);
-    setTimeout(function () { d.remove(); }, 1050);
-  }
-
-  function sparkle(x, y, colors) {
-    if (softMotion) return;
-    for (let i = 0; i < 14; i++) {
-      const p = document.createElement("div");
-      p.className = "burst";                     /* reuses the petal-burst CSS */
-      const s = 6 + Math.random() * 8;
-      p.style.width = s + "px";
-      p.style.height = s * 0.75 + "px";
-      p.style.left = x + "px";
-      p.style.top = y + "px";
-      p.style.background = colors[i % colors.length];
-      const a = Math.random() * Math.PI * 2;
-      const d = 34 + Math.random() * 70;
-      p.style.setProperty("--tx", Math.cos(a) * d + "px");
-      p.style.setProperty("--ty", (Math.sin(a) * d - 30) + "px");
-      p.style.setProperty("--rot", (Math.random() * 400 - 200) + "deg");
-      document.body.appendChild(p);
-      setTimeout(function () { p.remove(); }, 1300);
-    }
-  }
-  const FIRE = ["#D9423B", "#E8643A", "#F6B45A", "#FFE9A3"];
-  const MILK = ["#FFFFFF", "#FDFBF7", "#F3E8D2", "var(--blushpk)"];
-
-  let stage = null, timers = [];
-  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
-  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-
-  /* ═════════ 2. the spice ═════════ */
-
-  let lv = 0, busy = false, gulps = 0;
-
-  function setLv(n) {
-    lv = n;
-    plate.setAttribute("data-lv", String(n));
-    plate.classList.toggle("sweaty", n >= 2);
-    plate.classList.toggle("hot", n >= 3);
-    plate.classList.toggle("max", n >= 5);
-    pipEls.forEach(function (p, i) { p.classList.toggle("on", i < n); });
-    nameEl.textContent = LEVELS[n].name;
-    lineEl.textContent = LEVELS[n].line;
-  }
-  setLv(0);
-
-  function addChili() {
-    if (busy) return;
-    hint.classList.add("gone");
-    if (lv >= 5) { fx("no more. milk.", chiliBtn); return; }
-    busy = true;
-
-    if (!softMotion) {
-      const c = document.createElement("div");
-      c.className = "sp-fall";
-      c.innerHTML = CHILI("#D9423B");
-      wrap.appendChild(c);
-      setTimeout(function () { c.remove(); }, 800);
-    }
-
-    later(function () {
-      setLv(lv + 1);
-      eaten++;
-      try { localStorage.setItem("amy-chilis", String(eaten)); } catch (e) {}
-      renderCount();
-      countEl.classList.remove("pop");
-      void countEl.offsetWidth;
-      countEl.classList.add("pop");
-
-      frame.classList.remove("chomp");
-      void frame.offsetWidth;
-      frame.classList.add("chomp");
-
-      fx(CHOMPS[lv], frame);
-      const r = frame.getBoundingClientRect();
-      sparkle(r.left + r.width / 2, r.top + r.height * 0.78, FIRE);
-      busy = false;
-    }, softMotion ? 100 : 700);
-  }
-
-  function drinkMilk() {
-    hint.classList.add("gone");
-    if (lv === 0) { fx("she's not even warm yet", milkBtn); return; }
-    fx(GULPS[gulps++ % GULPS.length], frame);
-    const r = frame.getBoundingClientRect();
-    sparkle(r.left + r.width / 2, r.top + r.height / 2, MILK);
-    setLv(0);
-  }
-
-  chiliBtn.addEventListener("click", addChili);
-  milkBtn.addEventListener("click", drinkMilk);
-
-  /* ═════════ 3. the intro: pumpkin spice or just spicy? ═════════ */
-
-  function teardown() {
-    clearTimers();
-    if (stage) { stage.remove(); stage = null; }
-  }
-
-  function reveal() {
-    teardown();
-    plate.classList.add("go");
-    later(function () {
-      if (!backdropEl.classList.contains("show")) return;
-      const cardRect = card.getBoundingClientRect();
-      const plateRect = plate.getBoundingClientRect();
-      if (plateRect.bottom > cardRect.bottom - 10) {
-        card.scrollTo({ top: Math.max(0, plate.offsetTop - 20), behavior: "smooth" });
-      }
-    }, 620);
-  }
-
-  function runIntro() {
-    teardown();
-    if (softMotion) { reveal(); return; }
-
-    stage = document.createElement("div");
-    stage.className = "sp-stage";
-    stage.innerHTML =
-      '<div class="sp-duo">' +
-        '<div class="sp-item cup">' + CUP + "</div>" +
-        '<div class="sp-item pep">' + CHILI("#D9423B") + "</div>" +
-        '<div class="sp-bigface"><img src="' + SRC + '" alt="" draggable="false"><div class="sp-heat"></div></div>' +
-      "</div>" +
-      '<p class="sp-cap"></p>' +
-      '<p class="sp-skip">tap to skip</p>';
-    document.body.appendChild(stage);
-
-    const cup = stage.querySelector(".sp-item.cup");
-    const pep = stage.querySelector(".sp-item.pep");
-    const face = stage.querySelector(".sp-bigface");
-    const cap = stage.querySelector(".sp-cap");
-    function say(text) {
-      cap.classList.remove("show");
-      later(function () { cap.textContent = text; cap.classList.add("show"); }, 220);
-    }
-
-    later(function () { cup.classList.add("in"); say("pumpkin spice?"); }, 300);
-    later(function () { pep.classList.add("in"); say("or just spicy?"); }, 1500);
-    later(function () { cup.classList.add("merge"); pep.classList.add("merge"); }, 2800);
-    later(function () {
-      face.classList.add("show");
-      say("both. obviously.");
-      const r = face.getBoundingClientRect();
-      sparkle(r.left + r.width / 2, r.top + r.height / 2, FIRE);
-    }, 3150);
-    later(function () { if (stage) stage.classList.add("clearing"); }, 4700);
-    later(reveal, 5150);
-
-    stage.addEventListener("click", reveal);
-  }
-
-  /* ═════════ 4. fire it when the note opens ═════════ */
-
-  new MutationObserver(function () {
-    if (backdropEl.classList.contains("show")) {
-      if (titleEl) titleEl.textContent = "Too hot.";
-      busy = false;
-      gulps = 0;
-      wrap.querySelectorAll(".sp-fall").forEach(function (n) { n.remove(); });
-      setLv(0);
-      runIntro();
-    } else {
-      teardown();
-      busy = false;
-      plate.classList.remove("go");                /* so it replays next time she opens the note */
-    }
-  }).observe(backdropEl, { attributes: true, attributeFilter: ["class"] });
-})();
-</script>
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-   XIANG DAY · October 18 · "XIANG" (想你)
-
-   Needs:  xiang/me.jpg    (you, face centered)
-           xiang/amy.jpg   (her, face centered)
-   Missing either one → a placeholder face shows instead.
-
-   SEAL is the character on the red stamp. Swap it for her surname
-   character if you want (also add it to the font list below).
-
-   If the gold/red split on 想 cuts in a weird spot, change --split
-   (bigger % = the line moves down).
-
-   Runs only on the date set in XIANG_DAY. Any other day: does nothing.
-   Test it early with:  index.html?peek=10-18&fresh=1
-   ═══════════════════════════════════════════════════════════════════ -->
-<style>
-  /* everything is scoped to body.xiangday so no other day can be touched */
-
-  /* ---------- the intro: ink on paper ---------- */
-  body.xiangday .xg-stage {
-    position: fixed;
-    inset: 0;
-    z-index: 58;
-    overflow: hidden;
-    cursor: pointer;
-    background: radial-gradient(ellipse at 50% 40%, #FBF6EC 0%, #F1E7D6 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.4rem;
-    transition: opacity 0.5s ease;
-  }
-  body.xiangday .xg-stage.clearing { opacity: 0; }
-
-  body.xiangday .xg-chars {
-    --split: 56%;
-    position: relative;
-    display: flex;
-    font-family: 'Ma Shan Zheng', 'STKaiti', 'KaiTi', 'Kaiti SC', serif;
-    font-size: min(8.5rem, 34vw);
-    line-height: 1;
-    color: #2B1E18;
-  }
-  body.xiangday .xg-chars.thud { animation: xg-thud 0.25s ease; }
-  @keyframes xg-thud { 40% { transform: translateY(4px); } }
-
-  body.xiangday .xg-shift {
-    transform: translateX(0.5em);
-    transition: transform 0.9s cubic-bezier(0.3, 0.8, 0.3, 1);
-  }
-  body.xiangday .xg-chars.both .xg-shift { transform: translateX(0); }
-
-  body.xiangday .xg-ch {
-    position: relative;
-    display: block;
-    opacity: 0;
-    filter: blur(14px);
-    transform: scale(1.12);
-    transition: opacity 1s ease, filter 1.1s ease, transform 1.1s cubic-bezier(0.2, 0.8, 0.3, 1);
-  }
-  body.xiangday .xg-ch.in { opacity: 1; filter: blur(0); transform: scale(1); }
-
-  body.xiangday .xg-top,
-  body.xiangday .xg-bot {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 0.6s ease;
-  }
-  body.xiangday .xg-top {
-    color: #C9A25E;
-    -webkit-clip-path: inset(0 0 calc(100% - var(--split)) 0);
-    clip-path: inset(0 0 calc(100% - var(--split)) 0);
-  }
-  body.xiangday .xg-bot {
-    color: #C8473D;
-    -webkit-clip-path: inset(var(--split) 0 0 0);
-    clip-path: inset(var(--split) 0 0 0);
-  }
-  body.xiangday .xg-top.on,
-  body.xiangday .xg-bot.on { opacity: 1; }
-
-  body.xiangday .xg-seal {
-    position: absolute;
-    right: -0.18em;
-    bottom: -0.06em;
-    font-size: 0.2em;
-    width: 1.5em;
-    height: 1.5em;
-    border-radius: 0.15em;
-    background: #C8473D;
-    color: #FBF6EC;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: inset 0 0 0 0.07em rgba(251, 246, 236, 0.35);
-    opacity: 0;
-    transform: scale(2.4) rotate(-14deg);
-  }
-  body.xiangday .xg-seal.stamp { animation: xg-stamp 0.38s cubic-bezier(0.5, 0, 0.75, 0) forwards; }
-  @keyframes xg-stamp { to { opacity: 0.94; transform: scale(1) rotate(-6deg); } }
-
-  body.xiangday .xg-parts {
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-    height: 3rem;
-    font-family: 'Ma Shan Zheng', 'STKaiti', 'KaiTi', 'Kaiti SC', serif;
-    font-size: 2.6rem;
-  }
-  body.xiangday .xg-parts span {
-    opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  body.xiangday .xg-parts span.in { opacity: 1; transform: none; }
-  body.xiangday .xg-parts .p1 { color: #C9A25E; }
-  body.xiangday .xg-parts .p2 { color: #C8473D; }
-  body.xiangday .xg-parts .plus { font-family: 'Inter', sans-serif; font-size: 1.3rem; color: var(--taupe); }
-
-  body.xiangday .xg-say {
-    width: min(320px, 84vw);
-    min-height: 2.4rem;
-    text-align: center;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.85rem;
-    line-height: 1.35;
-    color: var(--mocha);
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  body.xiangday .xg-say.show { opacity: 1; transform: translateY(0); }
-
-  body.xiangday .xg-skip {
-    position: absolute;
-    bottom: 1.6rem;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.62rem;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: var(--taupe);
-  }
-
-  body.xiangday .xg-drop {
-    position: fixed;
-    z-index: 65;
-    pointer-events: none;
-    border-radius: 50%;
-    background: #2B1E18;
-    opacity: 0;
-    animation: xg-drop 0.9s ease-out forwards;
-  }
-  @keyframes xg-drop {
-    0%   { opacity: 0;    transform: scale(0); }
-    30%  { opacity: 0.55; transform: scale(1.1); }
-    100% { opacity: 0;    transform: scale(0.9); }
-  }
-
-  /* ---------- the red string, inside the love note ---------- */
-  body.xiangday .xg { position: relative; z-index: 10; margin-top: 1.3rem; }
-
-  body.xiangday .xg-scene {
-    position: relative;
-    width: 260px;
-    height: 130px;
-    margin: 0 auto;
-    opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
-  }
-  body.xiangday .xg.go .xg-scene { opacity: 1; transform: scale(1); }
-
-  body.xiangday .xg-string {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-    z-index: 2;
-  }
-
-  body.xiangday .xg-who { position: absolute; top: 14px; width: 76px; text-align: center; z-index: 1; }
-  body.xiangday .xg-who.me  { left: 6px; }
-  body.xiangday .xg-who.her { right: 6px; }
-  body.xiangday .xg-face {
-    width: 76px;
-    height: 76px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 3px solid #FFFFFF;
-    background: #F3E8D2;
-    box-shadow: 0 6px 16px rgba(62, 44, 35, 0.16);
-  }
-  body.xiangday .xg-face img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  body.xiangday .xg-face.bump { animation: xg-bump 0.4s ease; }
-  @keyframes xg-bump { 40% { transform: scale(1.12); } }
-  body.xiangday .xg-tag {
-    display: block;
-    margin-top: 0.35rem;
-    font-size: 0.58rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--taupe);
-  }
-
-  body.xiangday .xg-labels { text-align: center; margin-top: 0.6rem; min-height: 2.6rem; }
-  body.xiangday .xg-name { display: block; font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--espresso); }
-  body.xiangday .xg-line {
-    display: block;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.15rem;
-    color: var(--rose);
-    margin-top: 0.05rem;
-  }
-
-  body.xiangday .xg-actions { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.9rem; }
-  body.xiangday .xg-btn {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.45rem 1.05rem;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--key);
-    color: var(--mocha);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform 0.06s ease;
-  }
-  body.xiangday .xg-btn:active { transform: scale(0.95); }
-  body.xiangday .xg-btn.main { background: #C8473D; border-color: #C8473D; color: #FBF6EC; }
-
-  body.xiangday .xg-hint {
-    text-align: center;
-    font-size: 0.72rem;
-    color: var(--taupe);
-    margin-top: 0.65rem;
-    animation: xg-pulse 2.4s ease-in-out infinite;
-  }
-  body.xiangday .xg-hint.gone { display: none; }
-  @keyframes xg-pulse { 50% { opacity: 0.45; } }
-
-  body.xiangday .xg-count {
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--mocha);
-    margin-top: 0.7rem;
-    min-height: 1rem;
-  }
-  body.xiangday .xg-count.pop { animation: xg-pop 0.3s ease; }
-  @keyframes xg-pop { 50% { transform: scale(1.13); } }
-
-  body.xiangday .xg-fx {
-    position: fixed;
-    z-index: 70;
-    pointer-events: none;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.5rem;
-    color: #C8473D;
-    text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
-    animation: xg-float 1s ease-out forwards;
-  }
-  @keyframes xg-float {
-    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
-    25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
-    100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    body.xiangday .xg-scene { opacity: 1 !important; transform: none !important; transition: none; }
-    body.xiangday .xg-face.bump,
-    body.xiangday .xg-hint,
-    body.xiangday .xg-fx { animation: none !important; }
-  }
-</style>
-
-<script>
-(function () {
-  "use strict";
-
-  /* ── change this one line to move the whole thing to another date ── */
-  const XIANG_DAY = "10-18";
-
-  /* photos, relative to index.html */
-  const DIR = "xiang/";
-  const ME = "me.jpg";
-  const HER = "amy.jpg";
-
-  /* the character on the red stamp */
-  const SEAL = "爱";
-
-  let dk;
-  try { dk = dateKey; } catch (e) { return; }
-  if (dk !== XIANG_DAY) return;
-
-  const card = document.getElementById("modal-card");
-  const sig = card && card.querySelector(".signature");
-  const backdropEl = document.getElementById("modal-backdrop");
-  const titleEl = document.getElementById("modal-title");
-  if (!card || !sig || !backdropEl) return;
-
-  document.body.classList.add("xiangday");
-
-  const sub = document.querySelector("header p");
-  if (sub) sub.textContent = "missing you today :)";
-
-  /* brush calligraphy font, only the few characters we use (tiny download) */
-  const fl = document.createElement("link");
-  fl.rel = "stylesheet";
-  fl.href = "https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap&text=" +
-    encodeURIComponent("想你相心红线" + SEAL);
-  document.head.appendChild(fl);
-
-  const softMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const NS = "http://www.w3.org/2000/svg";
-
-  function placeholder(word) {
-    return "data:image/svg+xml;utf8," + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
-      '<rect width="100" height="100" fill="#F3E8D2"/>' +
-      '<text x="50" y="60" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="28" fill="#6B5142">' + word + "</text>" +
-      "</svg>");
-  }
-
-  const HEART = "M0 4 C-3 1.5 -6 -0.5 -6 -3 C-6 -5 -4.5 -6.2 -3 -6.2 C-1.7 -6.2 -0.6 -5.4 0 -4.4 " +
-    "C0.6 -5.4 1.7 -6.2 3 -6.2 C4.5 -6.2 6 -5 6 -3 C6 -0.5 3 1.5 0 4 Z";
-
-  /* ═════════ 1. the red string ═════════ */
-
-  const plate = document.createElement("div");
-  plate.className = "xg";
-  plate.innerHTML =
-    '<div class="xg-scene">' +
-      '<div class="xg-who me"><div class="xg-face"><img alt="" draggable="false"></div><span class="xg-tag">pittsburgh</span></div>' +
-      '<div class="xg-who her"><div class="xg-face"><img alt="" draggable="false"></div><span class="xg-tag">ithaca</span></div>' +
-      '<svg class="xg-string" viewBox="0 0 260 130" aria-hidden="true">' +
-        '<path class="xg-red" fill="none" stroke="#C8473D" stroke-width="2.2" stroke-linecap="round"/>' +
-        '<circle class="xg-knot a" r="3.2" cy="79" fill="#C8473D"/>' +
-        '<circle class="xg-knot b" r="3.2" cy="79" fill="#C8473D"/>' +
-      "</svg>" +
-    "</div>" +
-    '<div class="xg-labels"><span class="xg-name">红线 · hóng xiàn</span><span class="xg-line">red string. can\'t untie it :)</span></div>' +
-    '<div class="xg-actions">' +
-      '<button class="xg-btn main" type="button">想你</button>' +
-      '<button class="xg-btn tug" type="button">tug</button>' +
-    "</div>" +
-    '<p class="xg-hint">(send one)</p>' +
-    '<p class="xg-count" role="status"></p>';
-  card.insertBefore(plate, sig);
-
-  const scene = plate.querySelector(".xg-scene");
-  const meEl = plate.querySelector(".xg-who.me");
-  const herEl = plate.querySelector(".xg-who.her");
-  const meFace = meEl.querySelector(".xg-face");
-  const svg = plate.querySelector(".xg-string");
-  const str = plate.querySelector(".xg-red");
-  const knotA = plate.querySelector(".xg-knot.a");
-  const knotB = plate.querySelector(".xg-knot.b");
-  const sendBtn = plate.querySelector(".xg-btn.main");
-  const tugBtn = plate.querySelector(".xg-btn.tug");
-  const hint = plate.querySelector(".xg-hint");
-  const countEl = plate.querySelector(".xg-count");
-
-  const meImg = meEl.querySelector("img");
-  const herImg = herEl.querySelector("img");
-  meImg.onerror = function () { this.onerror = null; this.src = placeholder("me"); };
-  herImg.onerror = function () { this.onerror = null; this.src = placeholder("wu"); };
-  meImg.src = DIR + ME;
-  herImg.src = DIR + HER;
-
-  const REST = 24, TIGHT = 3;
-  function setSag(s) {
-    const k = Math.max(-0.4, (REST - s) / (REST - TIGHT));
-    const dx = 9 * k;
-    meEl.style.transform = "translateX(" + dx.toFixed(2) + "px)";
-    herEl.style.transform = "translateX(" + (-dx).toFixed(2) + "px)";
-    const x1 = 71 + dx, x2 = 189 - dx;
-    str.setAttribute("d", "M" + x1.toFixed(2) + " 79 Q130 " + (79 + 2 * s).toFixed(2) + " " + x2.toFixed(2) + " 79");
-    knotA.setAttribute("cx", x1.toFixed(2));
-    knotB.setAttribute("cx", x2.toFixed(2));
-  }
-  setSag(REST);
-
-  const MILESTONES = {
-    1: "想你 sent: 1",
-    5: "想你 sent: 5 · WUUUU",
-    10: "想你 sent: 10. miss youu",
-    25: "想你 sent: 25. string's not gonna break babyy",
-    50: "想你 sent: 50. come back",
-    100: "想你 sent: 100. COME HERE"
-  };
-  const REPLIES = ["想你 too", "me too", "got it :)", "more", "想你想你"];
-  const TUGS = ["can't untie it", "*tug*", "still here", "not going anywhere"];
-
-  let sent = 0;
-  try { sent = parseInt(localStorage.getItem("amy-xiang") || "0", 10) || 0; } catch (e) {}
-  function renderCount() { countEl.textContent = MILESTONES[sent] || "想你 sent: " + sent; }
-  if (sent > 0) { renderCount(); hint.classList.add("gone"); }
-
-  function fx(text, el) {
-    if (softMotion) return;
-    const r = el.getBoundingClientRect();
-    const d = document.createElement("div");
-    d.className = "xg-fx";
-    d.textContent = text;
-    d.style.left = (r.left + r.width / 2 + (Math.random() * 26 - 13)) + "px";
-    d.style.top = (r.top + 10) + "px";
-    document.body.appendChild(d);
-    setTimeout(function () { d.remove(); }, 1050);
-  }
-
-  const REDS = ["#C8473D", "var(--rose)", "var(--blushpk)", "#FFFFFF", "#C9A25E"];
-  function sparkle(x, y) {
-    if (softMotion) return;
-    for (let i = 0; i < 14; i++) {
-      const p = document.createElement("div");
-      p.className = "burst";                     /* reuses the petal-burst CSS */
-      p.style.zIndex = "65";                     /* above the intro screen */
-      const s = 6 + Math.random() * 8;
-      p.style.width = s + "px";
-      p.style.height = s * 0.75 + "px";
-      p.style.left = x + "px";
-      p.style.top = y + "px";
-      p.style.background = REDS[i % REDS.length];
-      const a = Math.random() * Math.PI * 2;
-      const d = 30 + Math.random() * 60;
-      p.style.setProperty("--tx", Math.cos(a) * d + "px");
-      p.style.setProperty("--ty", (Math.sin(a) * d - 30) + "px");
-      p.style.setProperty("--rot", (Math.random() * 400 - 200) + "deg");
-      document.body.appendChild(p);
-      setTimeout(function () { p.remove(); }, 1300);
-    }
-  }
-  function center(el) {
-    const r = el.getBoundingClientRect();
-    return [r.left + r.width / 2, r.top + r.height / 2];
-  }
-
-  let stage = null, timers = [];
-  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
-  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-
-  /* ═════════ 2. sending one ═════════ */
-
-  let flying = 0;
-  function send() {
-    hint.classList.add("gone");
-    sent++;
-    try { localStorage.setItem("amy-xiang", String(sent)); } catch (e) {}
-    renderCount();
-    countEl.classList.remove("pop");
-    void countEl.offsetWidth;
-    countEl.classList.add("pop");
-
-    function arrive() {
-      meFace.classList.remove("bump");
-      void meFace.offsetWidth;
-      meFace.classList.add("bump");
-      fx(REPLIES[sent % REPLIES.length], meFace);
-      const c = center(meFace);
-      sparkle(c[0], c[1]);
-    }
-
-    if (softMotion || flying >= 4) { arrive(); return; }
-    flying++;
-
-    const h = document.createElementNS(NS, "path");
-    h.setAttribute("d", HEART);
-    h.setAttribute("fill", "#C8473D");
-    svg.appendChild(h);
-
-    const t0 = performance.now(), D = 1300;
-    function step(now) {
-      const t = Math.min(1, (now - t0) / D);
-      const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-      const L = str.getTotalLength();
-      const p = str.getPointAtLength(L * (1 - e));            /* her → you */
-      h.setAttribute("transform", "translate(" + p.x.toFixed(1) + " " + (p.y - 5).toFixed(1) + ") scale(1.25)");
-      if (t < 1) requestAnimationFrame(step);
-      else { h.remove(); flying--; arrive(); }
-    }
-    requestAnimationFrame(step);
-  }
-
-  /* ═════════ 3. the tug ═════════ */
-
-  let tugRaf = 0, tugging = false, tugN = 0;
-  function tug() {
-    hint.classList.add("gone");
-    if (tugging) return;
-    fx(TUGS[tugN++ % TUGS.length], scene);
-    if (softMotion) return;
-    tugging = true;
-    const t0 = performance.now(), D = 1100;
-    function step(now) {
-      const t = Math.min(1, (now - t0) / D);
-      let s;
-      if (t < 0.22) {
-        const u = t / 0.22;
-        s = REST + (TIGHT - REST) * (1 - Math.pow(1 - u, 2));
-      } else {
-        const u = (t - 0.22) / 0.78;
-        s = REST + (TIGHT - REST) * Math.exp(-5 * u) * Math.cos(9 * u);
-      }
-      setSag(s);
-      if (t < 1) tugRaf = requestAnimationFrame(step);
-      else { setSag(REST); tugging = false; }
-    }
-    tugRaf = requestAnimationFrame(step);
-  }
-
-  sendBtn.addEventListener("click", send);
-  tugBtn.addEventListener("click", tug);
-
-  /* ═════════ 4. the intro: 想你 in ink ═════════ */
-
-  function teardown() {
-    clearTimers();
-    if (stage) { stage.remove(); stage = null; }
-  }
-
-  function inkDrops(el) {
-    const r = el.getBoundingClientRect();
-    for (let i = 0; i < 7; i++) {
-      const d = document.createElement("div");
-      d.className = "xg-drop";
-      const s = 3 + Math.random() * 7;
-      d.style.width = s + "px";
-      d.style.height = s + "px";
-      d.style.left = (r.left - 10 + Math.random() * (r.width + 20)) + "px";
-      d.style.top = (r.top - 10 + Math.random() * (r.height + 20)) + "px";
-      d.style.animationDelay = (Math.random() * 0.4) + "s";
-      document.body.appendChild(d);
-      setTimeout(function () { d.remove(); }, 1400);
-    }
-  }
-
-  function drawString() {
-    const L = str.getTotalLength();
-    str.style.transition = "none";
-    str.style.strokeDasharray = L + " " + L;
-    str.style.strokeDashoffset = String(L);
-    void str.getBoundingClientRect();
-    str.style.transition = "stroke-dashoffset 1.1s ease";
-    str.style.strokeDashoffset = "0";
-    later(function () {
-      str.style.transition = "";
-      str.style.strokeDasharray = "";
-      str.style.strokeDashoffset = "";
-    }, 1200);
-  }
-
-  function reveal() {
-    teardown();
-    plate.classList.add("go");
-    if (!softMotion) drawString();
-    later(function () {
-      if (!backdropEl.classList.contains("show")) return;
-      const cardRect = card.getBoundingClientRect();
-      const plateRect = plate.getBoundingClientRect();
-      if (plateRect.bottom > cardRect.bottom - 10) {
-        card.scrollTo({ top: Math.max(0, plate.offsetTop - 20), behavior: "smooth" });
-      }
-      if (typeof petalBurst === "function") petalBurst();
-    }, 620);
-  }
-
-  function runIntro() {
-    teardown();
-    if (softMotion) { reveal(); return; }
-
-    stage = document.createElement("div");
-    stage.className = "xg-stage";
-    stage.innerHTML =
-      '<div class="xg-chars">' +
-        '<div class="xg-shift"><span class="xg-ch xg-x">想<span class="xg-top">想</span><span class="xg-bot">想</span></span></div>' +
-        '<span class="xg-ch xg-n">你</span>' +
-        '<div class="xg-seal">' + SEAL + "</div>" +
-      "</div>" +
-      '<div class="xg-parts"><span class="p1">相</span><span class="plus">+</span><span class="p2">心</span></div>' +
-      '<p class="xg-say"></p>' +
-      '<p class="xg-skip">tap to skip</p>';
-    document.body.appendChild(stage);
-
-    const chars = stage.querySelector(".xg-chars");
-    const x = stage.querySelector(".xg-x");
-    const n = stage.querySelector(".xg-n");
-    const top = stage.querySelector(".xg-top");
-    const bot = stage.querySelector(".xg-bot");
-    const seal = stage.querySelector(".xg-seal");
-    const p1 = stage.querySelector(".p1");
-    const plus = stage.querySelector(".plus");
-    const p2 = stage.querySelector(".p2");
-    const cap = stage.querySelector(".xg-say");
-    function say(text) {
-      cap.classList.remove("show");
-      later(function () { cap.textContent = text; cap.classList.add("show"); }, 220);
-    }
-
-    later(function () { x.classList.add("in"); inkDrops(x); }, 300);
-    later(function () { say("xiǎng."); }, 1000);
-    later(function () { say("it means think. or miss. same thing tbh"); }, 2300);
-    later(function () {
-      top.classList.add("on");
-      p1.classList.add("in");
-      say("top half: 相. each other.");
-    }, 4000);
-    later(function () {
-      top.classList.remove("on");
-      bot.classList.add("on");
-      plus.classList.add("in");
-      p2.classList.add("in");
-      say("bottom half: 心. heart.");
-    }, 5600);
-    later(function () {
-      [p1, plus, p2].forEach(function (s) { s.classList.remove("in"); });
-      chars.classList.add("both");
-      n.classList.add("in");
-      inkDrops(n);
-      say("想你.");
-    }, 7300);
-    later(function () {
-      seal.classList.add("stamp");
-      later(function () {
-        chars.classList.add("thud");
-        const c = center(seal);
-        sparkle(c[0], c[1]);
-      }, 340);
-      say("i miss you, wu.");
-    }, 8700);
-    later(function () { if (stage) stage.classList.add("clearing"); }, 10300);
-    later(reveal, 10750);
-
-    stage.addEventListener("click", reveal);
-  }
-
-  /* ═════════ 5. fire it when the note opens ═════════ */
-
-  new MutationObserver(function () {
-    if (backdropEl.classList.contains("show")) {
-      if (titleEl) titleEl.textContent = "想你.";
-      cancelAnimationFrame(tugRaf);
-      tugging = false;
-      setSag(REST);
-      runIntro();
-    } else {
-      teardown();
-      cancelAnimationFrame(tugRaf);
-      tugging = false;
-      setSag(REST);
-      plate.classList.remove("go");              /* so it replays next time she opens the note */
-    }
-  }).observe(backdropEl, { attributes: true, attributeFilter: ["class"] });
-})();
-</script>
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-   FLOSS DAY · October 19 · "FLOSS"
-
-   Needs:  floss/amy.jpg   (her smiling, teeth showing)
-   Missing → a placeholder face shows instead.
-
-   SMILE_X / SMILE_Y = where her smile is in the photo, as % from the
-   left / top. The brush, bubbles, floss, and sparkle all aim there.
-
-   Runs only on the date set in FLOSS_DAY. Any other day: does nothing.
-   Test it early with:  index.html?peek=10-19&fresh=1
-   ═══════════════════════════════════════════════════════════════════ -->
-<style>
-  /* everything is scoped to body.flossday so no other day can be touched */
-
-  /* ---------- the intro: bathroom tiles ---------- */
-  body.flossday .fl-stage {
-    position: fixed;
-    inset: 0;
-    z-index: 58;
-    overflow: hidden;
-    cursor: pointer;
-    background-color: #F4F8FA;
-    background-image:
-      linear-gradient(#E3ECF1 1px, transparent 1px),
-      linear-gradient(90deg, #E3ECF1 1px, transparent 1px);
-    background-size: 36px 36px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.4rem;
-    transition: opacity 0.45s ease;
-  }
-  body.flossday .fl-stage.clearing { opacity: 0; }
-
-  body.flossday .fl-sink { position: relative; width: min(300px, 80vw); aspect-ratio: 2 / 1; }
-
-  body.flossday .fl-bigbrush {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    opacity: 0;
-    transform: translateY(30px) scale(0.8);
-    transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.3), opacity 0.4s ease;
-  }
-  body.flossday .fl-bigbrush.in { opacity: 1; transform: none; }
-  body.flossday .fl-bigbrush.wiggle { animation: fl-wiggle 0.9s ease-in-out; }
-  @keyframes fl-wiggle {
-    20% { transform: rotate(-4deg); }
-    40% { transform: rotate(3deg); }
-    60% { transform: rotate(-2deg); }
-    80% { transform: rotate(1deg); }
-  }
-
-  body.flossday .fl-paste { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 0.9s ease; }
-  body.flossday .fl-paste.in { stroke-dashoffset: 0; }
-
-  body.flossday .fl-tube {
-    position: absolute;
-    left: 92%;
-    top: 31%;
-    width: 40%;
-    transform-origin: 0% 50%;
-    opacity: 0;
-    transform: translateX(60px) rotate(-18deg);
-    transition: transform 0.5s cubic-bezier(0.3, 0.8, 0.3, 1), opacity 0.35s ease;
-  }
-  body.flossday .fl-tube.in { opacity: 1; transform: translateX(0) rotate(-18deg); }
-  body.flossday .fl-tube svg { display: block; width: 100%; }
-  body.flossday .fl-tube.squeeze svg { animation: fl-squeeze 0.9s ease; }
-  @keyframes fl-squeeze { 30%, 70% { transform: scaleY(0.72); } }
-
-  body.flossday .fl-say {
-    width: min(320px, 84vw);
-    min-height: 2.4rem;
-    text-align: center;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.85rem;
-    line-height: 1.35;
-    color: var(--mocha);
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  body.flossday .fl-say.show { opacity: 1; transform: translateY(0); }
-
-  body.flossday .fl-skip {
-    position: absolute;
-    bottom: 1.6rem;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.62rem;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: var(--taupe);
-  }
-
-  /* ---------- the mirror, inside the love note ---------- */
-  body.flossday .fl { position: relative; z-index: 10; margin-top: 1.3rem; }
-
-  body.flossday .fl-mirror {
-    position: relative;
-    width: 160px;
-    height: 184px;
-    margin: 0 auto;
-    opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
-  }
-  body.flossday .fl.go .fl-mirror { opacity: 1; transform: scale(1); }
-
-  body.flossday .fl-frame {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 6px solid #EAF1F4;
-    background: #F3E8D2;
-    box-shadow: 0 0 0 1px #D5E2E8, 0 10px 24px rgba(62, 44, 35, 0.16);
-  }
-  body.flossday .fl-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  body.flossday .fl-frame.dodge { animation: fl-dodge 0.55s ease; }
-  @keyframes fl-dodge {
-    30% { transform: translateX(-16px) rotate(-7deg); }
-    65% { transform: translateX(6px) rotate(3deg); }
-  }
-  body.flossday .fl-shine {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(125deg, transparent 30%, rgba(255, 255, 255, 0.35) 38%, transparent 46%);
-    pointer-events: none;
-  }
-
-  body.flossday .fl-bub {
-    position: absolute;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #F4FAFD 55%, #DCEBF4 100%);
-    border: 1px solid rgba(191, 215, 232, 0.9);
-    transform: translate(-50%, -50%) scale(0);
-    animation: fl-bub 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.5) forwards;
-    pointer-events: none;
-  }
-  @keyframes fl-bub { to { transform: translate(-50%, -50%) scale(1); } }
-  body.flossday .fl-bub.pop { animation: fl-popb 0.35s ease-out forwards; }
-  @keyframes fl-popb {
-    from { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
-    to   { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
-  }
-
-  body.flossday .fl-brush {
-    position: absolute;
-    left: 0;
-    width: 78%;
-    z-index: 3;
-    opacity: 0;
-    pointer-events: none;
-  }
-  body.flossday .fl-brush.scrub { animation: fl-scrub 0.9s ease-in-out; }
-  @keyframes fl-scrub {
-    0%   { opacity: 0; transform: translateX(-70%); }
-    15%  { opacity: 1; transform: translateX(10%); }
-    35%  { transform: translateX(40%); }
-    55%  { transform: translateX(8%); }
-    75%  { opacity: 1; transform: translateX(42%); }
-    100% { opacity: 0; transform: translateX(110%); }
-  }
-
-  body.flossday .fl-floss {
-    position: absolute;
-    left: 12%;
-    right: 12%;
-    height: 2px;
-    z-index: 3;
-    border-radius: 2px;
-    background: #FFFFFF;
-    box-shadow: 0 0 3px rgba(62, 44, 35, 0.35);
-    opacity: 0;
-    pointer-events: none;
-  }
-  body.flossday .fl-floss.go { animation: fl-floss 1.2s ease-in-out; }
-  @keyframes fl-floss {
-    0%   { opacity: 0; transform: translateY(-20px); }
-    15%  { opacity: 1; transform: translateY(0); }
-    30%  { transform: translateY(4px); }
-    45%  { transform: translateY(-3px); }
-    60%  { transform: translateY(4px); }
-    75%  { opacity: 1; transform: translateY(-2px); }
-    100% { opacity: 0; transform: translateY(0); }
-  }
-
-  body.flossday .fl-glint {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    margin: -15px 0 0 -15px;
-    z-index: 4;
-    opacity: 0;
-    pointer-events: none;
-  }
-  body.flossday .fl-glint svg { display: block; width: 100%; height: 100%; }
-  body.flossday .fl-glint.go { animation: fl-glint 1.4s ease forwards; }
-  @keyframes fl-glint {
-    0%   { opacity: 0; transform: scale(0) rotate(0deg); }
-    30%  { opacity: 1; transform: scale(1.3) rotate(45deg); }
-    60%  { opacity: 1; transform: scale(1) rotate(90deg); }
-    100% { opacity: 0; transform: scale(0.6) rotate(120deg); }
-  }
-
-  body.flossday .fl-meter { display: flex; justify-content: center; gap: 5px; margin-top: 1rem; }
-  body.flossday .fl-pip { width: 20px; color: #E4DCD1; transition: color 0.3s ease, filter 0.3s ease; }
-  body.flossday .fl-pip svg { display: block; width: 100%; }
-  body.flossday .fl-pip.on {
-    color: #FFFFFF;
-    filter: drop-shadow(0 0 3px rgba(143, 188, 212, 0.9));
-    animation: fl-pipp 0.35s ease;
-  }
-  @keyframes fl-pipp { 50% { transform: scale(1.3) rotate(-8deg); } }
-
-  body.flossday .fl-labels { text-align: center; margin-top: 0.6rem; min-height: 2.6rem; }
-  body.flossday .fl-name { display: block; font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--espresso); }
-  body.flossday .fl-line {
-    display: block;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.15rem;
-    color: var(--rose);
-    margin-top: 0.05rem;
-    min-height: 1.3rem;
-  }
-
-  body.flossday .fl-actions { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.9rem; }
-  body.flossday .fl-btn {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 0.45rem 1.05rem;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--key);
-    color: var(--mocha);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform 0.06s ease;
-  }
-  body.flossday .fl-btn:active { transform: scale(0.95); }
-  body.flossday .fl-btn.main { background: #8FBCD4; border-color: #8FBCD4; color: #fff; }
-
-  body.flossday .fl-hint {
-    text-align: center;
-    font-size: 0.72rem;
-    color: var(--taupe);
-    margin-top: 0.65rem;
-    animation: fl-pulse 2.4s ease-in-out infinite;
-  }
-  body.flossday .fl-hint.gone { display: none; }
-  @keyframes fl-pulse { 50% { opacity: 0.45; } }
-
-  body.flossday .fl-count {
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--mocha);
-    margin-top: 0.7rem;
-    min-height: 1rem;
-  }
-  body.flossday .fl-count.pop { animation: fl-pop 0.3s ease; }
-  @keyframes fl-pop { 50% { transform: scale(1.13); } }
-
-  body.flossday .fl-fx {
-    position: fixed;
-    z-index: 70;
-    pointer-events: none;
-    font-family: 'Great Vibes', cursive;
-    font-size: 1.5rem;
-    color: #5E9BB8;
-    text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
-    animation: fl-float 1s ease-out forwards;
-  }
-  @keyframes fl-float {
-    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
-    25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
-    100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
-  }
-
-  @media (max-height: 780px) {
-    body.flossday .fl { margin-top: 0.9rem; }
-    body.flossday .fl-mirror { width: 136px; height: 156px; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    body.flossday .fl-mirror { opacity: 1 !important; transform: none !important; transition: none; }
-    body.flossday .fl-frame.dodge,
-    body.flossday .fl-bub,
-    body.flossday .fl-bub.pop,
-    body.flossday .fl-glint.go,
-    body.flossday .fl-pip.on,
-    body.flossday .fl-hint,
-    body.flossday .fl-fx { animation: none !important; }
-    body.flossday .fl-bub { transform: translate(-50%, -50%) scale(1); }
-  }
-</style>
-
-<script>
-(function () {
-  "use strict";
-
-  /* ── change this one line to move the whole thing to another date ── */
-  const FLOSS_DAY = "10-19";
-
-  /* photo, relative to index.html */
-  const DIR = "floss/";
-  const FACE = "amy.jpg";
-
-  /* where her smile is in the photo (% from left, % from top) */
-  const SMILE_X = 40;
-  const SMILE_Y = 74;
-
-  let dk;
-  try { dk = dateKey; } catch (e) { return; }
-  if (dk !== FLOSS_DAY) return;
-
-  const card = document.getElementById("modal-card");
-  const sig = card && card.querySelector(".signature");
-  const backdropEl = document.getElementById("modal-backdrop");
-  const titleEl = document.getElementById("modal-title");
-  if (!card || !sig || !backdropEl) return;
-
-  document.body.classList.add("flossday");
-
-  const sub = document.querySelector("header p");
-  if (sub) sub.textContent = "bedtime check :)";
-
-  const softMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const PLACEHOLDER =
-    "data:image/svg+xml;utf8," + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
-      '<rect width="100" height="100" fill="#F3E8D2"/>' +
-      '<path d="M32 42 Q38 36 44 42" stroke="#6B5142" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
-      '<path d="M56 42 Q62 36 68 42" stroke="#6B5142" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
-      '<path d="M34 60 Q50 78 66 60 Z" fill="#FFFFFF" stroke="#6B5142" stroke-width="3" stroke-linejoin="round"/>' +
-      "</svg>");
-
-  function BRUSH(paste) {
-    let bristles = "";
-    for (let x = 72; x <= 93; x += 3) {
-      bristles += '<rect x="' + x + '" y="1" width="2" height="7.5" rx="1" fill="#EAF4FB" stroke="#BFD7E8" stroke-width="0.5"/>';
-    }
-    const PASTE_D = "M94 -0.5 q-2.75 -3.2 -5.5 0 t-5.5 0 t-5.5 0 t-5.5 0";
-    return '<svg viewBox="0 -8 100 32" aria-hidden="true" style="display:block;width:100%;overflow:visible">' +
-      '<rect x="0" y="9" width="66" height="7" rx="3.5" fill="#D9A0A5"/>' +
-      '<rect x="6" y="11" width="40" height="2" rx="1" fill="#FFFFFF" opacity="0.45"/>' +
-      '<path d="M64 10 L72 9 L72 16 L64 15 Z" fill="#D9A0A5"/>' +
-      '<rect x="70" y="8" width="27" height="8" rx="3" fill="#FFFFFF" stroke="#E4DCD1" stroke-width="1"/>' +
-      bristles +
-      (paste
-        ? '<path class="fl-paste" pathLength="1" d="' + PASTE_D + '" stroke="#A8D5C2" stroke-width="4.2" stroke-linecap="round" fill="none"/>' +
-          '<path class="fl-paste" pathLength="1" d="' + PASTE_D + '" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.8"/>'
-        : "") +
-    "</svg>";
-  }
-
-  const TUBE =
-    '<svg viewBox="0 0 80 30" aria-hidden="true">' +
-      '<rect x="0" y="11" width="9" height="8" rx="2" fill="#A8BBA0"/>' +
-      '<path d="M9 7 L70 4 L70 26 L9 23 Z" fill="#FFFFFF" stroke="#E4DCD1" stroke-width="1.2" stroke-linejoin="round"/>' +
-      '<path d="M70 4 L78 3 L78 27 L70 26 Z" fill="#F1EAE0" stroke="#E4DCD1" stroke-width="1.2"/>' +
-      '<path d="M72 4 L72 26 M75 3.5 L75 26.5" stroke="#E4DCD1" stroke-width="0.8"/>' +
-      '<rect x="28" y="9" width="24" height="12" rx="2" fill="#A8D5C2"/>' +
-      '<rect x="31" y="13" width="18" height="4" rx="1" fill="#FFFFFF" opacity="0.8"/>' +
-    "</svg>";
-
-  const TOOTH =
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="#BFD7E8" stroke-width="1.2" ' +
-    'd="M7 3c-2.5 0-4 2-4 4.5 0 2 .8 3.4 1.5 5 .7 1.6.8 3.5 1.3 5.5.4 1.6 1 3 2 3s1.4-1.5 1.7-3c.3-1.4.6-2.5 1.5-2.5s1.2 1.1 1.5 2.5c.3 1.5.7 3 1.7 3s1.6-1.4 2-3c.5-2 .6-3.9 1.3-5.5.7-1.6 1.5-3 1.5-5C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3z"/></svg>';
-
-  const STAR =
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C8 11 11 8 12 0 Z" fill="#FFFFFF" stroke="#BFD7E8" stroke-width="0.6"/></svg>';
-
-  /* ═════════ 1. the mirror ═════════ */
-
-  let pips = "";
-  for (let i = 0; i < 5; i++) pips += '<span class="fl-pip">' + TOOTH + "</span>";
-
-  const plate = document.createElement("div");
-  plate.className = "fl";
-  plate.innerHTML =
-    '<div class="fl-mirror">' +
-      '<div class="fl-frame"><img alt="someone who did not floss" draggable="false"><div class="fl-shine"></div><div class="fl-floss"></div></div>' +
-      '<div class="fl-brush">' + BRUSH(true) + "</div>" +
-      '<div class="fl-glint">' + STAR + "</div>" +
-    "</div>" +
-    '<div class="fl-meter">' + pips + "</div>" +
-    '<div class="fl-labels"><span class="fl-name"></span><span class="fl-line"></span></div>' +
-    '<div class="fl-actions">' +
-      '<button class="fl-btn main" type="button">brush</button>' +
-      '<button class="fl-btn flossb" type="button">floss</button>' +
-    "</div>" +
-    '<p class="fl-hint">(she needs help)</p>' +
-    '<p class="fl-count" role="status"></p>';
-  card.insertBefore(plate, sig);
-
-  const frame = plate.querySelector(".fl-frame");
-  const img = frame.querySelector("img");
-  const flossEl = plate.querySelector(".fl-floss");
-  const brushEl = plate.querySelector(".fl-brush");
-  const glint = plate.querySelector(".fl-glint");
-  const pipEls = plate.querySelectorAll(".fl-pip");
-  const nameEl = plate.querySelector(".fl-name");
-  const lineEl = plate.querySelector(".fl-line");
-  const brushBtn = plate.querySelector(".fl-btn.main");
-  const flossBtn = plate.querySelector(".fl-btn.flossb");
-  const hint = plate.querySelector(".fl-hint");
-  const countEl = plate.querySelector(".fl-count");
-
-  img.onerror = function () { this.onerror = null; this.src = PLACEHOLDER; };
-  img.src = DIR + FACE;
-
-  /* aim everything at her smile */
-  brushEl.style.top = "calc(" + SMILE_Y + "% - 12px)";
-  flossEl.style.top = SMILE_Y + "%";
-  glint.style.left = Math.min(SMILE_X + 14, 90) + "%";
-  glint.style.top = Math.max(SMILE_Y - 6, 8) + "%";
-
-  const SCRUB_FX = ["scrub", "scrub scrub", "*minty*", "brrr"];
-  const SCRUB_LINES = ["scrub scrub", "the back ones too", "don't forget the top", "almost"];
-  const EXCUSES = ["tomorrow", "i flossed last week", "the floss is all the way over there", "you're not my dentist"];
-
-  const MILESTONES = {
-    1: "teeth brushed: 1",
-    5: "teeth brushed: 5 · your dentist would cry",
-    10: "teeth brushed: 10. ok they're clean wu",
-    25: "teeth brushed: 25. there's no teeth left",
-    50: "teeth brushed: 50. go to bed",
-    100: "teeth brushed: 100. i was kidding about the brushing"
-  };
-
-  let brushedCount = 0;
-  try { brushedCount = parseInt(localStorage.getItem("amy-brushed") || "0", 10) || 0; } catch (e) {}
-  function renderCount() { countEl.textContent = MILESTONES[brushedCount] || "teeth brushed: " + brushedCount; }
-  if (brushedCount > 0) { renderCount(); hint.classList.add("gone"); }
-
-  function fx(text, el) {
-    if (softMotion) return;
-    const r = el.getBoundingClientRect();
-    const d = document.createElement("div");
-    d.className = "fl-fx";
-    d.textContent = text;
-    d.style.left = (r.left + r.width / 2 + (Math.random() * 26 - 13)) + "px";
-    d.style.top = (r.top + 16) + "px";
-    document.body.appendChild(d);
-    setTimeout(function () { d.remove(); }, 1050);
-  }
-
-  const MINT = ["#FFFFFF", "#A8D5C2", "#8FBCD4", "#EAF4FB", "var(--blushpk)"];
-  function sparkle(x, y, colors) {
-    if (softMotion) return;
-    for (let i = 0; i < 14; i++) {
-      const p = document.createElement("div");
-      p.className = "burst";                     /* reuses the petal-burst CSS */
-      p.style.zIndex = "65";                     /* above the intro screen */
-      const s = 6 + Math.random() * 8;
-      p.style.width = s + "px";
-      p.style.height = s * 0.75 + "px";
-      p.style.left = x + "px";
-      p.style.top = y + "px";
-      p.style.background = colors[i % colors.length];
-      const a = Math.random() * Math.PI * 2;
-      const d = 30 + Math.random() * 60;
-      p.style.setProperty("--tx", Math.cos(a) * d + "px");
-      p.style.setProperty("--ty", (Math.sin(a) * d - 30) + "px");
-      p.style.setProperty("--rot", (Math.random() * 400 - 200) + "deg");
-      document.body.appendChild(p);
-      setTimeout(function () { p.remove(); }, 1300);
-    }
-  }
-  function center(el) {
-    const r = el.getBoundingClientRect();
-    return [r.left + r.width / 2, r.top + r.height / 2];
-  }
-
-  let stage = null, timers = [];
-  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
-  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-
-  /* ═════════ 2. brushing + flossing ═════════ */
-
-  let scrub = 0, brushed = false, flossed = false, tries = 0, busy = false, celebrated = false;
-
-  function setPips() { pipEls.forEach(function (p, i) { p.classList.toggle("on", i < scrub); }); }
-
-  function paint() {
-    let n, l;
-    if (brushed && flossed)          { n = "brushed AND flossed."; l = "proud of you :)"; }
-    else if (brushed)                { n = "brushed.";             l = "now floss :)"; }
-    else if (flossed && scrub === 0) { n = "flossed.";             l = "...but not brushed??"; }
-    else if (scrub > 0)              { n = "brushing…";            l = SCRUB_LINES[Math.min(scrub, 4) - 1]; }
-    else                             { n = "not brushed.";         l = "it's bedtime wu"; }
-    nameEl.textContent = n;
-    lineEl.textContent = l;
-  }
-
-  function addBubble() {
-    const b = document.createElement("span");
-    b.className = "fl-bub";
-    const s = 8 + Math.random() * 12;
-    b.style.width = s + "px";
-    b.style.height = s + "px";
-    b.style.left = (SMILE_X + (Math.random() * 56 - 28)) + "%";
-    b.style.top = (SMILE_Y + (Math.random() * 22 - 10)) + "%";
-    frame.appendChild(b);
-  }
-  function popBubbles(animate) {
-    frame.querySelectorAll(".fl-bub").forEach(function (b) {
-      if (animate && !softMotion) {
-        b.classList.add("pop");
-        setTimeout(function () { b.remove(); }, 380);
-      } else {
-        b.remove();
-      }
-    });
-  }
-
-  function celebrate() {
-    if (celebrated) return;
-    celebrated = true;
-    if (typeof petalBurst === "function") petalBurst();
-  }
-
-  function clean() {
-    brushed = true;
-    popBubbles(true);
-    glint.classList.remove("go");
-    void glint.offsetWidth;
-    glint.classList.add("go");
-    const c = center(glint);
-    sparkle(c[0], c[1], MINT);
-    fx("*ding*", glint);
-
-    brushedCount++;
-    try { localStorage.setItem("amy-brushed", String(brushedCount)); } catch (e) {}
-    renderCount();
-    countEl.classList.remove("pop");
-    void countEl.offsetWidth;
-    countEl.classList.add("pop");
-
-    paint();
-    if (flossed) celebrate();
-  }
-
-  function brush() {
-    if (busy) return;
-    hint.classList.add("gone");
-    if (brushed) {                                /* round 2 */
-      brushed = false;
-      scrub = 0;
-      celebrated = false;
-      setPips();
-      fx("round 2?", frame);
-    }
-    busy = true;
-
-    if (!softMotion) {
-      brushEl.classList.remove("scrub");
-      void brushEl.offsetWidth;
-      brushEl.classList.add("scrub");
-      for (let i = 0; i < 3; i++) later(addBubble, 200 + i * 220);
-    } else {
-      addBubble();
-      addBubble();
-    }
-
-    later(function () {
-      scrub++;
-      setPips();
-      if (scrub >= 5) clean();
-      else { fx(SCRUB_FX[(scrub - 1) % SCRUB_FX.length], frame); paint(); }
-      busy = false;
-    }, softMotion ? 120 : 900);
-  }
-
-  function floss() {
-    if (busy) return;
-    hint.classList.add("gone");
-    if (flossed) { fx("already flossed :)", flossBtn); return; }
-
-    if (tries < EXCUSES.length) {                 /* she dodges */
-      fx(EXCUSES[tries++], frame);
-      frame.classList.remove("dodge");
-      void frame.offsetWidth;
-      frame.classList.add("dodge");
-      lineEl.textContent = tries === EXCUSES.length ? "one more try" : "she's avoiding it";
-      return;
-    }
-
-    busy = true;
-    fx("fine.", frame);
-    if (!softMotion) {
-      flossEl.classList.remove("go");
-      void flossEl.offsetWidth;
-      flossEl.classList.add("go");
-    }
-    later(function () {
-      flossed = true;
-      busy = false;
-      fx("flossed!", frame);
-      const c = center(frame);
-      sparkle(c[0], c[1], MINT);
-      paint();
-      if (brushed) celebrate();
-    }, softMotion ? 120 : 1250);
-  }
-
-  brushBtn.addEventListener("click", brush);
-  flossBtn.addEventListener("click", floss);
-
-  function reset() {
-    scrub = 0; brushed = false; flossed = false; tries = 0; busy = false; celebrated = false;
-    popBubbles(false);
-    brushEl.classList.remove("scrub");
-    flossEl.classList.remove("go");
-    glint.classList.remove("go");
-    frame.classList.remove("dodge");
-    setPips();
-    paint();
-  }
-  reset();
-
-  /* ═════════ 3. the intro: bedtime check ═════════ */
-
-  function teardown() {
-    clearTimers();
-    if (stage) { stage.remove(); stage = null; }
-  }
-
-  function reveal() {
-    teardown();
-    plate.classList.add("go");
-    later(function () {
-      if (!backdropEl.classList.contains("show")) return;
-      const cardRect = card.getBoundingClientRect();
-      const plateRect = plate.getBoundingClientRect();
-      if (plateRect.bottom > cardRect.bottom - 10) {
-        card.scrollTo({ top: Math.max(0, plate.offsetTop - 20), behavior: "smooth" });
-      }
-    }, 620);
-  }
-
-  function runIntro() {
-    teardown();
-    if (softMotion) { reveal(); return; }
-
-    stage = document.createElement("div");
-    stage.className = "fl-stage";
-    stage.innerHTML =
-      '<div class="fl-sink">' +
-        '<div class="fl-bigbrush">' + BRUSH(true) + "</div>" +
-        '<div class="fl-tube">' + TUBE + "</div>" +
-      "</div>" +
-      '<p class="fl-say"></p>' +
-      '<p class="fl-skip">tap to skip</p>';
-    document.body.appendChild(stage);
-
-    const big = stage.querySelector(".fl-bigbrush");
-    const tube = stage.querySelector(".fl-tube");
-    const pastes = stage.querySelectorAll(".fl-paste");
-    const cap = stage.querySelector(".fl-say");
-    function say(text) {
-      cap.classList.remove("show");
-      later(function () { cap.textContent = text; cap.classList.add("show"); }, 220);
-    }
-
-    later(function () { big.classList.add("in"); say("it's bedtime."); }, 300);
-    later(function () { tube.classList.add("in"); say("did you brush?"); }, 1500);
-    later(function () {
-      tube.classList.add("squeeze");
-      pastes.forEach(function (p) { p.classList.add("in"); });
-    }, 2200);
-    later(function () { tube.classList.remove("in"); }, 3300);
-    later(function () { say("did you floss?"); }, 3500);
-    later(function () { say("…wu."); }, 4900);
-    later(function () {
-      big.classList.add("wiggle");
-      say("didn't think so :)");
-      const c = center(big);
-      sparkle(c[0] + 60, c[1] - 10, MINT);
-    }, 6000);
-    later(function () { if (stage) stage.classList.add("clearing"); }, 7400);
-    later(reveal, 7850);
-
-    stage.addEventListener("click", reveal);
-  }
-
-  /* ═════════ 4. fire it when the note opens ═════════ */
-
-  new MutationObserver(function () {
-    if (backdropEl.classList.contains("show")) {
-      if (titleEl) titleEl.textContent = "Brushed?";
-      reset();
-      runIntro();
-    } else {
-      teardown();
-      busy = false;
-      plate.classList.remove("go");              /* so it replays next time she opens the note */
-    }
-  }).observe(backdropEl, { attributes: true, attributeFilter: ["class"] });
-})();
 </script>
 
 </body>
