@@ -1,0 +1,243 @@
+/* everything is scoped to body.frothday so no other day can be touched */
+
+/* ---------- the cup (shared by the intro and the note) ---------- */
+body.frothday .fr-cupwrap {
+  position: relative;
+  width: 200px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+}
+body.frothday .fr-cup { display: block; width: 100%; height: 100%; overflow: visible; }
+
+body.frothday .fr-liquid {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+  transition: transform 0.6s cubic-bezier(0.3, 0.8, 0.3, 1), opacity 0.45s ease;
+}
+body.frothday .fr-stain { opacity: 0; transition: opacity 0.5s ease 0.2s; }
+
+/* latte art blooming out from where the milk hits */
+body.frothday .fr-design {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+  animation: fr-bloom 0.95s cubic-bezier(0.2, 0.85, 0.3, 1.15) both;
+}
+@keyframes fr-bloom {
+  0%   { opacity: 0; transform: scale(0.08) rotate(-28deg); }
+  35%  { opacity: 1; }
+  70%  { transform: scale(1.05) rotate(3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+body.frothday .fr-design.out { animation: fr-swirl 0.45s ease-in forwards; }
+@keyframes fr-swirl { to { opacity: 0; transform: scale(0.35) rotate(160deg); } }
+body.frothday .fr-design.wobble { animation: fr-wobble 0.9s ease-in-out; }
+@keyframes fr-wobble {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25%      { transform: rotate(-7deg) scale(1.03, 0.97); }
+  55%      { transform: rotate(5deg) scale(0.98, 1.02); }
+  80%      { transform: rotate(-2deg); }
+}
+body.frothday .fr-face { filter: sepia(1) saturate(0.55) brightness(1.3) contrast(0.85); }
+
+/* milk pitcher + the pour */
+body.frothday .fr-pitcher {
+  position: absolute;
+  left: 49%;
+  top: -33%;
+  width: 30%;
+  height: 25%;
+  opacity: 0;
+  transform-origin: 3% 16%;          /* tips from the spout */
+  transform: rotate(0deg);
+  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.3, 0.8, 0.3, 1);
+  z-index: 3;
+  pointer-events: none;
+}
+body.frothday .pouring .fr-pitcher { opacity: 1; transform: rotate(-32deg); }
+
+body.frothday .fr-stream {
+  position: absolute;
+  left: 50%;
+  top: -29%;
+  width: 2.6%;
+  height: 79%;
+  margin-left: -1.3%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #EADBC6 0%, #FFFFFF 50%, #EADBC6 100%);
+  z-index: 2;
+  pointer-events: none;
+  -webkit-clip-path: inset(0 0 100% 0);
+  clip-path: inset(0 0 100% 0);
+}
+body.frothday .pouring .fr-stream { animation: fr-stream 1.25s ease 0.3s forwards; }
+@keyframes fr-stream {
+  0%   { -webkit-clip-path: inset(0 0 100% 0); clip-path: inset(0 0 100% 0); }
+  28%  { -webkit-clip-path: inset(0 0 0 0);    clip-path: inset(0 0 0 0); }
+  76%  { -webkit-clip-path: inset(0 0 0 0);    clip-path: inset(0 0 0 0); }
+  100% { -webkit-clip-path: inset(100% 0 0 0); clip-path: inset(100% 0 0 0); }
+}
+
+/* ---------- the intro, full screen ---------- */
+body.frothday .fr-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(253, 251, 247, 0.97);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  transition: opacity 0.45s ease;
+}
+body.frothday .fr-stage.clearing { opacity: 0; }
+body.frothday .fr-stage .fr-cupwrap { width: min(280px, 72vw); margin-top: 90px; }
+body.frothday .fr-stage .fr-liquid {
+  transform: scale(0.1);
+  opacity: 0;
+  transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.4s ease;
+}
+body.frothday .fr-stage .shot .fr-liquid { transform: scale(1); opacity: 1; }
+
+body.frothday .fr-cap {
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.75rem;
+  line-height: 1.35;
+  color: var(--mocha);
+  text-align: center;
+  max-width: 300px;
+  min-height: 2.4rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+body.frothday .fr-cap.show { opacity: 1; transform: translateY(0); }
+
+body.frothday .fr-skip {
+  position: absolute;
+  bottom: 1.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--taupe);
+}
+
+/* ---------- the cup, inside the love note ---------- */
+body.frothday .fr {
+  position: relative;
+  z-index: 10;
+  margin-top: 1.2rem;
+  padding-top: 72px;                 /* room for the pitcher */
+}
+body.frothday .fr .fr-cupwrap {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
+}
+body.frothday .fr.go .fr-cupwrap { opacity: 1; transform: scale(1); }
+body.frothday .fr.sipping .fr-cupwrap { animation: fr-slurp 0.4s ease; }
+@keyframes fr-slurp { 40% { transform: scale(1.04, 0.96); } }
+
+/* sips: the coffee level drops (it's a tapered cup, seen from above) */
+body.frothday .fr[data-sip="1"] .fr-liquid { transform: scale(0.88); }
+body.frothday .fr[data-sip="2"] .fr-liquid { transform: scale(0.74); }
+body.frothday .fr[data-sip="3"] .fr-liquid { transform: scale(0.55); opacity: 0; }
+body.frothday .fr[data-sip="3"] .fr-stain  { opacity: 0.45; }
+
+body.frothday .fr-labels { text-align: center; margin-top: 0.9rem; min-height: 2.6rem; }
+body.frothday .fr-name {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  color: var(--espresso);
+}
+body.frothday .fr-line {
+  display: block;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.15rem;
+  color: var(--rose);
+  margin-top: 0.05rem;
+  min-height: 1.3rem;
+}
+
+body.frothday .fr-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+body.frothday .fr-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.45rem 1.05rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--key);
+  color: var(--mocha);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.06s ease;
+}
+body.frothday .fr-btn:active { transform: scale(0.95); }
+body.frothday .fr-btn.pour { background: var(--rose); border-color: var(--rose); color: #fff; }
+body.frothday .fr-btn[disabled] { opacity: 0.55; cursor: default; }
+
+body.frothday .fr-hint {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--taupe);
+  margin-top: 0.65rem;
+  animation: fr-pulse 2.4s ease-in-out infinite;
+}
+body.frothday .fr-hint.gone { display: none; }
+@keyframes fr-pulse { 50% { opacity: 0.45; } }
+
+body.frothday .fr-count {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--mocha);
+  margin-top: 0.7rem;
+  min-height: 1rem;
+}
+body.frothday .fr-count.pop { animation: fr-pop 0.3s ease; }
+@keyframes fr-pop { 50% { transform: scale(1.13); } }
+
+/* little words that float off the cup */
+body.frothday .fr-fx {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.5rem;
+  color: var(--rose);
+  text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
+  animation: fr-float 1s ease-out forwards;
+}
+@keyframes fr-float {
+  0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
+}
+
+@media (max-height: 780px) {
+  body.frothday .fr { margin-top: 0.8rem; padding-top: 60px; }
+  body.frothday .fr .fr-cupwrap { width: 172px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.frothday .fr-design,
+  body.frothday .fr-design.out,
+  body.frothday .fr-design.wobble,
+  body.frothday .pouring .fr-stream,
+  body.frothday .fr-hint,
+  body.frothday .fr-fx,
+  body.frothday .fr.sipping .fr-cupwrap { animation: none !important; }
+  body.frothday .fr .fr-cupwrap { opacity: 1 !important; transform: none !important; transition: none; }
+  body.frothday .fr-pitcher { display: none; }
+}

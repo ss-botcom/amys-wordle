@@ -1,0 +1,367 @@
+/* everything is scoped to body.spicyday so no other day can be touched */
+
+/* ---------- the intro: pumpkin spice vs spicy ---------- */
+body.spicyday .sp-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(253, 251, 247, 0.97);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  transition: opacity 0.45s ease;
+}
+body.spicyday .sp-stage.clearing { opacity: 0; }
+
+body.spicyday .sp-duo { position: relative; width: min(320px, 86vw); height: 210px; }
+
+body.spicyday .sp-item {
+  position: absolute;
+  top: 50%;
+  width: 92px;
+  margin-top: -60px;
+  opacity: 1;
+  transform: scale(0);
+  transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.4), opacity 0.4s ease;
+}
+body.spicyday .sp-item svg { display: block; width: 100%; }
+body.spicyday .sp-item.cup { left: 10%; }
+body.spicyday .sp-item.pep { right: 10%; margin-top: -46px; }
+body.spicyday .sp-item.cup.in { transform: scale(1) rotate(-6deg); }
+body.spicyday .sp-item.pep.in { transform: scale(1) rotate(8deg); }
+body.spicyday .sp-item.merge {
+  opacity: 0;
+  transition: transform 0.45s cubic-bezier(0.6, 0, 0.8, 0.4), opacity 0.45s ease;
+}
+body.spicyday .sp-item.cup.merge { transform: translateX(90px) scale(0.2) rotate(30deg); }
+body.spicyday .sp-item.pep.merge { transform: translateX(-90px) scale(0.2) rotate(-30deg); }
+
+body.spicyday .sp-bigface {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 170px;
+  height: 170px;
+  margin: -85px 0 0 -85px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid #FFFFFF;
+  box-shadow: 0 10px 26px rgba(62, 44, 35, 0.22), 0 0 34px 10px rgba(217, 66, 59, 0.35);
+  transform: scale(0);
+  transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+body.spicyday .sp-bigface.show { transform: scale(1); }
+body.spicyday .sp-bigface img {
+  display: block;
+  width: 108%;
+  height: 108%;
+  margin: -4%;
+  object-fit: cover;
+  object-position: 58% 55%;
+}
+body.spicyday .sp-bigface.show img { animation: sp-jit 0.3s linear 0.6s infinite; }
+@keyframes sp-jit {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(-2px, 1px); }
+  50%      { transform: translate(2px, 0); }
+  75%      { transform: translate(-1px, -1px); }
+}
+body.spicyday .sp-bigface .sp-heat { opacity: 0.3; }
+
+body.spicyday .sp-cap {
+  width: min(320px, 84vw);
+  min-height: 2.4rem;
+  text-align: center;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.85rem;
+  line-height: 1.35;
+  color: var(--mocha);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+body.spicyday .sp-cap.show { opacity: 1; transform: translateY(0); }
+
+body.spicyday .sp-skip {
+  position: absolute;
+  bottom: 1.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--taupe);
+}
+
+/* ---------- her face, inside the love note ---------- */
+body.spicyday .sp {
+  position: relative;
+  z-index: 10;
+  margin-top: 1.2rem;
+  padding-top: 46px;                  /* room for the chili to fall */
+  --heat: 0;
+  --sat: 1;
+  --amp: 0px;
+}
+body.spicyday .sp[data-lv="1"] { --heat: 0.1;  --sat: 1.08; }
+body.spicyday .sp[data-lv="2"] { --heat: 0.2;  --sat: 1.16; }
+body.spicyday .sp[data-lv="3"] { --heat: 0.3;  --sat: 1.25; --amp: 1.2px; }
+body.spicyday .sp[data-lv="4"] { --heat: 0.42; --sat: 1.35; --amp: 2px; }
+body.spicyday .sp[data-lv="5"] { --heat: 0.55; --sat: 1.45; --amp: 3.2px; }
+
+body.spicyday .sp-wrap {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
+}
+body.spicyday .sp.go .sp-wrap { opacity: 1; transform: scale(1); }
+body.spicyday .sp.go.hot .sp-wrap { animation: sp-shake 0.35s linear infinite; }
+@keyframes sp-shake {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(calc(var(--amp) * -1), calc(var(--amp) * 0.5)); }
+  50%      { transform: translate(var(--amp), 0); }
+  75%      { transform: translate(calc(var(--amp) * -0.5), calc(var(--amp) * -0.6)); }
+}
+
+body.spicyday .sp-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid var(--lily);
+  box-shadow: 0 8px 20px rgba(62, 44, 35, 0.18), 0 0 26px 4px rgba(217, 66, 59, calc(var(--heat) * 0.9));
+  transition: box-shadow 0.6s ease;
+}
+body.spicyday .sp-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 58% 55%;
+  filter: saturate(var(--sat));
+  transition: filter 0.6s ease;
+}
+body.spicyday .sp-frame.chomp { animation: sp-chomp 0.35s ease; }
+@keyframes sp-chomp { 40% { transform: scale(1.05, 0.95); } }
+
+body.spicyday .sp-heat {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 60%, #E0483C 0%, #C0302A 100%);
+  mix-blend-mode: multiply;
+  opacity: var(--heat);
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+/* steam out of her ears */
+body.spicyday .sp-steam {
+  position: absolute;
+  top: 34%;
+  width: 14px;
+  height: 14px;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+body.spicyday .sp-steam.l { left: -2px; }
+body.spicyday .sp-steam.r { right: -2px; }
+body.spicyday .sp.hot .sp-steam { opacity: 1; }
+body.spicyday .sp-steam i {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(199, 188, 177, 0.75);
+  filter: blur(2px);
+  opacity: 0;
+}
+body.spicyday .sp.hot .sp-steam.l i { animation: sp-puff-l 1.5s ease-out infinite; }
+body.spicyday .sp.hot .sp-steam.r i { animation: sp-puff-r 1.5s ease-out infinite; }
+body.spicyday .sp-steam i:nth-child(2) { animation-delay: 0.5s !important; }
+body.spicyday .sp-steam i:nth-child(3) { animation-delay: 1s !important; }
+@keyframes sp-puff-l {
+  0%   { opacity: 0;   transform: translate(0, 0) scale(0.4); }
+  25%  { opacity: 0.9; }
+  100% { opacity: 0;   transform: translate(-30px, -26px) scale(1.7); }
+}
+@keyframes sp-puff-r {
+  0%   { opacity: 0;   transform: translate(0, 0) scale(0.4); }
+  25%  { opacity: 0.9; }
+  100% { opacity: 0;   transform: translate(30px, -26px) scale(1.7); }
+}
+
+/* one bead of sweat */
+body.spicyday .sp-sweat {
+  position: absolute;
+  right: 22%;
+  top: 16%;
+  width: 10px;
+  height: 10px;
+  z-index: 3;
+  border-radius: 0 50% 50% 50%;
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, #E4F1FB 0%, #8FBCE0 100%);
+  box-shadow: 0 1px 2px rgba(62, 44, 35, 0.2);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+body.spicyday .sp.sweaty .sp-sweat { opacity: 1; animation: sp-drip 1.8s ease-in infinite; }
+@keyframes sp-drip {
+  0%   { transform: translateY(0) rotate(45deg); opacity: 0; }
+  15%  { opacity: 1; }
+  80%  { transform: translateY(14px) rotate(45deg); opacity: 1; }
+  100% { transform: translateY(18px) rotate(45deg); opacity: 0; }
+}
+
+/* the halo of fire, max spice only */
+body.spicyday .sp-flames { position: absolute; inset: 0; z-index: 0; }
+body.spicyday .sp-flames i {
+  position: absolute;
+  width: 18px;
+  height: 26px;
+  margin: -26px 0 0 -9px;
+  transform-origin: 50% 100%;
+  border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%;
+  background: radial-gradient(ellipse at 50% 75%, #FFE9A3 0%, #F6B45A 35%, #E8643A 65%, #D9423B 100%);
+  opacity: 0;
+  transform: rotate(var(--r)) scale(0);
+  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+body.spicyday .sp.max .sp-flames i {
+  opacity: 1;
+  animation: sp-flick 0.5s ease-in-out infinite alternate;
+}
+@keyframes sp-flick {
+  from { transform: rotate(var(--r)) scale(0.9, 0.8); }
+  to   { transform: rotate(var(--r)) scale(1, 1.12); }
+}
+
+/* the chili that falls in */
+body.spicyday .sp-fall {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 40px;
+  z-index: 5;
+  pointer-events: none;
+  animation: sp-fall 0.75s cubic-bezier(0.45, 0, 0.75, 0.45) forwards;
+}
+body.spicyday .sp-fall svg { display: block; width: 100%; }
+@keyframes sp-fall {
+  0%   { opacity: 0; transform: translate(-50%, -70px) rotate(-35deg) scale(1); }
+  15%  { opacity: 1; }
+  75%  { opacity: 1; transform: translate(-50%, 88px) rotate(15deg) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, 96px) rotate(20deg) scale(0); }
+}
+
+/* spice meter */
+body.spicyday .sp-meter {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 1.1rem;
+}
+body.spicyday .sp-pip { width: 22px; color: var(--border); transition: color 0.3s ease; }
+body.spicyday .sp-pip svg { display: block; width: 100%; }
+body.spicyday .sp-pip.on { color: #D9423B; animation: sp-pip 0.35s ease; }
+@keyframes sp-pip { 50% { transform: scale(1.3) rotate(-10deg); } }
+
+body.spicyday .sp-labels { text-align: center; margin-top: 0.6rem; min-height: 2.6rem; }
+body.spicyday .sp-name {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  color: var(--espresso);
+}
+body.spicyday .sp-line {
+  display: block;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.15rem;
+  color: var(--rose);
+  margin-top: 0.05rem;
+  min-height: 1.3rem;
+}
+
+body.spicyday .sp-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+body.spicyday .sp-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.45rem 1.05rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--key);
+  color: var(--mocha);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.06s ease;
+}
+body.spicyday .sp-btn:active { transform: scale(0.95); }
+body.spicyday .sp-btn.hotbtn { background: #D96C5B; border-color: #D96C5B; color: #fff; }
+
+body.spicyday .sp-hint {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--taupe);
+  margin-top: 0.65rem;
+  animation: sp-pulse 2.4s ease-in-out infinite;
+}
+body.spicyday .sp-hint.gone { display: none; }
+@keyframes sp-pulse { 50% { opacity: 0.45; } }
+
+body.spicyday .sp-count {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--mocha);
+  margin-top: 0.7rem;
+  min-height: 1rem;
+}
+body.spicyday .sp-count.pop { animation: sp-pop 0.3s ease; }
+@keyframes sp-pop { 50% { transform: scale(1.13); } }
+
+body.spicyday .sp-fx {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.5rem;
+  color: #D9423B;
+  text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
+  animation: sp-float 1s ease-out forwards;
+}
+@keyframes sp-float {
+  0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
+}
+
+@media (max-height: 780px) {
+  body.spicyday .sp { margin-top: 0.9rem; padding-top: 40px; }
+  body.spicyday .sp-wrap { width: 124px; height: 124px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.spicyday .sp-wrap { opacity: 1 !important; transform: none !important; transition: none; }
+  body.spicyday .sp.go.hot .sp-wrap,
+  body.spicyday .sp-steam i,
+  body.spicyday .sp.sweaty .sp-sweat,
+  body.spicyday .sp.max .sp-flames i,
+  body.spicyday .sp-hint,
+  body.spicyday .sp-fx,
+  body.spicyday .sp-bigface.show img { animation: none !important; }
+}

@@ -1,0 +1,53 @@
+/* CANDY · Oct 30 — "where's my candy (medicine)". Scoped to .cd */
+.cd { text-align: center; }
+.cd-box {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  width: 252px;
+  margin: 0 auto;
+  padding: 6px;
+  border-radius: 12px;
+  background: #EFE4F2;
+  box-shadow: inset 0 -3px 0 rgba(120, 90, 140, 0.15);
+}
+.cd-cell {
+  position: relative;
+  height: 52px;
+  border-radius: 7px;
+  background: #FFFFFF;
+  overflow: visible;
+  perspective: 300px;
+  cursor: pointer;
+}
+.cd-lid {
+  position: absolute;
+  inset: 0;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #D8C3E6, #C8A2D4);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: 50% 0;
+  transition: transform 0.4s cubic-bezier(0.3, 1.3, 0.5, 1);
+  z-index: 2;
+}
+.cd-cell.open .cd-lid { transform: rotateX(-110deg); }
+.cd-candy {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 26px;
+  height: 13px;
+  margin: -6px 0 0 -13px;
+  transition: transform 0.5s cubic-bezier(0.3, 1.5, 0.5, 1), opacity 0.4s ease 0.35s;
+}
+.cd-cell.open .cd-candy { transform: translateY(-48px) rotate(200deg) scale(1.2); opacity: 0; }
+.cd-labels { margin-top: 0.8rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cd-lid, .cd-candy { transition: none; }
+}

@@ -1,0 +1,25 @@
+/* CALLED IT · Oct 28 (TIMES) + Oct 29 (AUDIO). Scoped to .ci */
+.ci { text-align: center; }
+.ci-ball { display: block; width: 92px; height: 92px; margin: 0 auto; overflow: visible; }
+.ci-glow { transform-box: fill-box; transform-origin: center; animation: ci-glow 2.6s ease-in-out infinite; }
+@keyframes ci-glow { 50% { opacity: 0.55; transform: scale(0.92); } }
+.ci-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  width: 230px;
+  margin: 0.7rem auto 0;
+}
+.ci-cell {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FFFFFF;
+  padding: 0.45rem 0.3rem;
+}
+.ci-k { display: block; font-size: 0.55rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--taupe); }
+.ci-v { display: block; font-family: 'Playfair Display', serif; font-size: 1.35rem; font-weight: 700; color: var(--espresso); }
+.ci-verdict { margin-top: 0.6rem; font-family: 'Caveat', cursive; font-size: 1.35rem; color: #B5737A; }
+.ci-verdict.hit { color: #6F8F64; }
+.ci-future { margin-top: 0.4rem; font-size: 0.78rem; color: var(--mocha); min-height: 1.2rem; }
+
+@media (prefers-reduced-motion: reduce) { .ci-glow { animation: none; } }

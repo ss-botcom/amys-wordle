@@ -1,0 +1,82 @@
+/* WANAN · Oct 25 — goodnight. Scoped to .wn */
+
+/* each guess dims the room a little */
+.wn-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background: #120E1A;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+
+.wn { text-align: center; }
+.wn-window {
+  position: relative;
+  width: 210px;
+  height: 212px;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 6px solid #F3E8D2;
+  box-shadow: 0 8px 22px rgba(62, 44, 35, 0.2);
+}
+.wn-window img { width: 100%; height: 100%; object-fit: cover; transition: filter 1.2s ease; }
+.wn-night {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 16, 40, 0.75), rgba(30, 24, 50, 0.45));
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.wn-night i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #FFF4DE; animation: twinkle 3s ease-in-out infinite; }
+.wn-moon {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  box-shadow: -7px 3px 0 0 #FFF1CC;
+  opacity: 0;
+  transition: opacity 1.2s ease 0.4s;
+}
+.wn.off .wn-night, .wn.off .wn-moon { opacity: 1; }
+.wn.off .wn-window img { filter: brightness(0.75) saturate(0.8); }
+
+/* the quilt pulls up when you tuck her in */
+.wn-quilt {
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  bottom: -40%;
+  height: 24%;
+  border-radius: 40% 40% 0 0 / 30% 30% 0 0;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 8px, transparent 8px 16px),
+    linear-gradient(180deg, #E8B7BC, #D9A0A5);
+  box-shadow: 0 -4px 10px rgba(62, 44, 35, 0.2);
+  transition: bottom 0.9s cubic-bezier(0.3, 1.2, 0.5, 1);
+}
+.wn.tucked .wn-quilt { bottom: -13%; }   /* up to her chin, not over her face */
+
+.wn-zzz {
+  position: absolute;
+  font-family: 'Caveat', cursive;
+  font-weight: 600;
+  color: #FFF4DE;
+  pointer-events: none;
+  animation: wn-z 2s ease-out forwards;
+}
+@keyframes wn-z {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.6) rotate(-10deg); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(30px, -90px) scale(1.3) rotate(10deg); }
+}
+.wn-labels { margin-top: 0.8rem; }
+.wn-han { font-family: 'Ma Shan Zheng', 'Playfair Display', serif; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wn-zzz, .wn-night i { animation: none !important; }
+}

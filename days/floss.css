@@ -1,0 +1,288 @@
+/* everything is scoped to body.flossday so no other day can be touched */
+
+/* ---------- the intro: bathroom tiles ---------- */
+body.flossday .fl-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  overflow: hidden;
+  cursor: pointer;
+  background-color: #F4F8FA;
+  background-image:
+    linear-gradient(#E3ECF1 1px, transparent 1px),
+    linear-gradient(90deg, #E3ECF1 1px, transparent 1px);
+  background-size: 36px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  transition: opacity 0.45s ease;
+}
+body.flossday .fl-stage.clearing { opacity: 0; }
+
+body.flossday .fl-sink { position: relative; width: min(300px, 80vw); aspect-ratio: 2 / 1; }
+
+body.flossday .fl-bigbrush {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  transform: translateY(30px) scale(0.8);
+  transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.3), opacity 0.4s ease;
+}
+body.flossday .fl-bigbrush.in { opacity: 1; transform: none; }
+body.flossday .fl-bigbrush.wiggle { animation: fl-wiggle 0.9s ease-in-out; }
+@keyframes fl-wiggle {
+  20% { transform: rotate(-4deg); }
+  40% { transform: rotate(3deg); }
+  60% { transform: rotate(-2deg); }
+  80% { transform: rotate(1deg); }
+}
+
+body.flossday .fl-paste { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 0.9s ease; }
+body.flossday .fl-paste.in { stroke-dashoffset: 0; }
+
+body.flossday .fl-tube {
+  position: absolute;
+  left: 92%;
+  top: 31%;
+  width: 40%;
+  transform-origin: 0% 50%;
+  opacity: 0;
+  transform: translateX(60px) rotate(-18deg);
+  transition: transform 0.5s cubic-bezier(0.3, 0.8, 0.3, 1), opacity 0.35s ease;
+}
+body.flossday .fl-tube.in { opacity: 1; transform: translateX(0) rotate(-18deg); }
+body.flossday .fl-tube svg { display: block; width: 100%; }
+body.flossday .fl-tube.squeeze svg { animation: fl-squeeze 0.9s ease; }
+@keyframes fl-squeeze { 30%, 70% { transform: scaleY(0.72); } }
+
+body.flossday .fl-say {
+  width: min(320px, 84vw);
+  min-height: 2.4rem;
+  text-align: center;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.85rem;
+  line-height: 1.35;
+  color: var(--mocha);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+body.flossday .fl-say.show { opacity: 1; transform: translateY(0); }
+
+body.flossday .fl-skip {
+  position: absolute;
+  bottom: 1.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--taupe);
+}
+
+/* ---------- the mirror, inside the love note ---------- */
+body.flossday .fl { position: relative; z-index: 10; margin-top: 1.3rem; }
+
+body.flossday .fl-mirror {
+  position: relative;
+  width: 160px;
+  height: 184px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25);
+}
+body.flossday .fl.go .fl-mirror { opacity: 1; transform: scale(1); }
+
+body.flossday .fl-frame {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 6px solid #EAF1F4;
+  background: #F3E8D2;
+  box-shadow: 0 0 0 1px #D5E2E8, 0 10px 24px rgba(62, 44, 35, 0.16);
+}
+body.flossday .fl-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+body.flossday .fl-frame.dodge { animation: fl-dodge 0.55s ease; }
+@keyframes fl-dodge {
+  30% { transform: translateX(-16px) rotate(-7deg); }
+  65% { transform: translateX(6px) rotate(3deg); }
+}
+body.flossday .fl-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(125deg, transparent 30%, rgba(255, 255, 255, 0.35) 38%, transparent 46%);
+  pointer-events: none;
+}
+
+body.flossday .fl-bub {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #F4FAFD 55%, #DCEBF4 100%);
+  border: 1px solid rgba(191, 215, 232, 0.9);
+  transform: translate(-50%, -50%) scale(0);
+  animation: fl-bub 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.5) forwards;
+  pointer-events: none;
+}
+@keyframes fl-bub { to { transform: translate(-50%, -50%) scale(1); } }
+body.flossday .fl-bub.pop { animation: fl-popb 0.35s ease-out forwards; }
+@keyframes fl-popb {
+  from { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+  to   { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+body.flossday .fl-brush {
+  position: absolute;
+  left: 0;
+  width: 78%;
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+}
+body.flossday .fl-brush.scrub { animation: fl-scrub 0.9s ease-in-out; }
+@keyframes fl-scrub {
+  0%   { opacity: 0; transform: translateX(-70%); }
+  15%  { opacity: 1; transform: translateX(10%); }
+  35%  { transform: translateX(40%); }
+  55%  { transform: translateX(8%); }
+  75%  { opacity: 1; transform: translateX(42%); }
+  100% { opacity: 0; transform: translateX(110%); }
+}
+
+body.flossday .fl-floss {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  height: 2px;
+  z-index: 3;
+  border-radius: 2px;
+  background: #FFFFFF;
+  box-shadow: 0 0 3px rgba(62, 44, 35, 0.35);
+  opacity: 0;
+  pointer-events: none;
+}
+body.flossday .fl-floss.go { animation: fl-floss 1.2s ease-in-out; }
+@keyframes fl-floss {
+  0%   { opacity: 0; transform: translateY(-20px); }
+  15%  { opacity: 1; transform: translateY(0); }
+  30%  { transform: translateY(4px); }
+  45%  { transform: translateY(-3px); }
+  60%  { transform: translateY(4px); }
+  75%  { opacity: 1; transform: translateY(-2px); }
+  100% { opacity: 0; transform: translateY(0); }
+}
+
+body.flossday .fl-glint {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+}
+body.flossday .fl-glint svg { display: block; width: 100%; height: 100%; }
+body.flossday .fl-glint.go { animation: fl-glint 1.4s ease forwards; }
+@keyframes fl-glint {
+  0%   { opacity: 0; transform: scale(0) rotate(0deg); }
+  30%  { opacity: 1; transform: scale(1.3) rotate(45deg); }
+  60%  { opacity: 1; transform: scale(1) rotate(90deg); }
+  100% { opacity: 0; transform: scale(0.6) rotate(120deg); }
+}
+
+body.flossday .fl-meter { display: flex; justify-content: center; gap: 5px; margin-top: 1rem; }
+body.flossday .fl-pip { width: 20px; color: #E4DCD1; transition: color 0.3s ease, filter 0.3s ease; }
+body.flossday .fl-pip svg { display: block; width: 100%; }
+body.flossday .fl-pip.on {
+  color: #FFFFFF;
+  filter: drop-shadow(0 0 3px rgba(143, 188, 212, 0.9));
+  animation: fl-pipp 0.35s ease;
+}
+@keyframes fl-pipp { 50% { transform: scale(1.3) rotate(-8deg); } }
+
+body.flossday .fl-labels { text-align: center; margin-top: 0.6rem; min-height: 2.6rem; }
+body.flossday .fl-name { display: block; font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--espresso); }
+body.flossday .fl-line {
+  display: block;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.15rem;
+  color: var(--rose);
+  margin-top: 0.05rem;
+  min-height: 1.3rem;
+}
+
+body.flossday .fl-actions { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.9rem; }
+body.flossday .fl-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.45rem 1.05rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--key);
+  color: var(--mocha);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.06s ease;
+}
+body.flossday .fl-btn:active { transform: scale(0.95); }
+body.flossday .fl-btn.main { background: #8FBCD4; border-color: #8FBCD4; color: #fff; }
+
+body.flossday .fl-hint {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--taupe);
+  margin-top: 0.65rem;
+  animation: fl-pulse 2.4s ease-in-out infinite;
+}
+body.flossday .fl-hint.gone { display: none; }
+@keyframes fl-pulse { 50% { opacity: 0.45; } }
+
+body.flossday .fl-count {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--mocha);
+  margin-top: 0.7rem;
+  min-height: 1rem;
+}
+body.flossday .fl-count.pop { animation: fl-pop 0.3s ease; }
+@keyframes fl-pop { 50% { transform: scale(1.13); } }
+
+body.flossday .fl-fx {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  font-family: 'Great Vibes', cursive;
+  font-size: 1.5rem;
+  color: #5E9BB8;
+  text-shadow: 0 1px 3px rgba(253, 251, 247, 0.9);
+  animation: fl-float 1s ease-out forwards;
+}
+@keyframes fl-float {
+  0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  25%  { transform: translate(-50%, -85%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -180%) scale(1);  opacity: 0; }
+}
+
+@media (max-height: 780px) {
+  body.flossday .fl { margin-top: 0.9rem; }
+  body.flossday .fl-mirror { width: 136px; height: 156px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.flossday .fl-mirror { opacity: 1 !important; transform: none !important; transition: none; }
+  body.flossday .fl-frame.dodge,
+  body.flossday .fl-bub,
+  body.flossday .fl-bub.pop,
+  body.flossday .fl-glint.go,
+  body.flossday .fl-pip.on,
+  body.flossday .fl-hint,
+  body.flossday .fl-fx { animation: none !important; }
+  body.flossday .fl-bub { transform: translate(-50%, -50%) scale(1); }
+}
