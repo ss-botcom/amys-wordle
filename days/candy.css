@@ -1,4 +1,4 @@
-/* CANDY · Oct 30 — "where's my candy (medicine)". Scoped to .cd */
+/* CANDY · Oct 29 — "where's my candy (medicine)". Scoped to .cd */
 .cd { text-align: center; }
 .cd-box {
   display: grid;
@@ -48,6 +48,34 @@
 .cd-cell.open .cd-candy { transform: translateY(-48px) rotate(200deg) scale(1.2); opacity: 0; }
 .cd-labels { margin-top: 0.8rem; }
 
+/* her, pouting, until the box is empty */
+.cd-face { position: relative; width: 150px; margin: 0 auto 1rem; }
+.cd-photo { width: 120px; height: 120px; }
+.cd-photo img { object-position: 30% 45%; }
+.cd-photo.chomp { animation: cd-chomp 0.45s ease; }
+@keyframes cd-chomp {
+  25% { transform: scale(1.06, 0.94); }
+  50% { transform: scale(0.96, 1.05); }
+  75% { transform: scale(1.03, 0.98); }
+}
+.cd-bubble {
+  position: absolute;
+  right: -46px;
+  top: 4px;
+  font-family: 'Caveat', cursive;
+  font-size: 1.15rem;
+  line-height: 1.1;
+  background: #fff;
+  color: #5A4336;
+  padding: 0.15rem 0.6rem;
+  border-radius: 12px 12px 12px 3px;
+  box-shadow: 0 3px 10px rgba(62, 44, 35, 0.15);
+  white-space: nowrap;
+  transform: rotate(4deg);
+}
+.cd.cured .cd-bubble { color: #6F8F64; }
+
 @media (prefers-reduced-motion: reduce) {
   .cd-lid, .cd-candy { transition: none; }
+  .cd-photo.chomp { animation: none; }
 }

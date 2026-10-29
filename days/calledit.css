@@ -1,5 +1,7 @@
-/* CALLED IT · Oct 28 (TIMES) + Oct 29 (AUDIO). Scoped to .ci */
+/* CALLED IT · Oct 28 (TIMES) + Oct 30 (AUDIO). Scoped to .ci */
 .ci { text-align: center; }
+.ci-pol { cursor: pointer; }
+.ci-pol img { object-position: 62% 40%; }
 .ci-ball { display: block; width: 92px; height: 92px; margin: 0 auto; overflow: visible; }
 .ci-glow { transform-box: fill-box; transform-origin: center; animation: ci-glow 2.6s ease-in-out infinite; }
 @keyframes ci-glow { 50% { opacity: 0.55; transform: scale(0.92); } }

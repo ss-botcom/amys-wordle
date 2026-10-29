@@ -1,9 +1,10 @@
 /* ═════
-   CALLED IT · October 28 "TIMES" (your first guess?) + October 29 "AUDIO"
+   CALLED IT · October 28 "TIMES" (your first guess?) + October 30 "AUDIO"
    (your second guess?)
 
    Today's word is her usual opener. If she plays it on the guess you
    predicted, the board gets a CALLED IT stamp and the note keeps score.
+   Oct 30 also gets a polaroid of her with her AirPods in (audio/amy.png).
    Test it:  index.html?peek=10-28&fresh=1   then guess TIMES first
    ═════ */
 (function () {
@@ -11,10 +12,10 @@
   if (typeof Special === "undefined") return;
   const S = Special;
 
-  const PREDICTED = { "10-28": 1, "10-29": 2 }[S.key] || 1;
+  const PREDICTED = { "10-28": 1, "10-30": 2 }[S.key] || 1;
   const FUTURE = {
-    "10-28": "tomorrow's prediction: you open with TIMES again. and then…",
-    "10-29": "prediction for tomorrow: TIMES, then AUDIO. every day. forever.",
+    "10-28": "friday's prediction: you open with TIMES again. and then…",
+    "10-30": "prediction for tomorrow: TIMES, then AUDIO. every day. forever.",
   }[S.key] || "";
   const ord = (n) => ["1st", "2nd", "3rd", "4th", "5th", "6th"][n - 1];
 
@@ -48,6 +49,21 @@
     '<p class="ci-verdict"></p>' +
     '<div class="sd-actions"><button class="sd-btn" type="button">predict tomorrow</button></div>' +
     '<p class="ci-future"></p>');
+
+  if (S.key === "10-30") {
+    const pol = document.createElement("figure");
+    pol.className = "polaroid ci-pol";
+    pol.innerHTML = '<img alt="" draggable="false"><figcaption>listening for AUDIO</figcaption>';
+    S.photo(pol.querySelector("img"), "audio/amy.png");
+    plate.insertBefore(pol, plate.firstChild);
+    const notes = () => {
+      const r = pol.getBoundingClientRect();
+      ["♪", "♫", "♪"].forEach((n, i) => S.later(() =>
+        S.floatText(n, r.right - 20 + Math.random() * 16, r.top + r.height * 0.5, { size: "1.5rem", color: "#B5737A" }), i * 280));
+    };
+    pol.addEventListener("click", notes);
+    S.on("open", () => S.later(notes, 1700));
+  }
 
   const got = plate.querySelector(".ci-got");
   const verdictEl = plate.querySelector(".ci-verdict");

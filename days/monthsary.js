@@ -15,7 +15,7 @@
   const WORDS_N = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
   const nWord = WORDS_N[N] || String(N);
 
-  S.subtitle(N === 12 ? "one whole year of us 💐" : nWord + " months of us 💐");
+  S.subtitle("happy monthsary wu 💐");              // no number: some months the word IS the number
   S.title = N === 12 ? "One year." : nWord.charAt(0).toUpperCase() + nWord.slice(1) + " months.";
   setTimeout(() => typeof petalBurst === "function" && petalBurst(), 1100);
 

@@ -1202,17 +1202,16 @@ const WORDS = {
   "10-26": { word: "ACORN", message: "Squirrels are out there hoarding acorns for winter. I'm doing the same thing with pictures of you :)" },
   "10-27": { word: "PLUCK", message: "Lemme Pluck" },
   "10-28": { word: "TIMES", message: "Your first guess? " },
-  "10-29": { word: "AUDIO", message: "Your second guess?" },
-  "10-30": { word: "CANDY", message: "Trick or treat. where's my candy (medicine)" },
+  "10-29": { word: "CANDY", message: "Trick or treat. where's my candy (medicine)" },
+  "10-30": { word: "AUDIO", message: "Your second guess?" },
   "10-31": { word: "BOOOO", message: "You're my boo :) Happy halloween wu " },
   /* ================= NOVEMBER ================= */
-  "11-01": { word: "GLEAM", message: "That gleam in your eye right before you say something mischievous? That's the exact moment I fell for you. Repeatedly." },
-  "11-02": { word: "GLINT", message: "I catch a glint of you in everything now — songs, menus, dumb memes. You're everywhere, and I love it." },
-  "11-03": { word: "EMBER", message: "Some loves burn out fast. Ours is an ember — steady, warm, and somehow getting stronger the longer it burns." },
-  "11-04": { word: "FLAME", message: "You're not just my flame — you're the whole fireplace. Warmth, light, and the reason home feels like home." },
-  "11-05": { word: "BLAZE", message: "You move through life like a blaze — bright, unstoppable, impossible to ignore. Don't ever dim that for anyone." },
-  "11-06": { word: "TORCH", message: "I've been carrying a torch for you since day one, and I plan to carry it forever. My arms aren't tired." },
-  "11-07": { word: "GLORY", message: "Watching you succeed is my favorite spectator sport. Every win of yours feels like glory to me too." },
+  "11-01": { word: "NINES", message: "Happy 9 months wu :) still a 10 tho" },
+  "11-02": { word: "ZAOAN", message: "早安 baby. I know you solve these in the morning :)" },
+  "11-03": { word: "PEARS", message: "Wanna be my pair :)" },
+  "11-04": { word: "MUAHH", message: "MUAHHHHHHH" },
+  "11-05": { word: "HOODY", message: "Wearing my hoodie?" },
+  "11-06": { word: "MOCHI", message: "Squishy and sweet. Like your cheeks :)" },
   "11-08": { word: "GRAND", message: "The Grand Canyon, the Grand Palace — overrated, all of it. The grandest thing I've ever witnessed is you, mid-laugh, mid-story." },
   "11-09": { word: "NOBLE", message: "You do the right thing even when nobody is watching. That quiet nobility is one of a hundred reasons I love you." },
   "11-10": { word: "IDEAL", message: "I used to keep a mental list describing my ideal person. Then you showed up and made the whole list look unambitious." },
@@ -1317,6 +1316,10 @@ const dd = pad2(todayDate.getDate());
      index.html?peek=10-19   → floss day
      index.html?peek=10-23   → wolf moon
      index.html?peek=10-31   → halloween
+     index.html?peek=11-02   → zaoan (wake her up)
+     index.html?peek=11-03   → pears
+     index.html?peek=11-05   → hoody
+     index.html?peek=11-06   → mochi
      index.html?peek=11-01   → 9 months (works on any 1st of the month)
    The list of special days is DAY_FILES below; their code lives in days/.
    Add &fresh=1 to wipe that day's saved test progress and replay:
@@ -1546,9 +1549,13 @@ const DAY_FILES = {
   "10-23": "wolve",
   "10-25": "wanan",
   "10-28": "calledit",
-  "10-29": "calledit",
-  "10-30": "candy",
+  "10-29": "candy",
+  "10-30": "calledit",
   "10-31": "halloween",
+  "11-02": "zaoan",
+  "11-03": "pears",
+  "11-05": "hoody",
+  "11-06": "mochi",
   "11-26": "thanksgiving",
 };
 
@@ -1705,7 +1712,7 @@ const Special = {
 
 /* bump this whenever you edit a file in days/, so phones don't keep an old copy
    (preview mode always loads fresh) */
-const DAYS_VERSION = "2026-10-18";
+const DAYS_VERSION = "2026-10-29";
 function loadDay(name) {
   const v = isPeek ? Date.now() : DAYS_VERSION;
   const css = new Promise((resolve) => {
