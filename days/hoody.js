@@ -19,7 +19,7 @@
   const PULLS = [
     { rx: 50, ry: 58, say: "cozy" },
     { rx: 42, ry: 50, say: "cozier" },
-    { rx: 33, ry: 41, say: "ok that's tight" },
+    { rx: 33, ry: 41, say: "" },
     { rx: 24, ry: 30, say: "burrito mode" },
   ];
 
@@ -42,7 +42,7 @@
       '<button class="sd-btn main" type="button">hood up</button>' +
       '<button class="sd-btn pull" type="button" disabled>pull the strings</button>' +
     "</div>" +
-    '<p class="sd-count" role="status">days since it was stolen: all of them</p>');
+    '');
 
   const frame = plate.querySelector(".ho-frame");
   const cloth = plate.querySelector(".ho-cloth");
@@ -81,7 +81,8 @@
     void frame.offsetWidth;
     frame.classList.add("tug");
     const [x, y] = S.center(frame);
-    S.floatText(pulls === 0 ? "ok loosened" : p.say, x, y - 80, { size: "1.4rem" });
+    const say = pulls === 0 ? "ok loosened" : p.say;
+    if (say) S.floatText(say, x, y - 80, { size: "1.4rem" });
     line.textContent = pulls === 0 ? "cozy wu" : p.say;
   });
 

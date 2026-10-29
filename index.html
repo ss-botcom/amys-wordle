@@ -1202,13 +1202,13 @@ const WORDS = {
   "10-26": { word: "ACORN", message: "Squirrels are out there hoarding acorns for winter. I'm doing the same thing with pictures of you :)" },
   "10-27": { word: "PLUCK", message: "Lemme Pluck" },
   "10-28": { word: "TIMES", message: "Your first guess? " },
-  "10-29": { word: "CANDY", message: "Trick or treat. where's my candy (medicine)" },
-  "10-30": { word: "AUDIO", message: "Your second guess?" },
+  "10-29": { word: "PEARS", message: "Wanna be my pair :)" },
+  "10-30": { word: "CANDY", message: "Trick or treat. where's my candy (medicine)" },
   "10-31": { word: "BOOOO", message: "You're my boo :) Happy halloween wu " },
   /* ================= NOVEMBER ================= */
   "11-01": { word: "NINES", message: "Happy 9 months wu :) still a 10 tho" },
   "11-02": { word: "ZAOAN", message: "早安 baby. I know you solve these in the morning :)" },
-  "11-03": { word: "PEARS", message: "Wanna be my pair :)" },
+  "11-03": { word: "AUDIO", message: "Your second guess?" },
   "11-04": { word: "MUAHH", message: "MUAHHHHHHH" },
   "11-05": { word: "HOODY", message: "Wearing my hoodie?" },
   "11-06": { word: "MOCHI", message: "Squishy and sweet. Like your cheeks :)" },
@@ -1317,7 +1317,7 @@ const dd = pad2(todayDate.getDate());
      index.html?peek=10-23   → wolf moon
      index.html?peek=10-31   → halloween
      index.html?peek=11-02   → zaoan (wake her up)
-     index.html?peek=11-03   → pears
+     index.html?peek=10-29   → pears
      index.html?peek=11-05   → hoody
      index.html?peek=11-06   → mochi
      index.html?peek=11-01   → 9 months (works on any 1st of the month)
@@ -1549,11 +1549,11 @@ const DAY_FILES = {
   "10-23": "wolve",
   "10-25": "wanan",
   "10-28": "calledit",
-  "10-29": "candy",
-  "10-30": "calledit",
+  "10-29": "pears",
+  "10-30": "candy",
   "10-31": "halloween",
   "11-02": "zaoan",
-  "11-03": "pears",
+  "11-03": "calledit",
   "11-05": "hoody",
   "11-06": "mochi",
   "11-26": "thanksgiving",
@@ -1712,7 +1712,7 @@ const Special = {
 
 /* bump this whenever you edit a file in days/, so phones don't keep an old copy
    (preview mode always loads fresh) */
-const DAYS_VERSION = "2026-10-29";
+const DAYS_VERSION = "2026-10-29b";
 function loadDay(name) {
   const v = isPeek ? Date.now() : DAYS_VERSION;
   const css = new Promise((resolve) => {

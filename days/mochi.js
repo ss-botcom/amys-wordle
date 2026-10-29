@@ -15,7 +15,6 @@
   S.title = "Squish.";
 
   const SQUISHES = ["squish", "smoosh", "boing", "mochi!", "so squishy", "cheeks :)", "squish squish", "麻糬"];
-  const MILESTONES = { 10: "ok she's very squishy", 25: "certified mochi", 50: "leave her cheeks alone wu" };
 
   const plate = S.addToNote("mo",
     '<div class="mo-plate">' +
@@ -47,7 +46,7 @@
     const [x, y] = S.center(mochi);
     S.floatText(SQUISHES[n % SQUISHES.length], x + (Math.random() * 70 - 35), y - 80, { size: "1.4rem" });
     n++;
-    count.textContent = "squishes: " + n + (MILESTONES[n] ? " · " + MILESTONES[n] : "");
+    count.textContent = String(n);
     count.classList.remove("pop");
     void count.offsetWidth;
     count.classList.add("pop");

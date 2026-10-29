@@ -75,11 +75,9 @@
       line.textContent = "good morning baby :)";
       btn.textContent = "she's up :)";
       btn.disabled = true;
-      count.textContent = "took " + WAKE + " tries. classic wu.";
       S.later(() => S.burst({ x, y: y - 40, count: 20, colors: ["#F2C96B", "#F6DFA0", "#E8B7BC", "#FFF4E6"] }), 250);
     } else {
       line.textContent = tries < 3 ? "she's not up yet" : "she's still not up";
-      count.textContent = "wake up attempts: " + tries;
     }
   });
 })();
