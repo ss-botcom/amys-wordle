@@ -1,0 +1,62 @@
+/* HOODY · Nov 5 — wearing my hoodie? Scoped to .ho */
+.ho { text-align: center; }
+.ho-frame { position: relative; width: 170px; height: 190px; margin: 0 auto; }
+
+.ho-photo {
+  position: absolute;
+  left: 15px;
+  top: 17px;
+  width: 140px;
+  height: 150px;
+  border-radius: 48%;
+}
+.ho-photo img { object-position: 50% 42%; transform: scale(1.45); transform-origin: 50% 46%; }
+
+/* the hood waits above the frame, then drops down around her face */
+.ho-hood {
+  position: absolute;
+  inset: 0;
+  width: 170px;
+  height: 190px;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-46px) scale(0.92);
+  transition: transform 0.55s cubic-bezier(0.3, 1.4, 0.5, 1), opacity 0.3s ease;
+  filter: drop-shadow(0 6px 10px rgba(62, 44, 35, 0.25));
+}
+.ho-frame.up .ho-hood { opacity: 1; transform: none; }
+.ho-frame.tug .ho-hood { animation: ho-tug 0.35s ease; }
+@keyframes ho-tug { 40% { transform: translateY(5px) scale(0.98, 1.02); } }
+.ho-frame.burrito .ho-photo { animation: ho-wiggle 0.6s ease; }
+@keyframes ho-wiggle {
+  25% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+  75% { transform: rotate(-2deg); }
+}
+
+/* the sticker */
+.ho-tag {
+  position: absolute;
+  right: -30px;
+  bottom: 8px;
+  z-index: 3;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  background: #FFF8E8;
+  box-shadow: 0 3px 8px rgba(62, 44, 35, 0.18);
+  font-family: 'Caveat', cursive;
+  font-size: 1.05rem;
+  color: #5A4336;
+  white-space: nowrap;
+  transform: rotate(-8deg);
+}
+.ho-tag s { color: var(--taupe); }
+.ho-tag b { color: #6E2B33; font-weight: 700; }
+
+.ho-labels { margin-top: 0.7rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ho-hood { transition: none; }
+  .ho-frame.tug .ho-hood, .ho-frame.burrito .ho-photo { animation: none; }
+}
