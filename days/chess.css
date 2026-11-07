@@ -1,0 +1,65 @@
+/* CHESS · Nov 8 — the board becomes a chessboard in her dress plaid. */
+
+.tile.cs-sq {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  font-size: clamp(1.7rem, 8.5vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1;
+  animation: cs-turn 0.5s ease both;
+}
+@keyframes cs-turn { from { transform: rotateY(90deg); } to { transform: none; } }
+
+/* plaid squares, like the dress: navy with thin white lines, white with thin navy lines */
+.tile.cs-dark {
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.16) 0 2px, transparent 2px 10px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.16) 0 2px, transparent 2px 10px),
+    #2E3552 !important;
+}
+.tile.cs-light {
+  background:
+    repeating-linear-gradient(0deg, rgba(46, 53, 82, 0.12) 0 2px, transparent 2px 10px),
+    repeating-linear-gradient(90deg, rgba(46, 53, 82, 0.12) 0 2px, transparent 2px 10px),
+    #F7F5EF !important;
+}
+
+/* pieces: black side up top, white side at the bottom, readable on either square */
+.tile.cs-b { color: #1B1F30 !important; text-shadow: 0 0 2px #fff, 0 0 3px #fff; }
+.tile.cs-w { color: #FFFFFF !important; text-shadow: 0 0 2px #1B1F30, 0 0 3px #1B1F30; }
+.tile.cs-drop { animation: cs-turn 0.5s ease both, cs-drop 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+@keyframes cs-drop {
+  from { opacity: 0; transform: translateY(-18px) scale(1.4); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* the queen is her */
+.tile.cs-queen {
+  position: relative;
+  overflow: visible;
+  background: var(--cs-img) var(--cs-pos) / var(--cs-zoom) auto no-repeat !important;
+  box-shadow: 0 0 0 3px #E3C481, 0 0 16px rgba(227, 196, 129, 0.8) !important;
+  border-radius: 50%;
+  animation: cs-crowned 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.tile.cs-queen::after {
+  content: "👑";
+  position: absolute;
+  left: 50%;
+  top: -20px;
+  font-size: 1.3rem;
+  transform: translateX(-50%) rotate(-8deg);
+}
+@keyframes cs-crowned {
+  from { opacity: 0; transform: scale(0.3) rotate(-20deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* the note */
+.cs { text-align: center; }
+.cs-pol { width: 170px; }
+.cs-pol img { width: 156px; height: 210px; object-position: 50% 45%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tile.cs-sq, .tile.cs-drop, .tile.cs-queen { animation: none !important; }
+}

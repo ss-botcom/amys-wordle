@@ -1,0 +1,19 @@
+/* FACES · Nov 15 — a stack of her faces. Scoped to .fc */
+.fc { text-align: center; }
+.fc-stack { position: relative; width: 170px; height: 190px; margin: 0 auto; cursor: pointer; }
+.fc-card {
+  position: absolute;
+  inset: 0;
+  padding: 8px 8px 26px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(62, 44, 35, 0.16);
+}
+.fc-card img { width: 100%; height: 100%; object-fit: cover; }
+.fc-card.under { transform: rotate(4deg); }
+.fc-card.top { transform: rotate(-3deg); z-index: 2; }
+.fc-card.top.toss { animation: fc-toss 0.38s ease-in forwards; }
+@keyframes fc-toss {
+  to { transform: translate(-180px, 30px) rotate(-30deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) { .fc-card.top.toss { animation: none; } }

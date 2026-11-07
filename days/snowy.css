@@ -1,0 +1,18 @@
+/* SNOWY · Nov 29 — a frosted window. Scoped to .sn */
+.sn { text-align: center; }
+.sn-window {
+  position: relative;
+  width: 220px;
+  height: 240px;
+  margin: 0 auto;
+  border-radius: 14px 14px 6px 6px;
+  overflow: hidden;
+  border: 8px solid #F3E8D2;
+  box-shadow: 0 0 0 1px var(--border), 0 8px 18px rgba(62, 44, 35, 0.18);
+  background: #DCE7EE;
+}
+.sn-window img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 40% 40%; }
+.sn-frost { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.sn-bar { position: absolute; background: #F3E8D2; pointer-events: none; }
+.sn-bar.v { left: 50%; top: 0; bottom: 0; width: 6px; margin-left: -3px; }
+.sn-bar.h { top: 50%; left: 0; right: 0; height: 6px; margin-top: -3px; }

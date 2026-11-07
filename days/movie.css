@@ -1,0 +1,54 @@
+/* MOVIE · Nov 13 — a tiny cinema. Scoped to .mv */
+.mv { text-align: center; }
+.mv-marquee {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  padding: 0.2rem 0.8rem;
+  border-radius: 6px;
+  background: #3E2C23;
+  color: #FBEAB9;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  box-shadow: 0 0 0 2px #E3C481, 0 0 12px rgba(227, 196, 129, 0.5);
+}
+.mv-theater {
+  position: relative;
+  width: 230px;
+  height: 170px;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #2A1F1A;
+  box-shadow: inset 0 0 0 6px #3E2C23, 0 8px 18px rgba(62, 44, 35, 0.22);
+  cursor: pointer;
+}
+.mv-screen {
+  position: absolute;
+  inset: 14px 18px 18px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #F5EFE3;
+  box-shadow: 0 0 22px rgba(255, 244, 220, 0.35);
+}
+.mv-screen img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 55%; }
+
+/* velvet curtains that part */
+.mv-curtain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 51%;
+  background: repeating-linear-gradient(90deg, #8E2F3A 0 10px, #A53B47 10px 18px, #8E2F3A 18px 24px);
+  box-shadow: inset 0 -10px 16px rgba(0, 0, 0, 0.25);
+  transition: transform 1.1s cubic-bezier(0.6, 0, 0.3, 1);
+}
+.mv-curtain.l { left: 0; transform-origin: 0 0; }
+.mv-curtain.r { right: 0; transform-origin: 100% 0; }
+.mv-theater.open .mv-curtain.l { transform: translateX(-86%) scaleX(0.4); }
+.mv-theater.open .mv-curtain.r { transform: translateX(86%) scaleX(0.4); }
+
+.mv-seats { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
+.mv-seats span { width: 26px; height: 14px; border-radius: 8px 8px 3px 3px; background: #A53B47; opacity: 0.8; }
+
+@media (prefers-reduced-motion: reduce) { .mv-curtain { transition: none; } }

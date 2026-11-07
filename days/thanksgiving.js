@@ -1,5 +1,5 @@
 /* ═════
-   THANKSGIVING · November 26 · "FEAST"
+   THANKSGIVING · November 26 · "THANK"
 
    A jar of folded notes — tap it and one pops out. Extra falling leaves.
    ✏️ REASONS is yours to rewrite: these are placeholders in roughly your
@@ -21,10 +21,9 @@
     "hama sushi sidehugs",
     "late night calls that go way too long",
     "pittsburgh, october 8th",
-    "you. (it was always going to be you twice)",
   ];
 
-  S.subtitle("happy thanksgiving :)");
+  S.subtitle("hi wu :)");                          // "thanksgiving" would give THANK away
   S.title = "Thankful.";
   S.ambient.set("leaves", 22);
 
@@ -59,6 +58,6 @@
     note.textContent = REASONS[i % REASONS.length];
     note.classList.add("show");
     i++;
-    count.textContent = i <= REASONS.length ? i + " of " + REASONS.length : "the jar refills itself. that's how it works";
+    count.textContent = Math.min(i, REASONS.length) + " of " + REASONS.length;
   });
 })();

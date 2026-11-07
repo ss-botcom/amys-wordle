@@ -1,0 +1,60 @@
+/* COFFE · Nov 9 — the big picture on the board. */
+
+/* each tile becomes its own slice of the photo */
+.tile.cf-pic {
+  background: var(--cf-img) var(--cf-pos) / var(--cf-size) no-repeat !important;
+  border-color: transparent !important;
+  color: transparent !important;
+  box-shadow: none !important;
+  animation: cf-turn 0.5s ease both;
+}
+@keyframes cf-turn {
+  0%   { transform: rotateY(90deg); }
+  100% { transform: rotateY(0); }
+}
+
+/* then the whole photo, no gaps, with steam coming off the top */
+.cf-whole {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 12px 30px rgba(62, 44, 35, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.9s ease;
+}
+#board.cf-done .cf-whole { opacity: 1; }
+
+.cf-steam {
+  position: absolute;
+  left: 50%;
+  top: -52px;
+  width: 70px;
+  height: 48px;
+  margin-left: -35px;
+  overflow: visible;
+}
+.cf-steam path {
+  fill: none;
+  stroke: var(--mocha);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: cf-steam 3s ease-in-out infinite;
+}
+.cf-steam path:nth-child(2) { animation-delay: 0.8s; }
+.cf-steam path:nth-child(3) { animation-delay: 1.6s; }
+@keyframes cf-steam {
+  0%   { opacity: 0; transform: translateY(8px); }
+  35%  { opacity: 0.55; }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile.cf-pic, .cf-steam path { animation: none !important; }
+  .cf-steam path { opacity: 0.4; }
+  .cf-whole { transition: none; }
+}
