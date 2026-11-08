@@ -1,7 +1,7 @@
 /* ═════
    FACES DAY · November 15 · "FACES"  (my favorite face to see :)
 
-   Uses photos already in the repo (edit FACES to change the order).
+   Uses the photos in faces/ (edit FACES to change the order).
    In the note: a stack of her faces. Tap to flip to the next one.
    Ends on the sweet one.
    Test it:  index.html?peek=11-15&fresh=1
@@ -14,15 +14,15 @@
   const FACES = [
     "faces/talk.png",
     "faces/uhoh.jpg",
-    "toast/amy-6.png",
-    "nose/amy-nose.png",
-    "mochi/amy.png",
-    "candy/amy.png",
-    "toast/amy-5.png",
-    "zaoan/amy.png",
+    "faces/pout2.png",
+    "faces/nose.png",
+    "faces/cheeks.png",
+    "faces/smug.png",
+    "faces/cry.png",
+    "faces/sleepy.png",
     "faces/pout.jpg",
-    "teehe/amy.jpg",
-    "xiang/amy.jpg",
+    "faces/giggle.jpg",
+    "faces/smile.jpg",
   ];
 
   S.subtitle("hi :)");
