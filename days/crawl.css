@@ -1,0 +1,82 @@
+/* CRAWL · Nov 25 — food crawl map. Scoped to .cr */
+.cr { text-align: center; }
+.cr-map {
+  position: relative;
+  width: 260px;
+  height: 170px;
+  margin: 0 auto;
+  border-radius: 14px;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(0deg, rgba(199, 188, 177, 0.35) 0 2px, transparent 2px 26px),
+    repeating-linear-gradient(90deg, rgba(199, 188, 177, 0.35) 0 2px, transparent 2px 26px),
+    #F7F1E6;
+  box-shadow: inset 0 0 0 1px var(--border), 0 6px 16px rgba(62, 44, 35, 0.14);
+}
+.cr-map::before {                 /* a bit of park */
+  content: "";
+  position: absolute;
+  left: 40%;
+  top: -10%;
+  width: 22%;
+  height: 34%;
+  border-radius: 8px;
+  background: rgba(168, 187, 160, 0.45);
+}
+.cr-route { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cr-route polyline { fill: none; stroke: var(--rose); stroke-width: 2.5; stroke-dasharray: 5 6; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+
+.cr-stop {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  padding: 0;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #FFF8E8;
+  box-shadow: 0 3px 8px rgba(62, 44, 35, 0.2);
+  font-size: 1.25rem;
+  line-height: 34px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.25s ease, filter 0.3s ease, opacity 0.3s ease;
+}
+.cr-stop:active { transform: scale(0.9); }
+.cr-stop.ate { filter: grayscale(1); opacity: 0.45; transform: scale(0.85); }
+.cr-stop.ate::after {
+  content: "✓";
+  position: absolute;
+  right: -6px;
+  top: -8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6F8F64;
+}
+
+.cr-pvd {
+  position: absolute;
+  margin: -12px 0 0 -22px;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: var(--espresso);
+  color: var(--latte);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+.cr-bus {
+  position: absolute;
+  margin: -14px 0 0 -14px;
+  font-size: 1.5rem;
+  opacity: 0;
+  transition: left 1.6s ease-in-out, top 1.6s ease-in-out, opacity 0.3s ease;
+}
+.cr-map.done .cr-bus { opacity: 1; }
+
+.cr-meter { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.7rem; }
+.cr-k { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--mocha); }
+.cr-bar { width: 140px; height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; }
+.cr-bar i { display: block; width: 0; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #E3C481, #D9772E); transition: width 0.5s ease; }
+
+@media (prefers-reduced-motion: reduce) { .cr-bus, .cr-stop, .cr-bar i { transition: none; } }

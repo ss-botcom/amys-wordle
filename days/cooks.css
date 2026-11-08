@@ -1,0 +1,23 @@
+/* COOKS · Nov 14 — chef wu. Scoped to .ck */
+.ck { text-align: center; }
+.ck-pol { width: 180px; }
+.ck-pol img { width: 166px; height: 130px; object-position: 60% 30%; }
+.ck-bell {
+  display: block;
+  width: 64px;
+  margin: 0.2rem auto 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ck-bell svg { display: block; width: 100%; }
+.ck-bell.ding { animation: ck-ding 0.5s ease; }
+@keyframes ck-ding {
+  20% { transform: rotate(-12deg) scale(1.05); }
+  45% { transform: rotate(10deg); }
+  70% { transform: rotate(-5deg); }
+}
+
+@media (prefers-reduced-motion: reduce) { .ck-bell.ding { animation: none; } }

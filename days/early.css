@@ -1,0 +1,38 @@
+/* EARLY · Nov 24 — a bus ticket for tomorrow. Scoped to .ea */
+.ea { text-align: center; }
+.ea-ticket {
+  display: flex;
+  width: 270px;
+  margin: 0 auto;
+  text-align: left;
+  cursor: pointer;
+  filter: drop-shadow(0 6px 12px rgba(62, 44, 35, 0.18));
+}
+.ea-main {
+  flex: 1;
+  padding: 0.7rem 0.8rem 0.65rem;
+  border-radius: 10px 0 0 10px;
+  background: #FFF8E8;
+  border-right: 2px dashed #D9C9AE;
+}
+.ea-k { display: block; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--taupe); }
+.ea-route { display: block; font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--espresso); line-height: 1.1; margin-bottom: 0.4rem; }
+.ea-route b { color: var(--rose); }
+.ea-row { display: flex; gap: 1.1rem; font-size: 0.78rem; font-weight: 600; color: var(--mocha); margin-top: 0.3rem; }
+.ea-stub {
+  width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 10px 10px 0;
+  background: #D9A0A5;
+  color: #fff;
+  transform-origin: 0 100%;
+  transition: transform 0.7s cubic-bezier(0.5, 0, 0.6, 1), opacity 0.5s ease 0.3s;
+}
+.ea-stub .ea-k { color: rgba(255, 255, 255, 0.8); }
+.ea-two { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; line-height: 1; }
+.ea-ticket.torn .ea-stub { transform: translate(18px, 120px) rotate(28deg); opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) { .ea-stub { transition: none; } }
