@@ -19,6 +19,7 @@
   const S = Special;
 
   const SRC = "chess/amy.webp";
+  const SRC_CSS = 'url("' + new URL(SRC, document.baseURI).href + '")';   // full address: a relative one in a CSS variable would resolve from days/
   const DRESS_POS = "54% 69%";                      // where the dress is in the photo (the skirt)
   const DRESS_ZOOM = "610%";                        // how far to zoom in so the dress fills the board
   const FACE_POS = "52% 27%";                       // where her face is
@@ -56,7 +57,7 @@
     if (getComputedStyle(boardEl).position === "static") boardEl.style.position = "relative";
     layer = document.createElement("div");
     layer.className = "cs-dress";
-    layer.style.setProperty("--cs-img", 'url("' + SRC + '")');
+    layer.style.setProperty("--cs-img", SRC_CSS);
     layer.style.setProperty("--cs-dress-pos", DRESS_POS);
     layer.style.setProperty("--cs-dress-zoom", DRESS_ZOOM);
     boardEl.appendChild(layer);
@@ -89,7 +90,7 @@
     const t = boardTiles[5][2];
     if (faceOk) {
       t.classList.add("cs-queen");
-      t.style.setProperty("--cs-img", 'url("' + SRC + '")');
+      t.style.setProperty("--cs-img", SRC_CSS);
       t.style.setProperty("--cs-pos", FACE_POS);
       t.style.setProperty("--cs-zoom", FACE_ZOOM);
     } else {
