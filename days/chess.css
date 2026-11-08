@@ -14,22 +14,8 @@
 }
 @keyframes cs-turn { from { transform: rotateY(90deg); } to { transform: none; } }
 
-/* 1. plaid squares, like the dress */
-.tile.cs-dark {
-  background:
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.16) 0 2px, transparent 2px 10px),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.16) 0 2px, transparent 2px 10px),
-    #2E3552 !important;
-}
-.tile.cs-light {
-  background:
-    repeating-linear-gradient(0deg, rgba(46, 53, 82, 0.12) 0 2px, transparent 2px 10px),
-    repeating-linear-gradient(90deg, rgba(46, 53, 82, 0.12) 0 2px, transparent 2px 10px),
-    #F7F5EF !important;
-}
-
-/* 2. her dress, zoomed in so it fills the board. Fades in over the squares,
-      then drops under the tiles (which go see-through) so pieces sit on it */
+/* 1. her dress, zoomed in so it fills the board. It sits under the tiles;
+      as each tile flips and goes see-through, the dress shows */
 .cs-dress {
   position: absolute;
   inset: 0;
@@ -47,7 +33,7 @@
 #board.cs-under .cs-dress { z-index: 1; }
 #board.cs-under .tile.cs-sq:not(.cs-queen) { background: transparent !important; }
 
-/* 3. pieces: black up top, white at the bottom, readable on the plaid */
+/* 2. pieces: black up top, white at the bottom, readable on the plaid */
 .tile.cs-b { color: #1B1F30 !important; text-shadow: 0 0 2px #fff, 0 0 4px #fff, 0 0 6px #fff; }
 .tile.cs-w { color: #FFFFFF !important; text-shadow: 0 0 2px #1B1F30, 0 0 4px #1B1F30, 0 0 6px #1B1F30; }
 .tile.cs-drop { animation: cs-drop 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
@@ -56,7 +42,7 @@
   to   { opacity: 1; transform: none; }
 }
 
-/* 4. the queen is her */
+/* 3. the queen is her */
 .tile.cs-queen {
   position: relative;
   overflow: visible;
@@ -78,7 +64,7 @@
   to   { opacity: 1; transform: none; }
 }
 
-/* 5. pull back: pieces fade, the dress zooms out to the whole photo */
+/* 4. pull back: pieces fade, the dress zooms out to the whole photo */
 #board.cs-zoom .cs-dress { background-size: 100% auto; background-position: 50% 40%; box-shadow: 0 12px 30px rgba(62, 44, 35, 0.25); }
 #board.cs-zoom .tile.cs-sq { opacity: 0; }
 #board.cs-still .cs-dress, #board.cs-still .tile.cs-sq { transition: none; animation: none; }

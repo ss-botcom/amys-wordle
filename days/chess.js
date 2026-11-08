@@ -4,11 +4,10 @@
    Needs:  chess/amy.webp   (the plaid dress mirror selfie)
 
    Her dress is the chessboard. When she wins:
-     1. the board flips into a plaid chessboard
-     2. it melts into her actual dress
-     3. the pieces drop onto the dress
-     4. the white queen's square is her face, with a crown
-     5. it zooms out to the whole photo
+     1. the tiles flip away one by one; underneath is her dress, zoomed in
+     2. the pieces drop onto the dress
+     3. the white queen's square is her face, with a crown
+     4. it zooms out to the whole photo
    The note waits for all of it, then shows the photo: "the queen".
 
    If the dress or her face sits off-center, nudge DRESS_* / FACE_*.
@@ -42,9 +41,7 @@
 
   /* when each beat starts, in ms after the win */
   const SQUARES = 700;
-  const DRESS = SQUARES + (ROWS + COLS) * STEP + 700;
-  const UNDER = DRESS + 1100;
-  const PIECES = UNDER + 250;
+  const PIECES = SQUARES + (ROWS + COLS) * STEP + 700;
   const QUEEN = PIECES + 1500;
   const ZOOM = QUEEN + 1700;
   const END = ZOOM + 2400;
@@ -65,10 +62,11 @@
     boardEl.appendChild(layer);
   }
 
+  /* each tile goes see-through, so the dress underneath shows */
   function squares(animate) {
     boardTiles.forEach((row, r) => row.forEach((t, c) => {
       const go = () => {
-        t.classList.add("cs-sq", (r + c) % 2 ? "cs-dark" : "cs-light");
+        t.classList.add("cs-sq");
         t.textContent = "";
       };
       animate ? S.later(go, (r + c) * STEP) : go();
@@ -108,10 +106,10 @@
   function play() {
     if (boardEl.classList.contains("cs-on")) return;
     boardEl.classList.add("cs-on");
+    boardEl.classList.add("cs-under");                                     // the dress sits under the tiles
     makeLayer();
+    layer.classList.add("show");
     squares(true);
-    S.later(() => layer.classList.add("show"), DRESS - SQUARES);           // chessboard → her dress
-    S.later(() => boardEl.classList.add("cs-under"), UNDER - SQUARES);     // dress slides under the tiles
     S.later(() => pieces(true), PIECES - SQUARES);
     S.later(() => queen(true), QUEEN - SQUARES);
     S.later(() => boardEl.classList.add("cs-zoom"), ZOOM - SQUARES);       // pull back to the whole photo
